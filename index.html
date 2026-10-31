@@ -1014,7 +1014,7 @@
       const chapterChoice = document.getElementById('upload-chapter').value;
 
       const promptText = `
-你是一位專業的國中八年級各科名師。
+你是一位專業的國中各科名師。
 這是一張或多張學生的平時測驗卷照片（可能包含正反面）。
 【任務要求】：
 1. 請逐題徹底掃描整張考卷的所有題目，絕對不可略過任何題目。
@@ -1044,14 +1044,31 @@
           parts.push({ inline_data: { mime_type: "image/jpeg", data: base64Clean } });
         });
 
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: parts }] })
-        });
+        // 優先嘗試 gemini-3.8-flash，若失敗則自動切換至備援模型
+        const candidateModels = ['gemini-3.8-flash', 'gemini-3-flash-preview'];
+        let lastErr = null;
+        let data = null;
 
-        const data = await resp.json();
-        if (data.error) throw new Error(data.error.message);
+        for (const model of candidateModels) {
+          try {
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: parts }] })
+            });
+            const resJson = await resp.json();
+            if (resJson.error) {
+              lastErr = resJson.error.message;
+              continue;
+            }
+            data = resJson;
+            break;
+          } catch (e) {
+            lastErr = e.message;
+          }
+        }
+
+        if (!data) throw new Error(lastErr || '所有可用模型皆無法連線，請檢查 API Key 或網路');
 
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
         const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1087,60 +1104,35 @@
       const key = document.getElementById('input-api-key').value.trim();
       const resBox = document.getElementById('test-connection-result');
       if (!key) { resBox.innerHTML = `<span class="text-red-500">❌ 請先輸入 API Key</span>`; return; }
-      resBox.innerHTML = `<span class="text-blue-500">⏳ 正在測試與 Gemini 模型連線...</span>`;
-      try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-        });
-        const data = await resp.json();
-        if (data.error) {
-          resBox.innerHTML = `<span class="text-red-600">❌ 連線失敗: ${data.error.message}</span>`;
-        } else {
-          resBox.innerHTML = `<span class="text-emerald-600 font-bold">✅ API Key 連線成功 (gemini-2.5-flash)！</span>`;
-        }
-      } catch (err) {
-        resBox.innerHTML = `<span class="text-red-600">❌ 網路連線錯誤，請檢查網路連線狀態</span>`;
-      }
-    }
-    function resetPomodoro() { clearInterval(pomoTimer); isPomoRunning = false; pomoTimeLeft = pomoTotalTime; document.getElementById('btn-pomo-toggle').innerText = "開始計時"; updatePomoDisplay(); }
-    function updatePomoDisplay() {
-      const m = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
-      const s = (pomoTimeLeft % 60).toString().padStart(2, '0');
-      if (document.getElementById('pomo-timer-display')) document.getElementById('pomo-timer-display').innerText = `${m}:${s}`;
-      const circle = document.getElementById('pomo-circle');
-      if (circle) circle.style.strokeDashoffset = 603 - (pomoTimeLeft / pomoTotalTime) * 603;
-    }
-
-    // API 設定與測試
-    function toggleApiKeyModal() {
-      const modal = document.getElementById('modal-api-key');
-      modal.classList.toggle('hidden');
-      const saved = localStorage.getItem('GEMINI_API_KEY');
-      if (saved) document.getElementById('input-api-key').value = saved;
-      document.getElementById('test-connection-result').innerHTML = '';
-    }
-
-    async function testApiKeyConnection() {
-      const key = document.getElementById('input-api-key').value.trim();
-      const resBox = document.getElementById('test-connection-result');
-      if (!key) { resBox.innerHTML = `<span class="text-red-500">❌ 請先輸入 API Key</span>`; return; }
       resBox.innerHTML = `<span class="text-blue-500">⏳ 正在測試與 Gemini 3.8 Flash 模型連線...</span>`;
-      try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-        });
-        const data = await resp.json();
-        if (data.error) {
-          resBox.innerHTML = `<span class="text-red-600">❌ 連線失敗: ${data.error.message}</span>`;
-        } else {
-          resBox.innerHTML = `<span class="text-emerald-600 font-bold">✅ API Key 連線成功 (gemini-3.8-flash)！</span>`;
+      
+      const candidateModels = ['gemini-3.8-flash', 'gemini-3-flash-preview'];
+      let connectedModel = null;
+      let lastErrMsg = '';
+
+      for (const model of candidateModels) {
+        try {
+          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
+          });
+          const data = await resp.json();
+          if (!data.error) {
+            connectedModel = model;
+            break;
+          } else {
+            lastErrMsg = data.error.message;
+          }
+        } catch (err) {
+          lastErrMsg = err.message;
         }
-      } catch (err) {
-        resBox.innerHTML = `<span class="text-red-600">❌ 網路連線錯誤</span>`;
+      }
+
+      if (connectedModel) {
+        resBox.innerHTML = `<span class="text-emerald-600 font-bold">✅ API Key 連線成功 (${connectedModel})！</span>`;
+      } else {
+        resBox.innerHTML = `<span class="text-red-600">❌ 連線失敗: ${lastErrMsg}</span>`;
       }
     }
 
@@ -1154,4 +1146,3 @@
   </script>
 </body>
 </html>
-  
