@@ -625,6 +625,7 @@
       updateChapterOptions();
       selectSubject('math');
       generatePrintPreview();
+      updatePomoDisplay(); // 初始化專注鐘顯示
 
       setInterval(updateCountdowns, 3600000);
     });
@@ -1100,6 +1101,132 @@
       }
     }
 
+    // 儲存並將 AI 辨識錯題分類加入題庫
+    function commitDetectedErrors() {
+      if (stagingErrors.length === 0) return;
+      allErrors = [...stagingErrors, ...allErrors];
+      localStorage.setItem('EXAM_ERRORS_V3', JSON.stringify(allErrors));
+      
+      const addedCount = stagingErrors.length;
+      const targetSubj = stagingErrors[0].subject || 'math';
+      stagingErrors = [];
+      
+      renderDetectedList();
+      updateCountdowns();
+      
+      // 切換至對應科目的錯題圖解庫檢視
+      switchTab('library');
+      selectSubject(targetSubj);
+      
+      alert(`🎉 成功將 ${addedCount} 道錯題加入【${targetSubj}】錯題精準庫！`);
+    }
+
+    // ==========================================
+    // 專注學習計時鐘核心功能修復
+    // ==========================================
+    function setPomoMode(mode) {
+      clearInterval(pomoTimer);
+      isPomoRunning = false;
+      
+      const toggleBtn = document.getElementById('btn-pomo-toggle');
+      if (toggleBtn) toggleBtn.innerText = "開始計時";
+
+      const b25 = document.getElementById('pomo-mode-focus25');
+      const b45 = document.getElementById('pomo-mode-exam45');
+      const b5 = document.getElementById('pomo-mode-rest5');
+      const statusLabel = document.getElementById('pomo-status-label');
+
+      [b25, b45, b5].forEach(b => {
+        if (b) b.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text transition hover:bg-morandi-border";
+      });
+
+      if (mode === 'focus25') {
+        pomoTotalTime = 25 * 60;
+        if (b25) b25.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white shadow-sm transition";
+        if (statusLabel) statusLabel.innerText = "25分 專注複習中";
+      } else if (mode === 'exam45') {
+        pomoTotalTime = 45 * 60;
+        if (b45) b45.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white shadow-sm transition";
+        if (statusLabel) statusLabel.innerText = "45分 模擬考場計時中";
+      } else if (mode === 'rest5') {
+        pomoTotalTime = 5 * 60;
+        if (b5) b5.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-sage text-white shadow-sm transition";
+        if (statusLabel) statusLabel.innerText = "5分 休息放鬆時間";
+      }
+
+      pomoTimeLeft = pomoTotalTime;
+      updatePomoDisplay();
+    }
+
+    function togglePomodoro() {
+      const btn = document.getElementById('btn-pomo-toggle');
+      if (isPomoRunning) {
+        clearInterval(pomoTimer);
+        isPomoRunning = false;
+        if (btn) btn.innerText = "繼續計時";
+      } else {
+        isPomoRunning = true;
+        if (btn) btn.innerText = "暫停";
+        
+        pomoTimer = setInterval(() => {
+          if (pomoTimeLeft > 0) {
+            pomoTimeLeft--;
+            updatePomoDisplay();
+          } else {
+            clearInterval(pomoTimer);
+            isPomoRunning = false;
+            if (btn) btn.innerText = "開始計時";
+            playPomoAlarmSound();
+            alert('🔔 計時結束！恭喜您完成了一個專注階段，請好好休息一下！');
+            resetPomodoro();
+          }
+        }, 1000);
+      }
+    }
+
+    function resetPomodoro() {
+      clearInterval(pomoTimer);
+      isPomoRunning = false;
+      pomoTimeLeft = pomoTotalTime;
+      const btn = document.getElementById('btn-pomo-toggle');
+      if (btn) btn.innerText = "開始計時";
+      updatePomoDisplay();
+    }
+
+    function updatePomoDisplay() {
+      const m = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
+      const s = (pomoTimeLeft % 60).toString().padStart(2, '0');
+      const display = document.getElementById('pomo-timer-display');
+      if (display) display.innerText = `${m}:${s}`;
+
+      const circle = document.getElementById('pomo-circle');
+      if (circle) {
+        const perimeter = 603; // 2 * PI * 96
+        const offset = perimeter - (pomoTimeLeft / pomoTotalTime) * perimeter;
+        circle.style.strokeDashoffset = offset;
+      }
+    }
+
+    // 瀏覽器內建 Web Audio API 音效，免外載音檔
+    function playPomoAlarmSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.6);
+      } catch (e) {
+        console.log('Audio not supported or permitted yet.');
+      }
+    }
+
     async function testApiKeyConnection() {
       const key = document.getElementById('input-api-key').value.trim();
       const resBox = document.getElementById('test-connection-result');
@@ -1146,3 +1273,4 @@
   </script>
 </body>
 </html>
+    
