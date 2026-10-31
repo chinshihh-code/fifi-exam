@@ -132,8 +132,8 @@
           <span class="text-[10px]">天</span>
         </div>
 
-        <button onclick="toggleApiKeyModal()" class="p-2 rounded-xl text-morandi-textMuted hover:text-morandi-clay hover:bg-morandi-cream transition" title="API Key 設定與測試">
-          <i data-lucide="settings" class="w-5 h-5"></i>
+        <button id="btn-settings-trigger" onclick="toggleApiKeyModal(event)" class="cursor-pointer p-2.5 rounded-xl text-morandi-text hover:text-morandi-clay hover:bg-morandi-cream active:bg-morandi-border transition select-none relative z-40 touch-manipulation" title="API Key 設定與測試" aria-label="設定">
+          <i data-lucide="settings" class="w-5 h-5 pointer-events-none"></i>
         </button>
       </div>
     </div>
@@ -452,11 +452,21 @@
           <h2 class="text-xl font-bold text-[#3d3734]">專注學習計時鐘</h2>
           <p class="text-xs text-morandi-textMuted mt-1">黃金專注曲線 · 模擬考 45 分鐘與日常 25 分鐘番茄鐘</p>
         </div>
-        <div class="flex justify-center space-x-2">
-          <button onclick="setPomoMode('focus25')" id="pomo-mode-focus25" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white">25分 專注讀書</button>
-          <button onclick="setPomoMode('exam45')" id="pomo-mode-exam45" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">45分 模擬考場</button>
-          <button onclick="setPomoMode('rest5')" id="pomo-mode-rest5" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">5分 休息</button>
+        <div class="flex flex-wrap justify-center gap-2">
+          <button onclick="setPomoMode('focus25')" id="pomo-mode-focus25" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white">25分 專注</button>
+          <button onclick="setPomoMode('exam45')" id="pomo-mode-exam45" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">45分 模擬考</button>
+          <button onclick="setPomoMode('rest5')" id="pomo-mode-rest5" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">5分 休息</button>
+          <button onclick="setPomoMode('custom')" id="pomo-mode-custom" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">自訂時間</button>
         </div>
+
+        <!-- 自訂時間輸入區 (點選自訂時顯示) -->
+        <div id="pomo-custom-input-box" class="hidden flex items-center justify-center gap-2 pt-1">
+          <label class="text-xs font-bold text-morandi-text">設定分鐘：</label>
+          <input type="number" id="pomo-custom-minutes" min="1" max="180" value="30" class="w-20 bg-morandi-cream border border-morandi-border rounded-xl px-2.5 py-1 text-xs text-center font-bold text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
+          <span class="text-xs text-morandi-textMuted">分鐘</span>
+          <button onclick="applyCustomPomoTime()" class="px-3 py-1 rounded-xl text-xs font-bold bg-morandi-rose text-white hover:bg-morandi-roseDark transition">套用</button>
+        </div>
+
         <div class="relative w-56 h-56 mx-auto flex items-center justify-center">
           <svg class="w-full h-full transform -rotate-90">
             <circle cx="112" cy="112" r="96" stroke="#f4ede4" stroke-width="10" fill="transparent" />
@@ -477,11 +487,11 @@
   </main>
 
   <!-- 彈出視窗: API Key 設定與連線測試 -->
-  <div id="modal-api-key" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 border border-morandi-border shadow-2xl space-y-4">
+  <div id="modal-api-key" class="fixed inset-0 bg-black/50 z-[9999] hidden flex items-center justify-center p-4 touch-manipulation" onclick="handleModalBackdropClick(event)">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 border border-morandi-border shadow-2xl space-y-4 relative z-[10000]" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between">
         <h3 class="font-bold text-base text-[#3d3734]">Gemini API Key 設定與連線測試</h3>
-        <button onclick="toggleApiKeyModal()" class="text-morandi-textMuted hover:text-morandi-clay"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button type="button" onclick="toggleApiKeyModal(event)" class="cursor-pointer p-1.5 text-morandi-textMuted hover:text-morandi-clay rounded-lg hover:bg-morandi-cream transition"><i data-lucide="x" class="w-5 h-5 pointer-events-none"></i></button>
       </div>
       <p class="text-xs text-morandi-textMuted">請輸入您的 Google Gemini API Key。金鑰僅會保存在您目前的瀏覽器本機中 (LocalStorage)。</p>
       <div>
@@ -490,12 +500,12 @@
       </div>
       <div id="test-connection-result" class="text-xs font-medium"></div>
       <div class="flex justify-between items-center pt-2">
-        <button onclick="testApiKeyConnection()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-morandi-sage text-white hover:bg-morandi-sageDark transition flex items-center space-x-1">
+        <button type="button" onclick="testApiKeyConnection()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-morandi-sage text-white hover:bg-morandi-sageDark transition flex items-center space-x-1 cursor-pointer">
           <i data-lucide="wifi" class="w-3.5 h-3.5"></i><span>測試連線</span>
         </button>
         <div class="flex space-x-2">
-          <button onclick="toggleApiKeyModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-morandi-textMuted hover:bg-morandi-cream transition">取消</button>
-          <button onclick="saveApiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-rose hover:bg-morandi-roseDark text-white transition">儲存金鑰</button>
+          <button type="button" onclick="toggleApiKeyModal(event)" class="px-4 py-2 rounded-xl text-xs font-bold text-morandi-textMuted hover:bg-morandi-cream transition cursor-pointer">取消</button>
+          <button type="button" onclick="saveApiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-rose hover:bg-morandi-roseDark text-white transition cursor-pointer">儲存金鑰</button>
         </div>
       </div>
     </div>
@@ -871,91 +881,6 @@
       if (multiImagesBase64.length === 0) document.getElementById('multi-preview-grid').classList.add('hidden');
     }
 
-    async function startAiAnalysis() {
-      const apiKey = localStorage.getItem('GEMINI_API_KEY');
-      if (!apiKey) {
-        alert('請先點擊右上角設定 ⚙️ 填寫您的 Gemini API Key！');
-        toggleApiKeyModal();
-        return;
-      }
-      if (multiImagesBase64.length === 0) {
-        alert('請先上傳正反面或多張試卷照片！');
-        return;
-      }
-
-      const btn = document.getElementById('btn-start-analysis');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>AI 正在逐題掃描與轉化 SVG 圖解...</span>`;
-      if (window.lucide) lucide.createIcons();
-
-      const subjectChoice = document.getElementById('upload-subject').value;
-      const chapterChoice = document.getElementById('upload-chapter').value;
-
-      const promptText = `
-        你是一位專業的國中八年級數學與理化名師。
-        這是一份或多份學生的平時測驗卷照片（包含正反面）。請務必【逐題掃描整張考卷的所有題目，不可漏題】，找出所有被老師打叉(✗)、畫圈、扣分或學生空白的錯題。
-        
-        針對每一道錯題，請嚴格依照 JSON 陣列格式回傳（不含 markdown 標包裝）：
-        [
-          {
-            "subject": "math 或 physics 或 chinese 或 english 或 social",
-            "chapter": "對應單元編號 (例如 2-2 或 3-1 等)",
-            "questionType": "題型與題號 (例如: 單選題 第 3 題)",
-            "content": "題目的完整文字 (數學式請用 LaTeX $...$ 包裹)",
-            "studentAnswer": "學生寫的錯答案",
-            "correctAnswer": "此題正解",
-            "pointsDeducted": 扣分數字,
-            "tag": "核心考點",
-            "svgDiagram": "若題目含有幾何圖形、函數圖形或波形，請產生一段簡潔美觀的 <svg viewBox='0 0 400 120' class='w-full max-w-md mx-auto my-2'>...</svg> 向量圖解；若無圖形則填空白字串 ''",
-            "solution": "詳細且淺顯易懂的引導解析與圖形解題說明"
-          }
-        ]
-      `;
-
-      try {
-        const parts = [{ text: promptText }];
-        multiImagesBase64.forEach(img => {
-          const base64Clean = img.data.split(',')[1];
-          parts.push({ inline_data: { mime_type: "image/jpeg", data: base64Clean } });
-        });
-
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: parts }] })
-        });
-
-        const data = await response.json();
-        const rawText = data.candidates[0].content.parts[0].text;
-        const cleanedJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleanedJson);
-
-        stagingErrors = parsed.map((item, i) => ({
-          id: `ai-${Date.now()}-${i}`,
-          subject: subjectChoice !== 'auto' ? subjectChoice : (item.subject || 'math'),
-          chapter: chapterChoice !== 'auto' ? chapterChoice : (item.chapter || '2-2'),
-          sourceExam: "拍照辨識試卷",
-          questionType: item.questionType || `第 ${i+1} 題`,
-          content: item.content || "",
-          studentAnswer: item.studentAnswer || "未填",
-          correctAnswer: item.correctAnswer || "",
-          pointsDeducted: item.pointsDeducted || 3,
-          tag: item.tag || "觀念盲點",
-          svgDiagram: item.svgDiagram || "",
-          solution: item.solution || ""
-        }));
-
-        renderDetectedList();
-      } catch (err) {
-        console.error(err);
-        alert('解析失敗，請確認 API Key 是否正確或照片是否清晰！');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>開始 AI 辨識正反面考卷錯題</span>`;
-        if (window.lucide) lucide.createIcons();
-      }
-    }
-
     function renderDetectedList() {
       const container = document.getElementById('detected-list-container');
       const badge = document.getElementById('detected-count-badge');
@@ -1122,7 +1047,216 @@
     }
 
     // ==========================================
-    // 專注學習計時鐘核心功能修復
+    // A4 雙模派卷與列印邏輯
+    // ==========================================
+    function onPresetChange() {
+      const val = document.getElementById('gen-paper-preset')?.value || 'math_all';
+      const titleInput = document.getElementById('gen-paper-title');
+      const presetTitles = {
+        math_all: "敦化國中 115學年度八年級第二次段考 數學科 錯題強化重測卷",
+        physics_all: "敦化國中 115學年度八年級第二次段考 理化科 錯題強化重測卷",
+        chinese_all: "敦化國中 115學年度八年級第二次段考 國文科 錯題強化重測卷",
+        english_all: "敦化國中 115學年度八年級第二次段考 英文科 錯題強化重測卷",
+        social_all: "敦化國中 115學年度八年級第二次段考 社會科 錯題強化重測卷"
+      };
+      if (titleInput && presetTitles[val]) {
+        titleInput.value = presetTitles[val];
+      }
+      generatePrintPreview();
+    }
+
+    function setPrintPreviewMode(mode) {
+      currentPreviewMode = mode;
+      const btnStu = document.getElementById('btn-preview-mode-stu');
+      const btnSol = document.getElementById('btn-preview-mode-sol');
+
+      if (mode === 'student') {
+        if (btnStu) btnStu.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white";
+        if (btnSol) btnSol.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text";
+      } else {
+        if (btnStu) btnStu.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text";
+        if (btnSol) btnSol.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white";
+      }
+      generatePrintPreview();
+    }
+
+    function generatePrintPreview() {
+      const paperView = document.getElementById('printable-a4-view');
+      if (!paperView) return;
+
+      const preset = document.getElementById('gen-paper-preset')?.value || 'math_all';
+      const title = document.getElementById('gen-paper-title')?.value || '敦化國中 錯題強化重測卷';
+
+      let targetErrors = [];
+      if (preset === 'math_all') targetErrors = allErrors.filter(e => e.subject === 'math');
+      else if (preset === 'physics_all') targetErrors = allErrors.filter(e => e.subject === 'physics');
+      else if (preset === 'chinese_all') targetErrors = allErrors.filter(e => e.subject === 'chinese');
+      else if (preset === 'english_all') targetErrors = allErrors.filter(e => e.subject === 'english');
+      else if (preset === 'social_all') targetErrors = allErrors.filter(e => e.subject === 'social');
+
+      const isStudent = (currentPreviewMode === 'student');
+
+      let html = `
+        <div class="border-b-2 border-slate-900 pb-4 text-center space-y-1">
+          <h1 class="text-xl font-bold tracking-wide">${title}</h1>
+          <div class="text-xs text-slate-600 flex justify-between items-center px-4 pt-1">
+            <span>版面模式：${isStudent ? '【學生練習空白卷・原題重練】' : '【教師／家長圖解詳解卷】'}</span>
+            <span>班級：_______ 姓名：_______</span>
+            <span>題數：共 ${targetErrors.length} 題</span>
+          </div>
+        </div>
+        <div class="space-y-6 pt-2">
+      `;
+
+      if (targetErrors.length === 0) {
+        html += `
+          <div class="text-center py-16 text-slate-400 text-xs">
+            目前該分類題庫尚無錯題。請透過「拍照辨識錯題」上傳考卷或切換其他科目。
+          </div>
+        `;
+      } else {
+        targetErrors.forEach((err, idx) => {
+          html += `
+            <div class="space-y-2 border-b border-dashed border-slate-300 pb-5">
+              <div class="flex items-start justify-between">
+                <div class="font-bold text-sm text-slate-800">
+                  ${idx + 1}. 【${err.questionType}】
+                </div>
+                <span class="text-xs text-slate-500 font-mono">扣分：-${err.pointsDeducted}分</span>
+              </div>
+              <div class="text-xs leading-relaxed text-slate-900">${err.content}</div>
+          `;
+
+          if (isStudent) {
+            html += `
+              <div class="mt-3 h-28 border border-dashed border-slate-300 rounded-lg p-2 text-[10px] text-slate-400 font-mono">
+                【請在此處書寫計算與推導過程】
+              </div>
+              <div class="pt-2 flex justify-end">
+                <div class="w-32 border-b border-slate-800 text-xs text-right pr-2">答：__________</div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-2">
+                <div class="font-bold text-slate-800 flex justify-between">
+                  <span>正解：${err.correctAnswer}</span>
+                  <span class="text-slate-500">考點：${err.tag || '觀念'}</span>
+                </div>
+                ${err.svgDiagram ? `<div class="my-2">${err.svgDiagram}</div>` : ''}
+                <div class="text-slate-700 leading-relaxed">${err.solution}</div>
+              </div>
+            `;
+          }
+          html += `</div>`;
+        });
+      }
+
+      html += `
+        </div>
+        <div class="text-center text-[10px] text-slate-400 pt-6">
+          考後重點重測 ｜ 徹底理解解題關鍵，段考穩拿高分
+        </div>
+      `;
+
+      paperView.innerHTML = html;
+      if (window.renderMathInElement) {
+        renderMathInElement(paperView, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false }
+          ]
+        });
+      }
+    }
+
+    function triggerPrint(mode) {
+      setPrintPreviewMode(mode);
+      document.body.className = "printing-paper";
+      window.print();
+      setTimeout(() => {
+        document.body.className = "";
+      }, 500);
+    }
+
+    function printA4CalendarPlan() {
+      const calContainer = document.getElementById('a4-calendar-table-container');
+      const chkContainer = document.getElementById('a4-checklist-table-container');
+
+      if (calContainer) {
+        calContainer.innerHTML = `
+          <table class="w-full text-xs border-collapse border border-slate-300 text-center">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="border border-slate-300 p-1 text-red-600">日</th>
+                <th class="border border-slate-300 p-1">一</th>
+                <th class="border border-slate-300 p-1">二</th>
+                <th class="border border-slate-300 p-1">三</th>
+                <th class="border border-slate-300 p-1">四</th>
+                <th class="border border-slate-300 p-1">五</th>
+                <th class="border border-slate-300 p-1 text-slate-600">六</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="border border-slate-300 p-2 text-slate-400">11/29</td>
+                <td class="border border-slate-300 p-2">11/30</td>
+                <td class="border border-slate-300 p-2">12/1 衝刺</td>
+                <td class="border border-slate-300 p-2 bg-red-50 font-bold text-red-600">12/2 (二段D1)</td>
+                <td class="border border-slate-300 p-2 bg-red-50 font-bold text-red-600">12/3 (二段D2)</td>
+                <td class="border border-slate-300 p-2">12/4</td>
+                <td class="border border-slate-300 p-2 text-slate-600">12/5</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+
+      if (chkContainer) {
+        const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS') || '{}');
+        let chkHtml = `
+          <table class="w-full text-xs border-collapse border border-slate-300">
+            <thead>
+              <tr class="bg-slate-100 text-center">
+                <th class="border border-slate-300 p-1.5 w-1/4">科目</th>
+                <th class="border border-slate-300 p-1.5 w-1/3">考程單元</th>
+                <th class="border border-slate-300 p-1.5">預習</th>
+                <th class="border border-slate-300 p-1.5">複習</th>
+                <th class="border border-slate-300 p-1.5">講義</th>
+                <th class="border border-slate-300 p-1.5">測驗卷</th>
+                <th class="border border-slate-300 p-1.5">考古題</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        EXAM_CHECKLIST_DATA.forEach(sub => {
+          sub.chapters.forEach((ch, idx) => {
+            chkHtml += `
+              <tr class="text-center">
+                ${idx === 0 ? `<td rowspan="${sub.chapters.length}" class="border border-slate-300 p-1.5 font-bold bg-slate-50">${sub.subjectName}</td>` : ''}
+                <td class="border border-slate-300 p-1.5 text-left pl-2">${ch.name}</td>
+                <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_prep`] ? '✓' : '□'}</td>
+                <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_review`] ? '✓' : '□'}</td>
+                <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_handout`] ? '✓' : '□'}</td>
+                <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_quiz`] ? '✓' : '□'}</td>
+                <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_mock`] ? '✓' : '□'}</td>
+              </tr>
+            `;
+          });
+        });
+        chkHtml += `</tbody></table>`;
+        chkContainer.innerHTML = chkHtml;
+      }
+
+      document.body.className = "printing-calendar";
+      window.print();
+      setTimeout(() => {
+        document.body.className = "";
+      }, 500);
+    }
+
+    // ==========================================
+    // 專注學習計時鐘核心功能修復 (含自訂時間)
     // ==========================================
     function setPomoMode(mode) {
       clearInterval(pomoTimer);
@@ -1134,27 +1268,56 @@
       const b25 = document.getElementById('pomo-mode-focus25');
       const b45 = document.getElementById('pomo-mode-exam45');
       const b5 = document.getElementById('pomo-mode-rest5');
+      const bCustom = document.getElementById('pomo-mode-custom');
+      const customInputBox = document.getElementById('pomo-custom-input-box');
       const statusLabel = document.getElementById('pomo-status-label');
 
-      [b25, b45, b5].forEach(b => {
-        if (b) b.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text transition hover:bg-morandi-border";
+      [b25, b45, b5, bCustom].forEach(b => {
+        if (b) b.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text transition hover:bg-morandi-border";
       });
+
+      if (customInputBox) customInputBox.classList.add('hidden');
 
       if (mode === 'focus25') {
         pomoTotalTime = 25 * 60;
-        if (b25) b25.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white shadow-sm transition";
+        if (b25) b25.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white shadow-sm transition";
         if (statusLabel) statusLabel.innerText = "25分 專注複習中";
       } else if (mode === 'exam45') {
         pomoTotalTime = 45 * 60;
-        if (b45) b45.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white shadow-sm transition";
+        if (b45) b45.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white shadow-sm transition";
         if (statusLabel) statusLabel.innerText = "45分 模擬考場計時中";
       } else if (mode === 'rest5') {
         pomoTotalTime = 5 * 60;
-        if (b5) b5.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-sage text-white shadow-sm transition";
+        if (b5) b5.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-sage text-white shadow-sm transition";
         if (statusLabel) statusLabel.innerText = "5分 休息放鬆時間";
+      } else if (mode === 'custom') {
+        if (bCustom) bCustom.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-roseDark text-white shadow-sm transition";
+        if (customInputBox) customInputBox.classList.remove('hidden');
+        const customMins = parseInt(document.getElementById('pomo-custom-minutes')?.value) || 30;
+        pomoTotalTime = customMins * 60;
+        if (statusLabel) statusLabel.innerText = `自訂 ${customMins} 分鐘專注中`;
       }
 
       pomoTimeLeft = pomoTotalTime;
+      updatePomoDisplay();
+    }
+
+    function applyCustomPomoTime() {
+      const input = document.getElementById('pomo-custom-minutes');
+      let val = parseInt(input?.value);
+      if (isNaN(val) || val <= 0) val = 30;
+      if (val > 180) val = 180;
+      if (input) input.value = val;
+
+      clearInterval(pomoTimer);
+      isPomoRunning = false;
+      const toggleBtn = document.getElementById('btn-pomo-toggle');
+      if (toggleBtn) toggleBtn.innerText = "開始計時";
+
+      pomoTotalTime = val * 60;
+      pomoTimeLeft = pomoTotalTime;
+      const statusLabel = document.getElementById('pomo-status-label');
+      if (statusLabel) statusLabel.innerText = `自訂 ${val} 分鐘專注中`;
       updatePomoDisplay();
     }
 
@@ -1270,7 +1433,44 @@
       alert('Gemini API Key 儲存成功！');
       toggleApiKeyModal();
     }
+
+    // iPad / 行動裝置專屬：API Key 彈窗安全開啟與切換
+    function toggleApiKeyModal(e) {
+      if (e) {
+        if (e.stopPropagation) e.stopPropagation();
+        if (e.preventDefault && e.type === 'touchend') e.preventDefault();
+      }
+      const modal = document.getElementById('modal-api-key');
+      if (!modal) return;
+      const isCurrentlyHidden = modal.classList.contains('hidden');
+      if (isCurrentlyHidden) {
+        modal.classList.remove('hidden');
+        const saved = localStorage.getItem('GEMINI_API_KEY') || '';
+        const input = document.getElementById('input-api-key');
+        if (input) input.value = saved;
+        const resBox = document.getElementById('test-connection-result');
+        if (resBox) resBox.innerHTML = '';
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target && e.target.id === 'modal-api-key') {
+        toggleApiKeyModal(e);
+      }
+    }
+
+    // 行動裝置 touch 觸控最佳化監聽
+    document.addEventListener('DOMContentLoaded', () => {
+      const settingsBtn = document.getElementById('btn-settings-trigger');
+      if (settingsBtn) {
+        settingsBtn.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          toggleApiKeyModal(e);
+        }, { passive: false });
+      }
+    });
   </script>
 </body>
 </html>
-    
