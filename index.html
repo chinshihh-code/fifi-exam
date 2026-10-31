@@ -55,7 +55,7 @@
 
     /* 列印專屬修復：徹底杜絕列印空白頁 */
     @media print {
-      header, nav, #tab-dashboard, #tab-calendar, #tab-library, #tab-camera, #tab-pomodoro, #modal-api-key, .no-print {
+      header, nav, #tab-dashboard, #tab-calendar, #tab-library, #tab-camera, #tab-generator, #tab-pomodoro, #modal-api-key, .no-print {
         display: none !important;
       }
       body, html {
@@ -112,7 +112,7 @@
       <div class="flex items-center space-x-3">
         <div>
           <h1 class="font-bold text-base sm:text-lg text-[#3d3734]">段考複習與錯題管理系統</h1>
-          <p class="text-xs text-morandi-textMuted">精準錯題剖析 · 全科目考程進度管理</p>
+          <p class="text-xs text-morandi-textMuted">SVG 圖形解題 · 全科目考程進度管理</p>
         </div>
       </div>
 
@@ -184,7 +184,7 @@
           <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/80 border border-morandi-border text-xs font-bold text-morandi-clayDark">
             <span>115 學年度第一學期</span>
             <span>·</span>
-            <span>國二段考衝刺</span>
+            <span>段考衝刺專用</span>
           </div>
           <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">用溫和專注的節奏，把每道錯題變成實力</h2>
         </div>
@@ -231,7 +231,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">考程行事曆 & 段考複習進度</h2>
-          <p class="text-xs text-morandi-textMuted mt-1">各科各單元五維度打勾確認表</p>
+          <p class="text-xs text-morandi-textMuted mt-1">各科各單元五維度打勾確認表（社會科已細分歷史、地理、公民第 3、4 章）</p>
         </div>
         <div class="flex items-center space-x-2">
           <button onclick="printA4CalendarPlan()" class="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-white border border-morandi-border text-morandi-clayDark hover:bg-morandi-cream text-xs font-bold transition shadow-sm">
@@ -271,7 +271,7 @@
         <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2"></div>
       </div>
 
-      <!-- 複習進度勾選表 -->
+      <!-- 複習進度勾選表 (五維度) -->
       <div class="bg-white rounded-3xl p-6 border border-morandi-border shadow-sm space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-morandi-border pb-4">
           <div class="flex items-center space-x-3">
@@ -280,7 +280,7 @@
             </div>
             <div>
               <h3 class="font-bold text-base text-[#3d3734]">二段考程各科各單元 · 複習進度勾選確認表</h3>
-              <p class="text-xs text-morandi-textMuted">完成一項打勾一項，進度自動儲存</p>
+              <p class="text-xs text-morandi-textMuted">預習／複習／講義／測驗卷／考古題 · 完成一項打勾一項，進度自動儲存</p>
             </div>
           </div>
           
@@ -316,14 +316,14 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">錯題精準庫</h2>
-          <p class="text-xs text-morandi-textMuted mt-1">單一科目切換 · 章節篩選 · 點擊展開直觀幾何與數線圖解</p>
+          <p class="text-xs text-morandi-textMuted mt-1">單一科目切換 · 章節篩選 · 點擊展開直觀 SVG 幾何與數線圖解</p>
         </div>
         <div class="text-xs text-morandi-textMuted font-mono">
           目前顯示：<span id="library-count-text" class="font-bold text-morandi-roseDark">0</span> 題
         </div>
       </div>
 
-      <!-- 單一科目切換列 -->
+      <!-- 單一科目切換列 (科目已簡化) -->
       <div class="bg-white p-4 rounded-3xl border border-morandi-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="selectSubject('math')" id="subj-btn-math" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-rose text-white shadow-sm">數學</button>
@@ -348,37 +348,47 @@
     <section id="tab-camera" class="hidden space-y-6">
       <div>
         <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">拍照辨識正反面／多張考卷錯題</h2>
-        <p class="text-xs text-morandi-textMuted mt-1">支援同時上傳「考卷正面＋背面」或多張照片，AI 自動抓取錯題並分類到指定科目與單元類別</p>
+        <p class="text-xs text-morandi-textMuted mt-1">支援同時上傳「考卷正面＋背面」或多張照片，AI 自動抓取錯題並自動轉化為 SVG 幾何圖解，歸類至指定科目與單元</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div class="lg:col-span-5 space-y-4">
           <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm space-y-4">
             <div>
-              <label class="block text-xs font-bold text-[#3d3734] mb-1">歸入科目類別</label>
-              <select id="upload-subject" onchange="updateChapterOptions()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
-                <option value="math">數學</option>
-                <option value="physics">理化</option>
-                <option value="chinese">國文</option>
-                <option value="english">英文</option>
-                <option value="social">社會</option>
+              <label class="block text-xs font-bold text-[#3d3734] mb-1">科目歸類模式</label>
+              <select id="upload-subject-mode" onchange="toggleSubjectMode()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text mb-2">
+                <option value="ai">🤖 AI 自動智慧判斷科目與章節</option>
+                <option value="manual">手動指定科目與章節</option>
               </select>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-[#3d3734] mb-1">對應單元章節</label>
-              <select id="upload-chapter" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
-                <!-- JS 動態更換 -->
-              </select>
+            <div id="manual-subject-box" class="hidden space-y-3 pt-1 border-t border-morandi-border">
+              <div>
+                <label class="block text-xs font-bold text-[#3d3734] mb-1">指定科目</label>
+                <select id="upload-subject" onchange="updateChapterOptions()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
+                  <option value="math">數學</option>
+                  <option value="physics">理化</option>
+                  <option value="chinese">國文</option>
+                  <option value="english">英文</option>
+                  <option value="social">社會</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-[#3d3734] mb-1">指定單元章節</label>
+                <select id="upload-chapter" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
+                  <!-- 動態產生 -->
+                </select>
+              </div>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-[#3d3734] mb-1">上傳試卷照片 (可一次勾選正反兩面，或分次加拍)</label>
+              <label class="block text-xs font-bold text-[#3d3734] mb-1">上傳試卷照片 (可多張/正反面)</label>
               <label class="border-2 border-dashed border-morandi-border rounded-2xl p-6 text-center hover:bg-morandi-cream/40 transition block cursor-pointer">
                 <input type="file" id="exam-image-input" accept="image/*" multiple onchange="handleMultipleImagesSelect(event)" class="hidden">
                 <i data-lucide="camera" class="w-8 h-8 mx-auto text-morandi-rose mb-2"></i>
                 <p class="text-xs font-bold text-[#3d3734]">點擊拍照 或 從相簿選取「正面＋背面」多張考卷</p>
-                <p class="text-[10px] text-morandi-textMuted mt-1">支援一次選多張照片，或先拍正面再點「繼續加拍背面」</p>
+                <p class="text-[10px] text-morandi-textMuted mt-1">支援一次選多張照片，或點下方繼續加拍</p>
               </label>
             </div>
 
@@ -390,12 +400,12 @@
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                 <span>+ 繼續加拍背面/下一張</span>
               </button>
-              <button onclick="clearStagingImages()" class="text-xs text-rose-500 hover:underline">清空</button>
+              <button onclick="clearStagingImages()" class="text-xs text-rose-500 hover:underline">清空所有照片</button>
             </div>
 
             <button onclick="startAiAnalysisMulti()" id="btn-start-analysis" class="w-full py-3 rounded-2xl bg-morandi-rose hover:bg-morandi-roseDark text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center space-x-2">
               <i data-lucide="sparkles" class="w-4 h-4"></i>
-              <span>開始 AI 辨識正反面考卷錯題</span>
+              <span>開始 AI 辨識與 SVG 圖解生成</span>
             </button>
           </div>
         </div>
@@ -404,10 +414,10 @@
           <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm min-h-[400px] flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between pb-3 border-b border-morandi-border">
-                <h3 class="font-bold text-sm text-[#3d3734]">AI 辨識出的錯題與科目分類預覽</h3>
+                <h3 class="font-bold text-sm text-[#3d3734]">AI 辨識出的錯題與 SVG 圖解預覽</h3>
                 <span id="detected-count-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-morandi-cream text-morandi-clayDark font-mono">0 題</span>
               </div>
-              <p class="text-[11px] text-morandi-textMuted pt-2">可在下方確認或調整每題歸屬的「科目」與「章節」，再一鍵匯入題庫</p>
+              <p class="text-[11px] text-morandi-textMuted pt-2">AI 將自動判斷科目與章節並生成圖形解題，確認無誤後即可一鍵匯入題庫</p>
 
               <div id="detected-list-container" class="py-4 space-y-4">
                 <div class="text-center py-12 text-morandi-textMuted text-xs">
@@ -431,7 +441,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">A4 雙模派卷列印</h2>
-          <p class="text-xs text-morandi-textMuted mt-1">支援「學生練習空白卷（原題重練）」與「家長/教師圖解詳解卷」</p>
+          <p class="text-xs text-morandi-textMuted mt-1">支援「學生練習空白卷（原題重練）」與「家長/教師圖解詳解卷（含 SVG 圖解）」</p>
         </div>
         <div class="flex items-center space-x-2">
           <button onclick="triggerPrint('student')" class="px-4 py-2.5 rounded-2xl bg-morandi-rose text-white text-xs font-bold hover:bg-morandi-roseDark transition shadow-sm flex items-center space-x-1.5">
@@ -534,7 +544,7 @@
 
   <!-- JavaScript 核心邏輯 -->
   <script>
-    // 章節定義（社會科已依需求細分第 3 章與第 4 章）
+    // 章節定義（社會科已細分歷史、地理、公民的第 3 章與第 4 章）
     const SUBJECT_CHAPTERS = {
       math: [
         { id: "2-2", name: "2-2 根式的運算與化簡" },
@@ -570,6 +580,7 @@
       ]
     };
 
+    // 二段各科五維度檢核項目資料 (社會科已獨立細分)
     const EXAM_CHECKLIST_DATA = [
       {
         subjectKey: "math",
@@ -619,12 +630,15 @@
       },
       {
         subjectKey: "social",
-        subjectName: "社會 (歷史/地理/公民 第3、4章)",
+        subjectName: "社會 (歷史、地理、公民 第3章與第4章)",
         badgeColor: "sage",
         chapters: [
-          { id: "hist34", name: "歷史 第3章 與 第4章" },
-          { id: "geo34", name: "地理 第3章 與 第4章" },
-          { id: "civ34", name: "公民 第3章 與 第4章" }
+          { id: "hist3", name: "歷史 第 3 章" },
+          { id: "hist4", name: "歷史 第 4 章" },
+          { id: "geo3", name: "地理 第 3 章" },
+          { id: "geo4", name: "地理 第 4 章" },
+          { id: "civ3", name: "公民 第 3 章" },
+          { id: "civ4", name: "公民 第 4 章" }
         ]
       }
     ];
@@ -633,7 +647,7 @@
     let currentSubject = 'math';
     let currentPreviewMode = 'student';
     let currentCalDate = new Date();
-    let stagingImages = []; // 支援多張/正反面照片暫存
+    let stagingImages = [];
     let stagingErrors = [];
 
     let pomoTimer = null;
@@ -642,7 +656,7 @@
     let isPomoRunning = false;
 
     window.addEventListener('DOMContentLoaded', () => {
-      const savedErrors = localStorage.getItem('EXAM_ERRORS_CLEAN_V3.8');
+      const savedErrors = localStorage.getItem('EXAM_ERRORS_CLEAN_V4.0');
       if (savedErrors) {
         try { allErrors = JSON.parse(savedErrors); } catch(e) { allErrors = []; }
       } else {
@@ -700,7 +714,7 @@
       if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 
-    // 支援多張照片選擇與加拍
+    // 拍照上傳多張照片處理
     function handleMultipleImagesSelect(event) {
       const files = event.target.files;
       if (!files || files.length === 0) return;
@@ -753,6 +767,13 @@
       document.getElementById('exam-image-input').value = '';
     }
 
+    function toggleSubjectMode() {
+      const mode = document.getElementById('upload-subject-mode').value;
+      const manualBox = document.getElementById('manual-subject-box');
+      manualBox.classList.toggle('hidden', mode === 'ai');
+      if (mode === 'manual') updateChapterOptions();
+    }
+
     function updateChapterOptions() {
       const subj = document.getElementById('upload-subject').value;
       const chSel = document.getElementById('upload-chapter');
@@ -763,7 +784,7 @@
       });
     }
 
-    // AI 拍照辨識解析多張考卷
+    // AI 拍照辨識解析多張考卷 (支援自動判斷科目與章節，強制生成 SVG 幾何圖解)
     async function startAiAnalysisMulti() {
       const apiKey = localStorage.getItem('GEMINI_API_KEY');
       if (!apiKey) {
@@ -779,26 +800,31 @@
 
       const btn = document.getElementById('btn-start-analysis');
       btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>AI 正在逐題掃描與生成圖解中...</span>`;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>AI 正在辨識錯題與生成 SVG 圖解中...</span>`;
       if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
 
-      const selectedSubject = document.getElementById('upload-subject').value;
-      const selectedChapter = document.getElementById('upload-chapter').value;
+      const subjectMode = document.getElementById('upload-subject-mode').value;
+      const manualSubj = document.getElementById('upload-subject').value;
+      const manualChap = document.getElementById('upload-chapter').value;
 
       try {
         const parts = [];
         parts.push({
-          text: `你是一位資深國中教師。這是一份或多份學生的平時考卷照片（包含正面與背面）。請逐題掃描卷面上所有被紅筆打叉(✗)、扣分或空白的錯題。
+          text: `你是一位資深國中教師。這是一份或多份學生的平時考卷照片（含正面與背面）。請逐題掃描卷面上所有被紅筆打叉(✗)、扣分或空白的錯題。
+          請自動判斷每題所屬的科目（math、physics、chinese、english、social）與對應章節代號。
+          **最重要要求**：如果題目含有幾何、數線、座標或理化波形圖表，請務必在 "svgDiagram" 欄位中手動編寫一段高質感的精美 SVG 向量圖解程式碼（例如 <svg viewBox="0 0 420 130" ...>...</svg>），讓學生能一眼看懂圖形與解題關鍵！
           請以嚴格的 JSON 陣列格式回傳，不要有額外 markdown 標籤：
           [
             {
+              "subject": "math 或 physics 或 chinese 或 english 或 social",
+              "chapter": "對應章節代號",
               "questionType": "題型與題號 (例如: 單選題 第 3 題)",
               "content": "題目的完整文字與選項",
               "studentAnswer": "學生當時寫的錯誤答案",
               "correctAnswer": "正確答案",
               "pointsDeducted": 3,
               "tag": "考點標籤",
-              "svgDiagram": "<svg viewBox='0 0 420 120' class='w-full max-w-md mx-auto my-2'><rect x='20' y='20' width='380' height='80' fill='#f5eee9' rx='8'/><text x='210' y='65' font-size='14' fill='#856350' text-anchor='middle'>幾何/數線 SVG 圖解說明</text></svg>",
+              "svgDiagram": "<svg viewBox='0 0 420 120' class='w-full max-w-md mx-auto my-2'><rect x='20' y='20' width='380' height='80' fill='#f5eee9' rx='8'/><text x='210' y='65' font-size='14' fill='#856350' text-anchor='middle'>圖形解題說明</text></svg>",
               "solution": "詳細分步解題步驟與觀念盲點"
             }
           ]`
@@ -824,8 +850,8 @@
 
         stagingErrors = parsed.map((item, i) => ({
           id: `ai-${Date.now()}-${i}`,
-          subject: selectedSubject,
-          chapter: selectedChapter,
+          subject: (subjectMode === 'manual') ? manualSubj : (item.subject || 'math'),
+          chapter: (subjectMode === 'manual') ? manualChap : (item.chapter || '2-2'),
           sourceExam: "拍照辨識試卷",
           questionType: item.questionType || `第 ${i+1} 題`,
           content: item.content || "",
@@ -840,10 +866,10 @@
         renderDetectedList();
       } catch (err) {
         console.error(err);
-        alert('辨識失敗，請確認 API Key 是否正確或照片是否清晰！');
+        alert('辨識失敗，請檢查 API Key 是否正確或照片是否清晰！');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>開始 AI 辨識正反面考卷錯題</span>`;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>開始 AI 辨識與 SVG 圖解生成</span>`;
         if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
       }
     }
@@ -868,7 +894,7 @@
         html += `
           <div class="p-4 rounded-2xl bg-morandi-cream/40 border border-morandi-border space-y-2">
             <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-morandi-roseDark">${idx + 1}. ${err.questionType}</span>
+              <span class="font-bold text-morandi-roseDark">${idx + 1}. [${err.subject.toUpperCase()}] ${err.questionType}</span>
               <span class="text-morandi-rose font-bold">扣 ${err.pointsDeducted} 分</span>
             </div>
             <div class="text-xs text-[#3d3734] leading-relaxed">${err.content}</div>
@@ -894,14 +920,87 @@
     function commitDetectedErrors() {
       if (stagingErrors.length === 0) return;
       allErrors = [...stagingErrors, ...allErrors];
-      localStorage.setItem('EXAM_ERRORS_CLEAN_V3.8', JSON.stringify(allErrors));
-      alert(`成功將 ${stagingErrors.length} 道錯題分類加入對應科目題庫！`);
+      localStorage.setItem('EXAM_ERRORS_CLEAN_V4.0', JSON.stringify(allErrors));
+      alert(`成功將 ${stagingErrors.length} 道錯題與 SVG 圖解分類加入對應科目題庫！`);
       stagingErrors = [];
       clearStagingImages();
       renderDetectedList();
       updateCountdowns();
       selectSubject(allErrors[0]?.subject || 'math');
       switchTab('library');
+    }
+
+    // 五維度進度勾選表渲染與儲存
+    function renderChecklist() {
+      const container = document.getElementById('exam-checklist-container');
+      if (!container) return;
+
+      const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS_V4.0') || '{}');
+      let totalBoxes = 0;
+      let checkedBoxes = 0;
+
+      let html = '';
+      EXAM_CHECKLIST_DATA.forEach(sub => {
+        html += `
+          <div class="border border-morandi-border rounded-2xl overflow-hidden bg-white">
+            <div class="bg-morandi-cream/60 px-4 py-2.5 border-b border-morandi-border flex items-center justify-between">
+              <span class="font-bold text-xs sm:text-sm text-[#3d3734] flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-morandi-${sub.badgeColor}"></span>
+                <span>${sub.subjectName}</span>
+              </span>
+              <span class="text-[11px] text-morandi-textMuted font-mono">共 ${sub.chapters.length} 個單元</span>
+            </div>
+            <div class="divide-y divide-[#f7f2ed]">
+        `;
+
+        sub.chapters.forEach(ch => {
+          const dims = [
+            { key: 'prep', label: '預習' },
+            { key: 'review', label: '複習' },
+            { key: 'handout', label: '講義' },
+            { key: 'quiz', label: '測驗卷' },
+            { key: 'mock', label: '考古題' }
+          ];
+
+          html += `
+            <div class="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-morandi-cream/20 transition">
+              <span class="text-xs font-medium text-morandi-text">${ch.name}</span>
+              <div class="grid grid-cols-5 gap-2 sm:gap-3 shrink-0">
+          `;
+
+          dims.forEach(d => {
+            totalBoxes++;
+            const boxKey = `${ch.id}_${d.key}`;
+            const isChecked = !!savedChecklist[boxKey];
+            if (isChecked) checkedBoxes++;
+
+            html += `
+              <label class="flex items-center space-x-1 cursor-pointer select-none text-[11px] text-morandi-textMuted hover:text-morandi-clay">
+                <input type="checkbox" onchange="toggleChecklistItem('${boxKey}')" ${isChecked ? 'checked' : ''} class="w-3.5 h-3.5 rounded text-morandi-rose focus:ring-0 border-morandi-border">
+                <span>${d.label}</span>
+              </label>
+            `;
+          });
+
+          html += `</div></div>`;
+        });
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+
+      const pct = totalBoxes > 0 ? Math.round((checkedBoxes / totalBoxes) * 100) : 0;
+      document.getElementById('checklist-progress-text').innerText = `${pct}% (${checkedBoxes}/${totalBoxes})`;
+      document.getElementById('checklist-progress-bar').style.width = `${pct}%`;
+      document.getElementById('stat-checklist-pct').innerText = `${pct}%`;
+    }
+
+    function toggleChecklistItem(key) {
+      const saved = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS_V4.0') || '{}');
+      saved[key] = !saved[key];
+      localStorage.setItem('EXAM_CHECKLIST_STATUS_V4.0', JSON.stringify(saved));
+      renderChecklist();
     }
 
     // 錯題圖解庫與篩選
@@ -945,7 +1044,7 @@
           <div class="bg-white p-12 text-center rounded-3xl border border-morandi-border text-morandi-textMuted space-y-2">
             <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-morandi-sage"></i>
             <p class="text-sm font-semibold">此分類目前尚無錯題紀錄</p>
-            <p class="text-xs">請透過「拍照辨識錯題」上傳正反面考卷自動歸類！</p>
+            <p class="text-xs">請透過「拍照辨識錯題」上傳正反面考卷自動產生 SVG 圖解與歸類！</p>
           </div>
         `;
         if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
@@ -967,7 +1066,7 @@
             </div>
             <div>
               <button onclick="toggleSolution('${err.id}')" id="btn-sol-toggle-${err.id}" class="text-xs font-bold text-morandi-clayDark hover:text-morandi-rose flex items-center space-x-1.5">
-                <i data-lucide="eye" class="w-4 h-4"></i><span>查看圖形解題與詳細步驟</span>
+                <i data-lucide="eye" class="w-4 h-4"></i><span>查看 SVG 圖形解題與詳細步驟</span>
               </button>
             </div>
             <div id="sol-box-${err.id}" class="hidden pt-3 border-t border-[#f0e4dc] space-y-3">
@@ -998,7 +1097,7 @@
       if (!box) return;
       box.classList.toggle('hidden');
       btn.innerHTML = box.classList.contains('hidden') ?
-        `<i data-lucide="eye" class="w-4 h-4"></i><span>查看圖形解題與詳細步驟</span>` :
+        `<i data-lucide="eye" class="w-4 h-4"></i><span>查看 SVG 圖形解題與詳細步驟</span>` :
         `<i data-lucide="eye-off" class="w-4 h-4"></i><span>收合圖形解題</span>`;
       if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
@@ -1018,7 +1117,7 @@
         <div class="border-b-2 border-slate-900 pb-4 text-center space-y-1">
           <h1 class="text-xl font-bold tracking-wide">${title}</h1>
           <div class="text-xs text-slate-600 flex justify-between px-4 pt-1">
-            <span>版面：${isStudent ? '學生練習空白卷' : '教師圖解詳解卷'}</span>
+            <span>版面：${isStudent ? '學生練習空白卷' : '教師 SVG 圖解詳解卷'}</span>
             <span>班級：_______ 姓名：_______</span>
           </div>
         </div>
@@ -1092,19 +1191,10 @@
     function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
     function resetToCurrentMonth() { currentCalDate = new Date(); renderCalendar(); }
 
-    function renderChecklist() {
-      const container = document.getElementById('exam-checklist-container');
-      if (!container) return;
-      let html = '';
-      EXAM_CHECKLIST_DATA.forEach(sub => {
-        html += `
-          <div class="border border-morandi-border rounded-2xl overflow-hidden bg-white">
-            <div class="bg-morandi-cream/60 px-4 py-2.5 font-bold text-xs text-[#3d3734]">${sub.subjectName}</div>
-            <div class="p-3 text-xs text-morandi-textMuted">已完成複習進度追蹤</div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
+    function printA4CalendarPlan() {
+      document.body.className = "printing-calendar";
+      window.print();
+      setTimeout(() => { document.body.className = ""; }, 500);
     }
 
     function toggleApiKeyModal() {
