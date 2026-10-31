@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>國八段考複習與錯題管理系統 v3.6</title>
+  <title>段考複習與錯題管理系統</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -58,7 +55,7 @@
 
     /* 列印專屬修復：徹底杜絕列印空白頁 */
     @media print {
-      header, nav, #tab-dashboard, #tab-calendar, #tab-library, #tab-camera, #tab-pomodoro, #modal-api-key, #toast-container, .no-print {
+      header, nav, #tab-dashboard, #tab-calendar, #tab-library, #tab-camera, #tab-pomodoro, #modal-api-key, .no-print {
         display: none !important;
       }
       body, html {
@@ -109,19 +106,13 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-morandi-rose/20">
 
-  <!-- 頂部浮動通知 -->
-  <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg space-y-2 pointer-events-none no-print"></div>
-
   <!-- 頂部 Header -->
   <header class="bg-white/90 backdrop-blur-md border-b border-morandi-border sticky top-0 z-30 transition-all">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-2.5">
+      <div class="flex items-center space-x-3">
         <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="font-bold text-base sm:text-lg text-[#3d3734]">國八段考複習與錯題管理</h1>
-            <span class="px-2 py-0.5 rounded-full bg-morandi-sage text-white text-[10px] font-mono font-bold">v3.6</span>
-          </div>
-          <p class="text-xs text-morandi-textMuted">圖表自動圖解辨識 · 正反面多卷AI歸類 · A4雙模派卷</p>
+          <h1 class="font-bold text-base sm:text-lg text-[#3d3734]">段考複習與錯題管理系統</h1>
+          <p class="text-xs text-morandi-textMuted">精準錯題剖析 · 全科目考程進度管理</p>
         </div>
       </div>
 
@@ -141,7 +132,7 @@
           <span class="text-[10px]">天</span>
         </div>
 
-        <button onclick="toggleApiKeyModal()" class="p-2 rounded-xl text-morandi-textMuted hover:text-morandi-clay hover:bg-morandi-cream transition" title="API Key 與題庫管理">
+        <button onclick="toggleApiKeyModal()" class="p-2 rounded-xl text-morandi-textMuted hover:text-morandi-clay hover:bg-morandi-cream transition" title="API Key 設定">
           <i data-lucide="settings" class="w-5 h-5"></i>
         </button>
       </div>
@@ -168,7 +159,7 @@
 
       <button onclick="switchTab('camera')" id="nav-camera" class="shrink-0 tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold text-morandi-text hover:bg-white transition flex items-center space-x-1.5">
         <i data-lucide="camera" class="w-4 h-4 text-morandi-rose"></i>
-        <span>拍照辨識錯題 (圖表+正反面)</span>
+        <span>拍照辨識錯題</span>
       </button>
 
       <button onclick="switchTab('generator')" id="nav-generator" class="shrink-0 tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold text-morandi-text hover:bg-white transition flex items-center space-x-1.5">
@@ -191,21 +182,21 @@
       <div class="rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-morandi-cream via-morandi-roseLight/30 to-morandi-sageLight/30 border border-morandi-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="space-y-2">
           <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/80 border border-morandi-border text-xs font-bold text-morandi-clayDark">
-            <span>115 學年度</span>
+            <span>115 學年度第一學期</span>
             <span>·</span>
-            <span>國二上學期段考衝刺</span>
+            <span>國二段考衝刺</span>
           </div>
-          <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">用直觀圖解與溫和節奏，把每道錯題變成實力</h2>
+          <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">用溫和專注的節奏，把每道錯題變成實力</h2>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3 shrink-0">
-          <button onclick="switchTab('camera')" class="px-5 py-3 rounded-2xl bg-morandi-rose hover:bg-morandi-roseDark text-white text-xs sm:text-sm font-bold shadow-md transition flex items-center space-x-2">
-            <i data-lucide="camera" class="w-4 h-4"></i>
-            <span>拍照上傳含圖表考卷</span>
-          </button>
-          <button onclick="switchTab('generator')" class="px-5 py-3 rounded-2xl bg-white hover:bg-morandi-cream border border-morandi-border text-morandi-text text-xs sm:text-sm font-bold transition flex items-center space-x-2">
+        <div class="flex items-center gap-3 shrink-0">
+          <button onclick="switchTab('generator')" class="px-5 py-3 rounded-2xl bg-morandi-rose hover:bg-morandi-roseDark text-white text-xs sm:text-sm font-bold shadow-md transition flex items-center space-x-2">
             <i data-lucide="printer" class="w-4 h-4"></i>
             <span>列印 A4 重練卷</span>
+          </button>
+          <button onclick="switchTab('calendar')" class="px-5 py-3 rounded-2xl bg-white hover:bg-morandi-cream border border-morandi-border text-morandi-text text-xs sm:text-sm font-bold transition flex items-center space-x-2">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span>核對段考進度</span>
           </button>
         </div>
       </div>
@@ -215,7 +206,7 @@
         <div class="bg-white p-5 rounded-2xl border border-morandi-border shadow-sm space-y-1">
           <span class="text-xs text-morandi-textMuted font-medium">總納管錯題</span>
           <div class="text-2xl sm:text-3xl font-bold font-mono text-morandi-roseDark" id="stat-total-errors">0</div>
-          <p class="text-[11px] text-morandi-textMuted" id="stat-subject-breakdown">各科錯題統計中</p>
+          <p class="text-[11px] text-morandi-textMuted">自動統計各科入庫題數</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-morandi-border shadow-sm space-y-1">
           <span class="text-xs text-morandi-textMuted font-medium">二段進度勾選</span>
@@ -230,65 +221,7 @@
         <div class="bg-white p-5 rounded-2xl border border-morandi-border shadow-sm space-y-1">
           <span class="text-xs text-morandi-textMuted font-medium">距離第三次段考</span>
           <div class="text-2xl sm:text-3xl font-bold font-mono text-morandi-sageDark" id="stat-days-exam3">--</div>
-          <p class="text-[11px] text-morandi-textMuted">1/18 (一) 學期末段考</p>
-        </div>
-      </div>
-
-      <!-- 各科錯題分類快速入口 -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <div onclick="filterBySubject('math')" class="cursor-pointer bg-white p-4 rounded-2xl border border-morandi-border hover:border-morandi-rose shadow-sm transition space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-xs text-[#3d3734] flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-morandi-rose"></span>
-              <span>國八數學</span>
-            </span>
-            <span id="dash-count-math" class="text-xs font-mono font-bold text-morandi-roseDark">0 題</span>
-          </div>
-          <p class="text-[11px] text-morandi-textMuted">根式運算 · 畢氏定理 · 幾何圖形</p>
-        </div>
-
-        <div onclick="filterBySubject('physics')" class="cursor-pointer bg-white p-4 rounded-2xl border border-morandi-border hover:border-morandi-sage shadow-sm transition space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-xs text-[#3d3734] flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-morandi-sage"></span>
-              <span>國八理化</span>
-            </span>
-            <span id="dash-count-physics" class="text-xs font-mono font-bold text-morandi-sageDark">0 題</span>
-          </div>
-          <p class="text-[11px] text-morandi-textMuted">波動波形 · 聲波 · 光學反射圖</p>
-        </div>
-
-        <div onclick="filterBySubject('chinese')" class="cursor-pointer bg-white p-4 rounded-2xl border border-morandi-border hover:border-morandi-clay shadow-sm transition space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-xs text-[#3d3734] flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-morandi-clay"></span>
-              <span>國文</span>
-            </span>
-            <span id="dash-count-chinese" class="text-xs font-mono font-bold text-morandi-clayDark">0 題</span>
-          </div>
-          <p class="text-[11px] text-morandi-textMuted">字音字形 · 文意理解 · 語法修辭</p>
-        </div>
-
-        <div onclick="filterBySubject('english')" class="cursor-pointer bg-white p-4 rounded-2xl border border-morandi-border hover:border-morandi-rose shadow-sm transition space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-xs text-[#3d3734] flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-morandi-roseDark"></span>
-              <span>英文</span>
-            </span>
-            <span id="dash-count-english" class="text-xs font-mono font-bold text-morandi-roseDark">0 題</span>
-          </div>
-          <p class="text-[11px] text-morandi-textMuted">動名詞 · 過去進行式 · 克漏字</p>
-        </div>
-
-        <div onclick="filterBySubject('social')" class="cursor-pointer bg-white p-4 rounded-2xl border border-morandi-border hover:border-morandi-sage shadow-sm transition space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-bold text-xs text-[#3d3734] flex items-center space-x-1.5">
-              <span class="w-2 h-2 rounded-full bg-morandi-sageDark"></span>
-              <span>社會</span>
-            </span>
-            <span id="dash-count-social" class="text-xs font-mono font-bold text-morandi-sageDark">0 題</span>
-          </div>
-          <p class="text-[11px] text-morandi-textMuted">歷史 · 地理圖表 · 公民</p>
+          <p class="text-[11px] text-morandi-textMuted">1/18 (日) 學期末段考</p>
         </div>
       </div>
     </section>
@@ -298,9 +231,8 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">考程行事曆 & 段考複習進度</h2>
-          <p class="text-xs text-morandi-textMuted mt-1">115 學年度第一學期 · 二段各科各單元五維度打勾確認表</p>
+          <p class="text-xs text-morandi-textMuted mt-1">各科各單元五維度打勾確認表</p>
         </div>
-        
         <div class="flex items-center space-x-2">
           <button onclick="printA4CalendarPlan()" class="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-white border border-morandi-border text-morandi-clayDark hover:bg-morandi-cream text-xs font-bold transition shadow-sm">
             <i data-lucide="printer" class="w-4 h-4 text-morandi-rose"></i>
@@ -337,24 +269,9 @@
         </div>
 
         <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2"></div>
-
-        <div class="flex flex-wrap items-center gap-4 pt-2 text-xs text-morandi-textMuted border-t border-[#f0e4dc]">
-          <div class="flex items-center space-x-1.5">
-            <span class="w-3 h-3 rounded-full bg-morandi-rose"></span>
-            <span>第二次段考日 (12/2~12/3)</span>
-          </div>
-          <div class="flex items-center space-x-1.5">
-            <span class="w-3 h-3 rounded-full bg-morandi-sage"></span>
-            <span>第三次段考日 (1/18~1/19)</span>
-          </div>
-          <div class="flex items-center space-x-1.5">
-            <span class="w-3 h-3 rounded-full border-2 border-morandi-clay"></span>
-            <span>今天</span>
-          </div>
-        </div>
       </div>
 
-      <!-- 二段 各科各單元打勾確認表 -->
+      <!-- 複習進度勾選表 -->
       <div class="bg-white rounded-3xl p-6 border border-morandi-border shadow-sm space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-morandi-border pb-4">
           <div class="flex items-center space-x-3">
@@ -363,7 +280,7 @@
             </div>
             <div>
               <h3 class="font-bold text-base text-[#3d3734]">二段考程各科各單元 · 複習進度勾選確認表</h3>
-              <p class="text-xs text-morandi-textMuted">依段考範圍定制 · 完成一項打勾一項，進度自動儲存</p>
+              <p class="text-xs text-morandi-textMuted">完成一項打勾一項，進度自動儲存</p>
             </div>
           </div>
           
@@ -382,87 +299,43 @@
       </div>
     </section>
 
-    <!-- 專屬隱藏區：A4 行事曆與進度表列印專用紙本排版 -->
+    <!-- 隱藏列印專用檢視 -->
     <div id="a4-calendar-print-view" class="hidden bg-white text-slate-800 p-8 space-y-6">
       <div class="border-b-2 border-slate-800 pb-3 flex justify-between items-end">
         <div>
           <h1 class="text-xl font-bold tracking-wide">115學年度第一學期 八年級 第二次段考 複習進度與考程總表</h1>
           <p class="text-xs text-slate-600 mt-1">考試日期：12/2 (三) ～ 12/3 (四) ｜ 班級：______ 座號：______ 姓名：______</p>
         </div>
-        <div class="text-right">
-          <span class="text-xs font-semibold px-2 py-1 border border-slate-700 rounded">紙本張貼・每日打勾確認</span>
-        </div>
       </div>
-
-      <div class="space-y-2">
-        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-          <span>📅</span> 衝刺月曆 (考程標註)
-        </h2>
-        <div id="a4-calendar-table-container"></div>
-      </div>
-
-      <div class="space-y-3 pt-2">
-        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-          <span>📝</span> 各科單元複習進度勾選表（預習／複習／講義／測驗卷／考古題）
-        </h2>
-        <div id="a4-checklist-table-container"></div>
-      </div>
-
-      <div class="pt-4 border-t border-slate-300 flex justify-between items-center text-xs text-slate-600">
-        <div>每日達成一項即打勾 ｜ 考前重點：數學 2-2~3-2 計算手寫步驟完整 ｜ 理化 3-1~4-5 觀念熟讀</div>
-        <div class="flex items-center space-x-6">
-          <span>學生簽名：___________</span>
-          <span>家長簽閱：___________</span>
-        </div>
-      </div>
+      <div id="a4-calendar-table-container"></div>
+      <div id="a4-checklist-table-container"></div>
     </div>
 
     <!-- 頁面 3: 錯題圖解庫 (Library) -->
     <section id="tab-library" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">各科錯題圖解庫</h2>
-          <p class="text-xs text-morandi-textMuted mt-1">單一科目切換 · 章節篩選 · 每道錯題均附直觀幾何或波形圖解</p>
+          <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">錯題精準庫</h2>
+          <p class="text-xs text-morandi-textMuted mt-1">單一科目切換 · 章節篩選 · 點擊展開直觀幾何與數線圖解</p>
         </div>
-        <div class="flex items-center space-x-3">
-          <div class="text-xs text-morandi-textMuted font-mono">
-            本類顯示：<span id="library-count-text" class="font-bold text-morandi-roseDark">0</span> 題
-          </div>
-          <button onclick="switchTab('camera')" class="px-3.5 py-1.5 rounded-xl bg-morandi-rose text-white text-xs font-bold hover:bg-morandi-roseDark transition flex items-center space-x-1">
-            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-            <span>+ 拍照加題</span>
-          </button>
+        <div class="text-xs text-morandi-textMuted font-mono">
+          目前顯示：<span id="library-count-text" class="font-bold text-morandi-roseDark">0</span> 題
         </div>
       </div>
 
-      <!-- 單一科目切換列 & 單元篩選 -->
+      <!-- 單一科目切換列 -->
       <div class="bg-white p-4 rounded-3xl border border-morandi-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
-          <button onclick="selectSubject('math')" id="subj-btn-math" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-rose text-white shadow-sm">
-            <span>國八數學</span>
-            <span id="badge-count-math" class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">0</span>
-          </button>
-          <button onclick="selectSubject('physics')" id="subj-btn-physics" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-cream text-morandi-text hover:bg-morandi-border">
-            <span>國八理化</span>
-            <span id="badge-count-physics" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">0</span>
-          </button>
-          <button onclick="selectSubject('chinese')" id="subj-btn-chinese" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-cream text-morandi-text hover:bg-morandi-border">
-            <span>國文</span>
-            <span id="badge-count-chinese" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">0</span>
-          </button>
-          <button onclick="selectSubject('english')" id="subj-btn-english" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-cream text-morandi-text hover:bg-morandi-border">
-            <span>英文</span>
-            <span id="badge-count-english" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">0</span>
-          </button>
-          <button onclick="selectSubject('social')" id="subj-btn-social" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-cream text-morandi-text hover:bg-morandi-border">
-            <span>社會</span>
-            <span id="badge-count-social" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">0</span>
-          </button>
+          <button onclick="selectSubject('math')" id="subj-btn-math" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-rose text-white shadow-sm">數學</button>
+          <button onclick="selectSubject('physics')" id="subj-btn-physics" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-cream text-morandi-text">理化</button>
+          <button onclick="selectSubject('chinese')" id="subj-btn-chinese" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-cream text-morandi-text">國文</button>
+          <button onclick="selectSubject('english')" id="subj-btn-english" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-cream text-morandi-text">英文</button>
+          <button onclick="selectSubject('social')" id="subj-btn-social" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-cream text-morandi-text">社會</button>
         </div>
 
         <div class="flex items-center space-x-2 shrink-0">
           <label for="filter-chapter" class="text-xs text-morandi-textMuted font-medium">單元章節：</label>
-          <select id="filter-chapter" onchange="renderLibrary()" class="bg-morandi-cream border border-morandi-border rounded-xl px-3 py-1.5 text-xs font-medium text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
+          <select id="filter-chapter" onchange="renderLibrary()" class="bg-morandi-cream border border-morandi-border rounded-xl px-3 py-1.5 text-xs font-medium text-morandi-text focus:outline-none">
             <option value="all">全部單元</option>
           </select>
         </div>
@@ -471,109 +344,81 @@
       <div id="error-card-container" class="space-y-4"></div>
     </section>
 
-    <!-- 頁面 4: 拍照辨識錯題 (含圖表截取與圖解生成) -->
+    <!-- 頁面 4: 拍照辨識錯題 (Camera / AI Upload) -->
     <section id="tab-camera" class="hidden space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">拍照辨識正反面／含圖表考卷錯題</h2>
-          <p class="text-xs text-morandi-textMuted mt-1">支援上傳含「幾何圖形、函數圖表、理化波形」之試卷，AI 將自動辨識圖表並轉化為直觀 SVG 幾何圖解</p>
-        </div>
-        <button onclick="toggleApiKeyModal()" class="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-morandi-cream hover:bg-morandi-border text-morandi-clayDark text-xs font-bold transition flex items-center space-x-1.5">
-          <i data-lucide="key" class="w-3.5 h-3.5"></i>
-          <span>檢查 / 測試 API Key</span>
-        </button>
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">拍照辨識正反面／多張考卷錯題</h2>
+        <p class="text-xs text-morandi-textMuted mt-1">支援同時上傳「考卷正面＋背面」或多張照片，AI 自動抓取錯題並分類到指定科目與單元類別</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div class="lg:col-span-5 space-y-4">
           <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-bold text-[#3d3734] mb-1">歸入科目類別</label>
-                <select id="upload-subject" onchange="updateChapterOptions()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-bold text-morandi-text">
-                  <option value="auto">✨ AI 自動判斷科目</option>
-                  <option value="math" selected>📐 國八數學</option>
-                  <option value="physics">🔬 國八理化</option>
-                  <option value="chinese">📖 國文</option>
-                  <option value="english">🔤 英文</option>
-                  <option value="social">🌍 社會</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold text-[#3d3734] mb-1">對應單元章節</label>
-                <select id="upload-chapter" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
-                  <!-- JS 動態更新 -->
-                </select>
-              </div>
+            <div>
+              <label class="block text-xs font-bold text-[#3d3734] mb-1">歸入科目類別</label>
+              <select id="upload-subject" onchange="updateChapterOptions()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
+                <option value="math">數學</option>
+                <option value="physics">理化</option>
+                <option value="chinese">國文</option>
+                <option value="english">英文</option>
+                <option value="social">社會</option>
+              </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-[#3d3734] mb-1">考卷來源名稱 (選填)</label>
-              <input type="text" id="upload-exam-title" placeholder="例如：八上數學第 2 章圖形平時考卷" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
+              <label class="block text-xs font-bold text-[#3d3734] mb-1">對應單元章節</label>
+              <select id="upload-chapter" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
+                <!-- JS 動態更換 -->
+              </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-[#3d3734] mb-1.5">上傳含圖表之試卷照片 (正/反面)</label>
-              <input type="file" id="exam-image-input" accept="image/*" multiple onchange="handleMultiImageSelect(event)" class="hidden">
-              <label for="exam-image-input" class="cursor-pointer block border-2 border-dashed border-morandi-rose/60 bg-morandi-roseLight/30 hover:bg-morandi-roseLight/60 transition rounded-2xl p-5 text-center space-y-2">
-                <div class="w-10 h-10 rounded-2xl bg-white text-morandi-roseDark mx-auto flex items-center justify-center shadow-sm">
-                  <i data-lucide="camera" class="w-5 h-5"></i>
-                </div>
-                <div class="text-xs font-bold text-[#3d3734]">點擊拍照 或 從相簿選取「含圖表考卷」多張照片</div>
-                <div class="text-[11px] text-morandi-textMuted">支援幾何圖形、函數圖表、理化波形自動圖解轉譯</div>
+              <label class="block text-xs font-bold text-[#3d3734] mb-1">上傳試卷照片 (可一次勾選正反兩面，或分次加拍)</label>
+              <label class="border-2 border-dashed border-morandi-border rounded-2xl p-6 text-center hover:bg-morandi-cream/40 transition block cursor-pointer">
+                <input type="file" id="exam-image-input" accept="image/*" multiple onchange="handleMultipleImagesSelect(event)" class="hidden">
+                <i data-lucide="camera" class="w-8 h-8 mx-auto text-morandi-rose mb-2"></i>
+                <p class="text-xs font-bold text-[#3d3734]">點擊拍照 或 從相簿選取「正面＋背面」多張考卷</p>
+                <p class="text-[10px] text-morandi-textMuted mt-1">支援一次選多張照片，或先拍正面再點「繼續加拍背面」</p>
               </label>
             </div>
 
-            <div id="multi-preview-wrapper" class="hidden space-y-2.5 pt-1">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-morandi-clayDark">已選取考卷 (<span id="selected-pages-count">0</span> 頁)：</span>
-                <div class="flex items-center space-x-2">
-                  <label for="exam-image-input" class="cursor-pointer text-[11px] font-bold px-2.5 py-1 rounded-lg bg-morandi-cream hover:bg-morandi-border text-morandi-clayDark transition">
-                    + 繼續加拍下一張
-                  </label>
-                  <button onclick="clearAllUploadedImages()" class="text-[11px] font-bold px-2 py-1 rounded-lg text-morandi-rose hover:bg-morandi-roseLight transition">
-                    清空
-                  </button>
-                </div>
-              </div>
+            <!-- 已選取照片預覽網格 -->
+            <div id="multi-image-preview-grid" class="grid grid-cols-2 gap-3"></div>
 
-              <div id="multi-preview-grid" class="grid grid-cols-2 gap-2.5 max-h-64 overflow-y-auto p-1"></div>
+            <div class="flex items-center justify-between">
+              <button onclick="document.getElementById('exam-image-input').click()" class="text-xs text-morandi-clayDark hover:underline flex items-center space-x-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>+ 繼續加拍背面/下一張</span>
+              </button>
+              <button onclick="clearStagingImages()" class="text-xs text-rose-500 hover:underline">清空</button>
             </div>
 
-            <button onclick="startAiAnalysis()" id="btn-start-analysis" class="w-full py-3.5 rounded-2xl bg-morandi-rose hover:bg-morandi-roseDark text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center space-x-2">
+            <button onclick="startAiAnalysisMulti()" id="btn-start-analysis" class="w-full py-3 rounded-2xl bg-morandi-rose hover:bg-morandi-roseDark text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center space-x-2">
               <i data-lucide="sparkles" class="w-4 h-4"></i>
-              <span>開始 AI 辨識錯題與圖表圖解</span>
+              <span>開始 AI 辨識正反面考卷錯題</span>
             </button>
-
-            <div id="ai-status-log" class="hidden p-3 rounded-xl bg-morandi-cream/70 border border-morandi-border text-[11px] font-mono text-morandi-clayDark space-y-1"></div>
           </div>
         </div>
 
         <div class="lg:col-span-7">
-          <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm min-h-[440px] flex flex-col justify-between">
+          <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm min-h-[400px] flex flex-col justify-between">
             <div>
-              <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-morandi-border">
-                <div>
-                  <h3 class="font-bold text-sm text-[#3d3734]">AI 辨識出的錯題與圖解預覽</h3>
-                  <p class="text-[11px] text-morandi-textMuted">確認題目、圖解與分類無誤後，一鍵加入題庫</p>
-                </div>
-                <span id="detected-count-badge" class="text-xs px-3 py-1 rounded-full bg-morandi-roseLight text-morandi-roseDark font-bold font-mono">0 題</span>
+              <div class="flex items-center justify-between pb-3 border-b border-morandi-border">
+                <h3 class="font-bold text-sm text-[#3d3734]">AI 辨識出的錯題與科目分類預覽</h3>
+                <span id="detected-count-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-morandi-cream text-morandi-clayDark font-mono">0 題</span>
               </div>
+              <p class="text-[11px] text-morandi-textMuted pt-2">可在下方確認或調整每題歸屬的「科目」與「章節」，再一鍵匯入題庫</p>
 
-              <div id="detected-list-container" class="py-4 space-y-4 max-h-[520px] overflow-y-auto pr-1">
-                <div class="text-center py-16 text-morandi-textMuted text-xs space-y-2">
-                  <i data-lucide="image" class="w-8 h-8 mx-auto text-morandi-border"></i>
-                  <p>請先上傳含幾何圖形或理化圖表的考卷照片並點擊「開始 AI 辨識」</p>
+              <div id="detected-list-container" class="py-4 space-y-4">
+                <div class="text-center py-12 text-morandi-textMuted text-xs">
+                  請先在左側選取正反面考卷照片並點擊「開始 AI 辨識」
                 </div>
               </div>
             </div>
 
-            <div class="pt-4 border-t border-morandi-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <span class="text-[11px] text-morandi-textMuted">儲存後每題將自動內嵌清晰的 SVG 幾何/圖表解題說明</span>
-              <button onclick="commitDetectedErrors()" id="btn-commit-errors" disabled class="px-6 py-3 rounded-2xl bg-morandi-sage hover:bg-morandi-sageDark text-white text-xs font-bold shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5">
-                <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-                <span>儲存並分類加入該科目題庫</span>
+            <div class="pt-4 border-t border-morandi-border flex items-center justify-end space-x-3">
+              <button onclick="commitDetectedErrors()" id="btn-commit-errors" disabled class="px-5 py-2.5 rounded-2xl bg-morandi-sage text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed">
+                儲存並分類加入對應科目題庫
               </button>
             </div>
           </div>
@@ -588,7 +433,6 @@
           <h2 class="text-xl sm:text-2xl font-bold text-[#3d3734]">A4 雙模派卷列印</h2>
           <p class="text-xs text-morandi-textMuted mt-1">支援「學生練習空白卷（原題重練）」與「家長/教師圖解詳解卷」</p>
         </div>
-
         <div class="flex items-center space-x-2">
           <button onclick="triggerPrint('student')" class="px-4 py-2.5 rounded-2xl bg-morandi-rose text-white text-xs font-bold hover:bg-morandi-roseDark transition shadow-sm flex items-center space-x-1.5">
             <i data-lucide="printer" class="w-4 h-4"></i>
@@ -604,23 +448,17 @@
       <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label class="block text-xs font-bold text-[#3d3734] mb-1">選擇要列印的科目錯題類別</label>
+            <label class="block text-xs font-bold text-[#3d3734] mb-1">科目與考卷模式</label>
             <select id="gen-paper-preset" onchange="onPresetChange()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text">
-              <optgroup label="📋 依科目類別 · 總錯題卷">
-                <option value="math_all" selected>國八數學 · 全部錯題複習卷</option>
-                <option value="physics_all">國八理化 · 全部錯題複習卷</option>
-                <option value="chinese_all">國文 · 全部錯題複習卷</option>
-                <option value="english_all">英文 · 全部錯題複習卷</option>
-                <option value="social_all">社會 · 全部錯題複習卷</option>
-                <option value="all_subjects">🌟 跨科目 · 全部錯題總整理卷</option>
-              </optgroup>
-              <optgroup label="🎯 單一單元 · 專項強化卷">
-                <option value="math_unit_2_2">國八數學 (2-2 根式運算專攻)</option>
-                <option value="physics_unit_3_1_2">國八理化 (3-1~3-2 波動聲音專攻)</option>
+              <optgroup label="📋 單一科目 · 全範圍總錯題卷">
+                <option value="math_all">數學 · 全科目總錯題複習卷</option>
+                <option value="physics_all">理化 · 全科目總錯題複習卷</option>
+                <option value="chinese_all">國文 · 全科目總錯題複習卷</option>
+                <option value="english_all">英文 · 全科目總錯題複習卷</option>
+                <option value="social_all">社會 · 全科目總錯題複習卷</option>
               </optgroup>
             </select>
           </div>
-
           <div>
             <label class="block text-xs font-bold text-[#3d3734] mb-1">預覽版面模式</label>
             <div class="flex items-center space-x-2 pt-1">
@@ -628,10 +466,9 @@
               <button onclick="setPrintPreviewMode('solution')" id="btn-preview-mode-sol" class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">圖解詳解</button>
             </div>
           </div>
-
           <div>
             <label class="block text-xs font-bold text-[#3d3734] mb-1">試卷標題自訂</label>
-            <input type="text" id="gen-paper-title" value="115學年度八年級第二次段考 國八數學 錯題強化重測卷" oninput="generatePrintPreview()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs text-morandi-text">
+            <input type="text" id="gen-paper-title" value="115學年度八年級第二次段考 錯題強化原題重測卷" oninput="generatePrintPreview()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs text-morandi-text">
           </div>
         </div>
       </div>
@@ -648,13 +485,11 @@
           <h2 class="text-xl font-bold text-[#3d3734]">專注學習計時鐘</h2>
           <p class="text-xs text-morandi-textMuted mt-1">黃金專注曲線 · 模擬考 45 分鐘與日常 25 分鐘番茄鐘</p>
         </div>
-
         <div class="flex justify-center space-x-2">
           <button onclick="setPomoMode('focus25')" id="pomo-mode-focus25" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white">25分 專注讀書</button>
           <button onclick="setPomoMode('exam45')" id="pomo-mode-exam45" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">45分 模擬考場</button>
           <button onclick="setPomoMode('rest5')" id="pomo-mode-rest5" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text">5分 休息</button>
         </div>
-
         <div class="relative w-56 h-56 mx-auto flex items-center justify-center">
           <svg class="w-full h-full transform -rotate-90">
             <circle cx="112" cy="112" r="96" stroke="#f4ede4" stroke-width="10" fill="transparent" />
@@ -665,114 +500,80 @@
             <span id="pomo-status-label" class="text-xs text-morandi-textMuted mt-1">專注複習中</span>
           </div>
         </div>
-
         <div class="flex justify-center space-x-3">
-          <button onclick="togglePomodoro()" id="btn-pomo-toggle" class="px-6 py-2.5 rounded-2xl bg-morandi-rose text-white text-xs font-bold shadow-md hover:bg-morandi-roseDark transition">
-            開始計時
-          </button>
-          <button onclick="resetPomodoro()" class="px-4 py-2.5 rounded-2xl bg-morandi-cream border border-morandi-border text-morandi-clayDark text-xs font-bold hover:bg-morandi-border transition">
-            重設
-          </button>
-        </div>
-
-        <div class="p-4 rounded-2xl bg-morandi-cream/50 text-[11px] text-morandi-clayDark text-left space-y-1">
-          <div class="font-bold">💡 學習時間建議：</div>
-          <p>• 國中生黃金專注時間約 25～30 分鐘，休息 5 分鐘後大腦能有效鞏固記憶。</p>
-          <p>• 考前一週建議使用「45 分鐘模擬考模式」，讓生理時鐘適應段考 50 分鐘的答題配速。</p>
+          <button onclick="togglePomodoro()" id="btn-pomo-toggle" class="px-6 py-2.5 rounded-2xl bg-morandi-rose text-white text-xs font-bold shadow-md hover:bg-morandi-roseDark transition">開始計時</button>
+          <button onclick="resetPomodoro()" class="px-4 py-2.5 rounded-2xl bg-morandi-cream border border-morandi-border text-morandi-clayDark text-xs font-bold hover:bg-morandi-border transition">重設</button>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- 彈出視窗: API Key 與連線測試設定 -->
-  <div id="modal-api-key" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 no-print">
+  <!-- 彈出視窗: API Key 設定 -->
+  <div id="modal-api-key" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 border border-morandi-border shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="font-bold text-base text-[#3d3734]">⚙️ Gemini API Key 設定與檢測</h3>
+        <h3 class="font-bold text-base text-[#3d3734]">Gemini API Key 設定</h3>
         <button onclick="toggleApiKeyModal()" class="text-morandi-textMuted hover:text-morandi-clay">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
       <p class="text-xs text-morandi-textMuted">
-        請輸入您的 Google Gemini API Key。金鑰僅儲存於本機瀏覽器中。
+        請輸入您的 Google Gemini API Key。金鑰僅會保存在您目前的瀏覽器本機中 (LocalStorage)，不會上傳至任何伺服器。
       </p>
       <div>
         <label class="block text-xs font-semibold text-morandi-text mb-1">API Key</label>
         <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-mono text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
       </div>
-
-      <div class="flex items-center justify-between">
-        <button onclick="testApiKeyConnection()" id="btn-test-key" class="px-3 py-1.5 rounded-xl bg-morandi-sageLight text-morandi-sageDark hover:bg-morandi-sage hover:text-white text-xs font-bold transition">
-          🔍 測試金鑰與可用模型
-        </button>
-        <span id="test-key-result" class="text-[11px] font-mono text-morandi-clayDark"></span>
-      </div>
-
-      <div class="pt-3 border-t border-morandi-border flex items-center justify-between">
-        <button onclick="clearAllErrorsInStorage()" class="text-xs text-morandi-rose hover:underline font-semibold">
-          清空目前所有錯題
-        </button>
-        <div class="flex space-x-2">
-          <button onclick="toggleApiKeyModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-morandi-textMuted hover:bg-morandi-cream transition">取消</button>
-          <button onclick="saveApiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-rose hover:bg-morandi-roseDark text-white transition">儲存設定</button>
-        </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="toggleApiKeyModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-morandi-textMuted hover:bg-morandi-cream transition">取消</button>
+        <button onclick="saveApiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-rose hover:bg-morandi-roseDark text-white transition">儲存金鑰</button>
       </div>
     </div>
   </div>
 
   <!-- JavaScript 核心邏輯 -->
   <script>
-    const SUBJECT_NAMES = {
-      math: "國八數學",
-      physics: "國八理化",
-      chinese: "國文",
-      english: "英文",
-      social: "社會"
-    };
-
+    // 章節定義（社會科已依需求細分第 3 章與第 4 章）
     const SUBJECT_CHAPTERS = {
       math: [
         { id: "2-2", name: "2-2 根式的運算與化簡" },
         { id: "2-1", name: "2-1 二次方根與近似值" },
         { id: "2-3", name: "2-3 畢氏定理" },
         { id: "3-1", name: "3-1 提公因式與乘法公式因式分解" },
-        { id: "3-2", name: "3-2 十字交乘法" },
-        { id: "m-other", name: "數學其他單元" }
+        { id: "3-2", name: "3-2 十字交乘法" }
       ],
       physics: [
         { id: "3-1", name: "3-1 波的傳播與特性" },
         { id: "3-2", name: "3-2 聲音的產生與傳播" },
         { id: "3-3", name: "3-3 回聲與超聲波" },
         { id: "4-1", name: "4-1 光的傳播與光速" },
-        { id: "4-2", name: "4-2 光的反射與面鏡" },
-        { id: "4-3", name: "4-3 光的折射與透鏡" },
-        { id: "p-other", name: "理化其他單元" }
+        { id: "4-2", name: "4-2 光的反向與平面鏡" }
       ],
       chinese: [
         { id: "c-4", name: "第四課 課文與文法分析" },
         { id: "c-6", name: "第六課 課文與文意理解" },
-        { id: "c-lang2", name: "語文常識(二) 修辭與應用" },
-        { id: "c-other", name: "國文綜合範圍" }
+        { id: "c-lang2", name: "語文常識(二) 修辭與應用" }
       ],
       english: [
         { id: "e-u3", name: "Unit 3 文法與閱讀" },
         { id: "e-u4", name: "Unit 4 文法與閱讀" },
-        { id: "e-r2", name: "Review 2 整合複習" },
-        { id: "e-other", name: "英文綜合範圍" }
+        { id: "e-r2", name: "Review 2 整合複習" }
       ],
       social: [
-        { id: "s-h", name: "歷史 第 3~4 章" },
-        { id: "s-g", name: "地理 第 3~4 章" },
-        { id: "s-c", name: "公民 第 3~4 章" },
-        { id: "s-other", name: "社會綜合範圍" }
+        { id: "hist-3", name: "歷史 第 3 章" },
+        { id: "hist-4", name: "歷史 第 4 章" },
+        { id: "geo-3", name: "地理 第 3 章" },
+        { id: "geo-4", name: "地理 第 4 章" },
+        { id: "civ-3", name: "公民 第 3 章" },
+        { id: "civ-4", name: "公民 第 4 章" }
       ]
     };
 
     const EXAM_CHECKLIST_DATA = [
       {
         subjectKey: "math",
-        subjectName: "國八數學 (2-2 ~ 3-2 全手寫)",
+        subjectName: "數學 (2-2 ~ 3-2 全手寫)",
         badgeColor: "rose",
         chapters: [
           { id: "m22", name: "2-2 根式的運算與化簡" },
@@ -783,7 +584,7 @@
       },
       {
         subjectKey: "physics",
-        subjectName: "國八理化 (3-1 ~ 4-5 電腦讀卡)",
+        subjectName: "理化 (3-1 ~ 4-5 電腦讀卡)",
         badgeColor: "sage",
         chapters: [
           { id: "p31", name: "3-1 波的傳播與週期波" },
@@ -798,7 +599,7 @@
       },
       {
         subjectKey: "chinese",
-        subjectName: "國文 (第4、6課、語二 部分手寫)",
+        subjectName: "國文 (第4、6課、語二)",
         badgeColor: "clay",
         chapters: [
           { id: "c4", name: "第 4 課 課文重點與形音義" },
@@ -808,22 +609,22 @@
       },
       {
         subjectKey: "english",
-        subjectName: "英文 (Unit 3 ~ Review 2 部分手寫)",
+        subjectName: "英文 (Unit 3 ~ Review 2)",
         badgeColor: "rose",
         chapters: [
-          { id: "eu3", name: "Unit 3 單字片語與動名詞文法" },
+          { id: "eu3", name: "Unit 3 單字片語與動名詞" },
           { id: "eu4", name: "Unit 4 閱讀理解與過去進行式" },
           { id: "er2", name: "Review 2 總複習與克漏字" }
         ]
       },
       {
         subjectKey: "social",
-        subjectName: "社會 (歷/地/公 3~4章 電腦讀卡)",
+        subjectName: "社會 (歷史/地理/公民 第3、4章)",
         badgeColor: "sage",
         chapters: [
-          { id: "sh34", name: "歷史 第 3~4 章 秦漢帝國與文化" },
-          { id: "sg34", name: "地理 第 3~4 章 中國地形與氣候" },
-          { id: "sc34", name: "公民 第 3~4 章 憲法與人民權利保障" }
+          { id: "hist34", name: "歷史 第3章 與 第4章" },
+          { id: "geo34", name: "地理 第3章 與 第4章" },
+          { id: "civ34", name: "公民 第3章 與 第4章" }
         ]
       }
     ];
@@ -832,7 +633,7 @@
     let currentSubject = 'math';
     let currentPreviewMode = 'student';
     let currentCalDate = new Date();
-    let uploadedImages = [];
+    let stagingImages = []; // 支援多張/正反面照片暫存
     let stagingErrors = [];
 
     let pomoTimer = null;
@@ -841,20 +642,17 @@
     let isPomoRunning = false;
 
     window.addEventListener('DOMContentLoaded', () => {
-      const savedErrors = localStorage.getItem('EXAM_ERRORS_CLEAN_V3.6');
+      const savedErrors = localStorage.getItem('EXAM_ERRORS_CLEAN_V3.8');
       if (savedErrors) {
-        try {
-          allErrors = JSON.parse(savedErrors);
-        } catch (e) {
-          allErrors = [];
-        }
+        try { allErrors = JSON.parse(savedErrors); } catch(e) { allErrors = []; }
       } else {
         allErrors = [];
       }
 
-      lucide.createIcons();
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
       updateCountdowns();
-      updateSubjectStats();
       renderChecklist();
       renderCalendar();
       updateChapterOptions();
@@ -864,51 +662,15 @@
       setInterval(updateCountdowns, 3600000);
     });
 
-    function showToast(msg, isError = false) {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-      const el = document.createElement('div');
-      el.className = `px-4 py-3 rounded-2xl shadow-lg text-xs font-bold text-white transition-all duration-300 pointer-events-auto flex items-center justify-between ${isError ? 'bg-[#9e5d5e]' : 'bg-[#627a6e]'}`;
-      el.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="ml-3 opacity-80 hover:opacity-100">✕</button>`;
-      container.appendChild(el);
-      setTimeout(() => {
-        if (el.parentElement) {
-          el.style.opacity = '0';
-          setTimeout(() => el.remove(), 300);
-        }
-      }, 6000);
-    }
-
-    function setAiStatusLog(text) {
-      const logBox = document.getElementById('ai-status-log');
-      if (!logBox) return;
-      if (!text) {
-        logBox.classList.add('hidden');
-        logBox.innerText = '';
-      } else {
-        logBox.classList.remove('hidden');
-        logBox.innerText = text;
-      }
-    }
-
     function updateCountdowns() {
       const now = new Date();
       const currentYear = now.getFullYear();
 
-      let exam2Year = currentYear;
-      let exam2Date = new Date(exam2Year, 11, 2);
-      if (now > new Date(exam2Year, 11, 4)) {
-        exam2Date = new Date(exam2Year + 1, 11, 2);
-      }
+      let exam2Date = new Date(currentYear, 11, 2);
+      if (now > new Date(currentYear, 11, 4)) exam2Date = new Date(currentYear + 1, 11, 2);
 
-      let exam3Year = currentYear;
-      if (now.getMonth() >= 8) {
-        exam3Year = currentYear + 1;
-      }
-      let exam3Date = new Date(exam3Year, 0, 18);
-      if (now > new Date(exam3Year, 0, 20)) {
-        exam3Date = new Date(exam3Year + 1, 0, 18);
-      }
+      let exam3Date = new Date(currentYear, 0, 18);
+      if (now.getMonth() >= 8) exam3Date = new Date(currentYear + 1, 0, 18);
 
       const diffDays2 = Math.max(0, Math.ceil((exam2Date - now) / (1000 * 60 * 60 * 24)));
       const diffDays3 = Math.max(0, Math.ceil((exam3Date - now) / (1000 * 60 * 60 * 24)));
@@ -917,27 +679,7 @@
       document.getElementById('countdown-exam3').innerText = diffDays3;
       document.getElementById('stat-days-exam2').innerText = diffDays2 + ' 天';
       document.getElementById('stat-days-exam3').innerText = diffDays3 + ' 天';
-    }
-
-    function updateSubjectStats() {
-      const counts = {
-        math: allErrors.filter(e => e.subject === 'math').length,
-        physics: allErrors.filter(e => e.subject === 'physics').length,
-        chinese: allErrors.filter(e => e.subject === 'chinese').length,
-        english: allErrors.filter(e => e.subject === 'english').length,
-        social: allErrors.filter(e => e.subject === 'social').length
-      };
-
       document.getElementById('stat-total-errors').innerText = allErrors.length;
-      document.getElementById('stat-subject-breakdown').innerText =
-        `數 ${counts.math} · 理 ${counts.physics} · 國 ${counts.chinese} · 英 ${counts.english} · 社 ${counts.social}`;
-
-      ['math', 'physics', 'chinese', 'english', 'social'].forEach(k => {
-        const dashEl = document.getElementById(`dash-count-${k}`);
-        if (dashEl) dashEl.innerText = `${counts[k]} 題`;
-        const badgeEl = document.getElementById(`badge-count-${k}`);
-        if (badgeEl) badgeEl.innerText = counts[k];
-      });
     }
 
     function switchTab(tabId) {
@@ -947,204 +689,241 @@
         const btn = document.getElementById(`nav-${id}`);
         if (sec) sec.classList.toggle('hidden', id !== tabId);
         if (btn) {
-          if (id === tabId) {
-            btn.className = "shrink-0 tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 bg-morandi-rose text-white shadow-sm";
-          } else {
-            btn.className = "shrink-0 tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold text-morandi-text hover:bg-white transition flex items-center space-x-1.5";
-          }
+          btn.className = (id === tabId) ? 
+            "shrink-0 tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 bg-morandi-rose text-white shadow-sm" :
+            "shrink-0 tab-btn px-4 py-1.5 rounded-xl text-xs font-semibold text-morandi-text hover:bg-white transition flex items-center space-x-1.5";
         }
       });
-
       if (tabId === 'calendar') renderCalendar();
       if (tabId === 'generator') generatePrintPreview();
       if (tabId === 'library') renderLibrary();
-      lucide.createIcons();
+      if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 
-    function renderChecklist() {
-      const container = document.getElementById('exam-checklist-container');
-      if (!container) return;
+    // 支援多張照片選擇與加拍
+    function handleMultipleImagesSelect(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
 
-      const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS') || '{}');
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          stagingImages.push({
+            name: file.name || `相片 ${stagingImages.length + 1}`,
+            dataUrl: e.target.result
+          });
+          renderStagingImagePreviews();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
 
-      let totalBoxes = 0;
-      let checkedBoxes = 0;
+    function renderStagingImagePreviews() {
+      const grid = document.getElementById('multi-image-preview-grid');
+      if (!grid) return;
+
+      if (stagingImages.length === 0) {
+        grid.innerHTML = '';
+        return;
+      }
 
       let html = '';
-      EXAM_CHECKLIST_DATA.forEach(sub => {
+      stagingImages.forEach((img, idx) => {
         html += `
-          <div class="border border-morandi-border rounded-2xl overflow-hidden bg-white">
-            <div class="bg-morandi-cream/60 px-4 py-2.5 border-b border-morandi-border flex items-center justify-between">
-              <span class="font-bold text-xs sm:text-sm text-[#3d3734] flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-morandi-${sub.badgeColor}"></span>
-                <span>${sub.subjectName}</span>
-              </span>
-              <span class="text-[11px] text-morandi-textMuted font-mono">共 ${sub.chapters.length} 個單元</span>
+          <div class="relative rounded-2xl overflow-hidden border border-morandi-border bg-morandi-cream group h-32">
+            <img src="${img.dataUrl}" alt="考卷" class="w-full h-full object-cover">
+            <div class="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full">
+              第 ${idx + 1} 頁
             </div>
-            <div class="divide-y divide-[#f7f2ed]">
+            <button onclick="removeStagingImage(${idx})" class="absolute top-1 right-1 bg-rose-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-rose-600">×</button>
+          </div>
         `;
+      });
+      grid.innerHTML = html;
+    }
 
-        sub.chapters.forEach(ch => {
-          const dims = [
-            { key: 'prep', label: '預習' },
-            { key: 'review', label: '複習' },
-            { key: 'handout', label: '講義' },
-            { key: 'quiz', label: '測驗卷' },
-            { key: 'mock', label: '考古題' }
-          ];
+    function removeStagingImage(idx) {
+      stagingImages.splice(idx, 1);
+      renderStagingImagePreviews();
+    }
 
-          html += `
-            <div class="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-morandi-cream/20 transition">
-              <span class="text-xs font-medium text-morandi-text">${ch.name}</span>
-              <div class="grid grid-cols-5 gap-2 sm:gap-3 shrink-0">
-          `;
+    function clearStagingImages() {
+      stagingImages = [];
+      renderStagingImagePreviews();
+      document.getElementById('exam-image-input').value = '';
+    }
 
-          dims.forEach(d => {
-            totalBoxes++;
-            const boxKey = `${ch.id}_${d.key}`;
-            const isChecked = !!savedChecklist[boxKey];
-            if (isChecked) checkedBoxes++;
+    function updateChapterOptions() {
+      const subj = document.getElementById('upload-subject').value;
+      const chSel = document.getElementById('upload-chapter');
+      if (!chSel) return;
+      chSel.innerHTML = '';
+      (SUBJECT_CHAPTERS[subj] || []).forEach(c => {
+        chSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+    }
 
-            html += `
-              <label class="flex items-center space-x-1 cursor-pointer select-none text-[11px] text-morandi-textMuted hover:text-morandi-clay">
-                <input type="checkbox" onchange="toggleChecklistItem('${boxKey}')" ${isChecked ? 'checked' : ''} class="w-3.5 h-3.5 rounded text-morandi-rose focus:ring-0 border-morandi-border">
-                <span>${d.label}</span>
-              </label>
-            `;
-          });
+    // AI 拍照辨識解析多張考卷
+    async function startAiAnalysisMulti() {
+      const apiKey = localStorage.getItem('GEMINI_API_KEY');
+      if (!apiKey) {
+        alert('請先點擊右上角設定 ⚙️ 填入您的 Gemini API Key！');
+        toggleApiKeyModal();
+        return;
+      }
 
-          html += `</div></div>`;
+      if (stagingImages.length === 0) {
+        alert('請先上傳至少一張試卷照片！');
+        return;
+      }
+
+      const btn = document.getElementById('btn-start-analysis');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>AI 正在逐題掃描與生成圖解中...</span>`;
+      if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+
+      const selectedSubject = document.getElementById('upload-subject').value;
+      const selectedChapter = document.getElementById('upload-chapter').value;
+
+      try {
+        const parts = [];
+        parts.push({
+          text: `你是一位資深國中教師。這是一份或多份學生的平時考卷照片（包含正面與背面）。請逐題掃描卷面上所有被紅筆打叉(✗)、扣分或空白的錯題。
+          請以嚴格的 JSON 陣列格式回傳，不要有額外 markdown 標籤：
+          [
+            {
+              "questionType": "題型與題號 (例如: 單選題 第 3 題)",
+              "content": "題目的完整文字與選項",
+              "studentAnswer": "學生當時寫的錯誤答案",
+              "correctAnswer": "正確答案",
+              "pointsDeducted": 3,
+              "tag": "考點標籤",
+              "svgDiagram": "<svg viewBox='0 0 420 120' class='w-full max-w-md mx-auto my-2'><rect x='20' y='20' width='380' height='80' fill='#f5eee9' rx='8'/><text x='210' y='65' font-size='14' fill='#856350' text-anchor='middle'>幾何/數線 SVG 圖解說明</text></svg>",
+              "solution": "詳細分步解題步驟與觀念盲點"
+            }
+          ]`
         });
 
-        html += `</div></div>`;
+        stagingImages.forEach(img => {
+          const base64 = img.dataUrl.split(',')[1];
+          parts.push({
+            inline_data: { mime_type: "image/jpeg", data: base64 }
+          });
+        });
+
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: parts }] })
+        });
+
+        const data = await resp.json();
+        const rawText = data.candidates[0].content.parts[0].text;
+        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleaned);
+
+        stagingErrors = parsed.map((item, i) => ({
+          id: `ai-${Date.now()}-${i}`,
+          subject: selectedSubject,
+          chapter: selectedChapter,
+          sourceExam: "拍照辨識試卷",
+          questionType: item.questionType || `第 ${i+1} 題`,
+          content: item.content || "",
+          studentAnswer: item.studentAnswer || "未填",
+          correctAnswer: item.correctAnswer || "",
+          pointsDeducted: item.pointsDeducted || 3,
+          tag: item.tag || "觀念盲點",
+          svgDiagram: item.svgDiagram || "",
+          solution: item.solution || ""
+        }));
+
+        renderDetectedList();
+      } catch (err) {
+        console.error(err);
+        alert('辨識失敗，請確認 API Key 是否正確或照片是否清晰！');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>開始 AI 辨識正反面考卷錯題</span>`;
+        if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+      }
+    }
+
+    function renderDetectedList() {
+      const container = document.getElementById('detected-list-container');
+      const badge = document.getElementById('detected-count-badge');
+      const commitBtn = document.getElementById('btn-commit-errors');
+
+      badge.innerText = `${stagingErrors.length} 題`;
+
+      if (stagingErrors.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-morandi-textMuted text-xs">未辨識到錯題</div>`;
+        commitBtn.disabled = true;
+        return;
+      }
+
+      commitBtn.disabled = false;
+
+      let html = '';
+      stagingErrors.forEach((err, idx) => {
+        html += `
+          <div class="p-4 rounded-2xl bg-morandi-cream/40 border border-morandi-border space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-morandi-roseDark">${idx + 1}. ${err.questionType}</span>
+              <span class="text-morandi-rose font-bold">扣 ${err.pointsDeducted} 分</span>
+            </div>
+            <div class="text-xs text-[#3d3734] leading-relaxed">${err.content}</div>
+            <div class="text-[11px] text-morandi-textMuted flex justify-between pt-1">
+              <span>學生寫：${err.studentAnswer}</span>
+              <span class="font-bold text-morandi-sageDark">正解：${err.correctAnswer}</span>
+            </div>
+          </div>
+        `;
       });
 
       container.innerHTML = html;
-
-      const pct = totalBoxes > 0 ? Math.round((checkedBoxes / totalBoxes) * 100) : 0;
-      document.getElementById('checklist-progress-text').innerText = `${pct}% (${checkedBoxes}/${totalBoxes})`;
-      document.getElementById('checklist-progress-bar').style.width = `${pct}%`;
-      document.getElementById('stat-checklist-pct').innerText = `${pct}%`;
-    }
-
-    function toggleChecklistItem(key) {
-      const saved = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS') || '{}');
-      saved[key] = !saved[key];
-      localStorage.setItem('EXAM_CHECKLIST_STATUS', JSON.stringify(saved));
-      renderChecklist();
-    }
-
-    function renderCalendar() {
-      const title = document.getElementById('calendar-month-title');
-      const grid = document.getElementById('calendar-grid');
-      if (!grid) return;
-
-      const year = currentCalDate.getFullYear();
-      const month = currentCalDate.getMonth();
-      title.innerText = `${year} 年 ${month + 1} 月`;
-
-      grid.innerHTML = '';
-
-      const firstDayIndex = new Date(year, month, 1).getDay();
-      const totalDays = new Date(year, month + 1, 0).getDate();
-
-      for (let i = 0; i < firstDayIndex; i++) {
-        const empty = document.createElement('div');
-        empty.className = "h-14 sm:h-16 rounded-xl bg-morandi-cream/20";
-        grid.appendChild(empty);
-      }
-
-      const today = new Date();
-
-      for (let day = 1; day <= totalDays; day++) {
-        const dateBox = document.createElement('div');
-        const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === day);
-        const isExam2 = (month === 11 && (day === 2 || day === 3));
-        const isExam3 = (month === 0 && (day === 18 || day === 19));
-
-        let bgClass = "bg-white hover:bg-morandi-cream/50";
-        let badge = "";
-
-        if (isExam2) {
-          bgClass = "bg-morandi-roseLight/70 border border-morandi-rose/50";
-          badge = `<span class="mt-1 text-[9px] font-bold px-1 py-0.5 rounded bg-morandi-rose text-white scale-90 inline-block">二段</span>`;
-        } else if (isExam3) {
-          bgClass = "bg-morandi-sageLight/70 border border-morandi-sage/50";
-          badge = `<span class="mt-1 text-[9px] font-bold px-1 py-0.5 rounded bg-morandi-sage text-white scale-90 inline-block">三段</span>`;
-        } else if (isToday) {
-          bgClass = "bg-morandi-cream border-2 border-morandi-clay";
-        }
-
-        dateBox.className = `h-14 sm:h-16 p-1.5 rounded-xl border border-morandi-border/60 flex flex-col justify-between ${bgClass} transition`;
-        dateBox.innerHTML = `
-          <div class="flex justify-between items-start">
-            <span class="text-xs font-mono font-bold ${isToday ? 'text-morandi-clayDark' : 'text-morandi-text'}">${day}</span>
-          </div>
-          <div>${badge}</div>
-        `;
-        grid.appendChild(dateBox);
+      if (window.renderMathInElement) {
+        renderMathInElement(container, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false }
+          ]
+        });
       }
     }
 
-    function changeMonth(delta) {
-      currentCalDate.setMonth(currentCalDate.getMonth() + delta);
-      renderCalendar();
+    function commitDetectedErrors() {
+      if (stagingErrors.length === 0) return;
+      allErrors = [...stagingErrors, ...allErrors];
+      localStorage.setItem('EXAM_ERRORS_CLEAN_V3.8', JSON.stringify(allErrors));
+      alert(`成功將 ${stagingErrors.length} 道錯題分類加入對應科目題庫！`);
+      stagingErrors = [];
+      clearStagingImages();
+      renderDetectedList();
+      updateCountdowns();
+      selectSubject(allErrors[0]?.subject || 'math');
+      switchTab('library');
     }
 
-    function resetToCurrentMonth() {
-      currentCalDate = new Date();
-      renderCalendar();
-    }
-
+    // 錯題圖解庫與篩選
     function selectSubject(subjKey) {
       currentSubject = subjKey;
-
-      const subjs = ['math', 'physics', 'chinese', 'english', 'social'];
-      subjs.forEach(s => {
+      ['math', 'physics', 'chinese', 'english', 'social'].forEach(s => {
         const btn = document.getElementById(`subj-btn-${s}`);
         if (btn) {
-          if (s === subjKey) {
-            btn.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-rose text-white shadow-sm";
-          } else {
-            btn.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-morandi-cream text-morandi-text hover:bg-morandi-border";
-          }
+          btn.className = (s === subjKey) ?
+            "px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-rose text-white shadow-sm" :
+            "px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-cream text-morandi-text";
         }
       });
 
       const filterChap = document.getElementById('filter-chapter');
       if (filterChap) {
         filterChap.innerHTML = '<option value="all">全部單元</option>';
-        const list = SUBJECT_CHAPTERS[subjKey] || [];
-        list.forEach(c => {
+        (SUBJECT_CHAPTERS[subjKey] || []).forEach(c => {
           filterChap.innerHTML += `<option value="${c.id}">${c.name}</option>`;
         });
       }
-
       renderLibrary();
-    }
-
-    function filterBySubject(subjKey) {
-      switchTab('library');
-      selectSubject(subjKey);
-    }
-
-    function deleteErrorById(errId) {
-      allErrors = allErrors.filter(e => e.id !== errId);
-      localStorage.setItem('EXAM_ERRORS_CLEAN_V3.6', JSON.stringify(allErrors));
-      updateSubjectStats();
-      renderLibrary();
-      generatePrintPreview();
-      showToast('已刪除該道錯題');
-    }
-
-    function clearAllErrorsInStorage() {
-      allErrors = [];
-      localStorage.setItem('EXAM_ERRORS_CLEAN_V3.6', JSON.stringify(allErrors));
-      updateSubjectStats();
-      renderLibrary();
-      generatePrintPreview();
-      toggleApiKeyModal();
-      showToast('已清空所有錯題資料');
     }
 
     function renderLibrary() {
@@ -1163,62 +942,35 @@
 
       if (filtered.length === 0) {
         container.innerHTML = `
-          <div class="bg-white p-12 text-center rounded-3xl border border-morandi-border text-morandi-textMuted space-y-3">
-            <i data-lucide="camera" class="w-8 h-8 mx-auto text-morandi-rose"></i>
-            <p class="text-sm font-bold text-[#3d3734]">「${SUBJECT_NAMES[currentSubject]}」目前尚無錯題紀錄</p>
-            <p class="text-xs">點擊上方「拍照辨識錯題 (圖表+正反面)」，上傳含幾何/理化圖表的考卷照片即可！</p>
-            <button onclick="switchTab('camera')" class="mt-2 px-4 py-2 rounded-xl bg-morandi-rose text-white text-xs font-bold hover:bg-morandi-roseDark transition inline-flex items-center space-x-1.5">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span>立即拍照上傳考卷</span>
-            </button>
+          <div class="bg-white p-12 text-center rounded-3xl border border-morandi-border text-morandi-textMuted space-y-2">
+            <i data-lucide="sparkles" class="w-8 h-8 mx-auto text-morandi-sage"></i>
+            <p class="text-sm font-semibold">此分類目前尚無錯題紀錄</p>
+            <p class="text-xs">請透過「拍照辨識錯題」上傳正反面考卷自動歸類！</p>
           </div>
         `;
-        lucide.createIcons();
+        if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
         return;
       }
 
       let html = '';
       filtered.forEach((err) => {
-        const chapObj = (SUBJECT_CHAPTERS[err.subject] || []).find(c => c.id === err.chapter);
-        const chapLabel = chapObj ? chapObj.name : (err.chapter || '綜合單元');
-
         html += `
-          <div class="bg-white rounded-3xl border border-morandi-border shadow-sm p-6 space-y-4 transition hover:shadow-md">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#f7f2ed] pb-3">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2.5 py-1 rounded-lg bg-morandi-rose text-white font-bold text-xs">${SUBJECT_NAMES[err.subject] || '科目'}</span>
-                <span class="px-2.5 py-1 rounded-lg bg-morandi-sageLight text-morandi-sageDark font-bold text-xs">${chapLabel}</span>
-                <span class="px-2.5 py-1 rounded-lg bg-morandi-roseLight text-morandi-roseDark font-bold text-xs">${err.questionType}</span>
-                <span class="text-xs font-semibold text-morandi-clayDark">${err.sourceExam || ''}</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-morandi-cream text-morandi-textMuted">${err.tag || '核心觀念'}</span>
-                <button onclick="deleteErrorById('${err.id}')" class="text-xs text-morandi-textMuted hover:text-morandi-rose p-1" title="刪除此題">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
+          <div class="bg-white rounded-3xl border border-morandi-border shadow-sm p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-[#f7f2ed] pb-3">
+              <span class="px-2.5 py-1 rounded-lg bg-morandi-roseLight text-morandi-roseDark font-bold text-xs">${err.questionType}</span>
+              <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-morandi-cream text-morandi-textMuted">${err.tag || '觀念盲點'}</span>
             </div>
-
-            <div class="text-sm text-[#3d3734] leading-relaxed">
-              ${err.content}
-            </div>
-
-            <div class="p-3 rounded-2xl bg-morandi-roseLight/30 border border-morandi-rose/20 text-xs flex items-center justify-between">
+            <div class="text-sm text-[#3d3734] leading-relaxed">${err.content}</div>
+            <div class="p-3 rounded-2xl bg-morandi-roseLight/30 border border-morandi-rose/20 text-xs flex justify-between">
               <span class="text-morandi-roseDark font-semibold">當時作答：${err.studentAnswer}</span>
               <span class="text-morandi-rose font-bold">扣 ${err.pointsDeducted} 分</span>
             </div>
-
             <div>
-              <button onclick="toggleSolution('${err.id}')" id="btn-sol-toggle-${err.id}" class="text-xs font-bold text-morandi-clayDark hover:text-morandi-rose flex items-center space-x-1.5 transition">
-                <i data-lucide="eye" class="w-4 h-4"></i>
-                <span>查看圖解詳解與幾何/圖表解題說明</span>
+              <button onclick="toggleSolution('${err.id}')" id="btn-sol-toggle-${err.id}" class="text-xs font-bold text-morandi-clayDark hover:text-morandi-rose flex items-center space-x-1.5">
+                <i data-lucide="eye" class="w-4 h-4"></i><span>查看圖形解題與詳細步驟</span>
               </button>
             </div>
-
             <div id="sol-box-${err.id}" class="hidden pt-3 border-t border-[#f0e4dc] space-y-3">
-              <div class="text-xs font-bold text-morandi-sageDark bg-morandi-sageLight/60 px-3 py-2 rounded-xl">
-                ✓ 正確答案：${err.correctAnswer}
-              </div>
               ${err.svgDiagram || ''}
               <div class="p-4 rounded-2xl bg-morandi-cream/50 text-xs text-[#3d3734] leading-relaxed space-y-2">
                 ${err.solution}
@@ -1229,7 +981,7 @@
       });
 
       container.innerHTML = html;
-      lucide.createIcons();
+      if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
       if (window.renderMathInElement) {
         renderMathInElement(container, {
           delimiters: [
@@ -1244,809 +996,129 @@
       const box = document.getElementById(`sol-box-${id}`);
       const btn = document.getElementById(`btn-sol-toggle-${id}`);
       if (!box) return;
-
-      if (box.classList.contains('hidden')) {
-        box.classList.remove('hidden');
-        btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i><span>收合圖解詳解</span>`;
-      } else {
-        box.classList.add('hidden');
-        btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i><span>查看圖解詳解與幾何/圖表解題說明</span>`;
-      }
-      lucide.createIcons();
+      box.classList.toggle('hidden');
+      btn.innerHTML = box.classList.contains('hidden') ?
+        `<i data-lucide="eye" class="w-4 h-4"></i><span>查看圖形解題與詳細步驟</span>` :
+        `<i data-lucide="eye-off" class="w-4 h-4"></i><span>收合圖形解題</span>`;
+      if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 
-    function onPresetChange() {
-      const val = document.getElementById('gen-paper-preset').value;
-      const titleInput = document.getElementById('gen-paper-title');
-
-      const presetTitles = {
-        math_all: "115學年度八年級第二次段考 國八數學 全科錯題強化重測卷",
-        physics_all: "115學年度八年級第二次段考 國八理化 全科錯題強化重測卷",
-        chinese_all: "115學年度八年級第二次段考 國文 全科錯題強化重測卷",
-        english_all: "115學年度八年級第二次段考 英文 全科錯題強化重測卷",
-        social_all: "115學年度八年級第二次段考 社會科 全科錯題強化重測卷",
-        all_subjects: "115學年度八年級第二次段考 跨科目總錯題強化重測卷",
-        math_unit_2_2: "115學年度八年級第二次段考 數學 (2-2 根式運算專攻卷)",
-        physics_unit_3_1_2: "115學年度八年級第二次段考 理化 (3-1~3-2 波動聲音專攻卷)"
-      };
-
-      if (presetTitles[val]) {
-        titleInput.value = presetTitles[val];
-      }
-      generatePrintPreview();
-    }
-
-    function setPrintPreviewMode(mode) {
-      currentPreviewMode = mode;
-      const btnStu = document.getElementById('btn-preview-mode-stu');
-      const btnSol = document.getElementById('btn-preview-mode-sol');
-
-      if (mode === 'student') {
-        btnStu.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white";
-        btnSol.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text";
-      } else {
-        btnStu.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text";
-        btnSol.className = "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white";
-      }
-
-      generatePrintPreview();
-    }
-
+    // A4 列印與預覽
     function generatePrintPreview() {
       const paperView = document.getElementById('printable-a4-view');
-      const preset = document.getElementById('gen-paper-preset').value;
       const title = document.getElementById('gen-paper-title').value;
-
       if (!paperView) return;
 
-      let targetErrors = [];
-      if (preset === 'math_all') {
-        targetErrors = allErrors.filter(e => e.subject === 'math');
-      } else if (preset === 'physics_all') {
-        targetErrors = allErrors.filter(e => e.subject === 'physics');
-      } else if (preset === 'chinese_all') {
-        targetErrors = allErrors.filter(e => e.subject === 'chinese');
-      } else if (preset === 'english_all') {
-        targetErrors = allErrors.filter(e => e.subject === 'english');
-      } else if (preset === 'social_all') {
-        targetErrors = allErrors.filter(e => e.subject === 'social');
-      } else if (preset === 'all_subjects') {
-        targetErrors = [...allErrors];
-      } else if (preset === 'math_unit_2_2') {
-        targetErrors = allErrors.filter(e => e.subject === 'math' && e.chapter === '2-2');
-      } else if (preset === 'physics_unit_3_1_2') {
-        targetErrors = allErrors.filter(e => e.subject === 'physics' && (e.chapter === '3-1' || e.chapter === '3-2'));
-      }
+      let targetErrors = allErrors.filter(e => e.subject === currentSubject);
+      if (targetErrors.length === 0) targetErrors = allErrors;
 
       const isStudent = (currentPreviewMode === 'student');
 
       let html = `
         <div class="border-b-2 border-slate-900 pb-4 text-center space-y-1">
           <h1 class="text-xl font-bold tracking-wide">${title}</h1>
-          <div class="text-xs text-slate-600 flex justify-between items-center px-4 pt-1">
-            <span>版面模式：${isStudent ? '【學生練習空白卷・原題重練】' : '【教師／家長圖解詳解卷】'}</span>
+          <div class="text-xs text-slate-600 flex justify-between px-4 pt-1">
+            <span>版面：${isStudent ? '學生練習空白卷' : '教師圖解詳解卷'}</span>
             <span>班級：_______ 姓名：_______</span>
-            <span>題數：共 ${targetErrors.length} 題</span>
           </div>
         </div>
         <div class="space-y-6 pt-2">
       `;
 
-      if (targetErrors.length === 0) {
+      targetErrors.forEach((err, idx) => {
         html += `
-          <div class="py-16 text-center text-slate-400 text-xs">
-            目前該科目尚無錯題可供列印，請先至「拍照辨識錯題」上傳考卷！
-          </div>
+          <div class="space-y-2 border-b border-dashed border-slate-300 pb-5">
+            <div class="font-bold text-sm text-slate-800">${idx + 1}. 【${err.questionType}】</div>
+            <div class="text-xs leading-relaxed text-slate-900">${err.content}</div>
         `;
-      } else {
-        targetErrors.forEach((err, idx) => {
+        if (isStudent) {
+          html += `<div class="mt-3 h-28 border border-dashed border-slate-300 rounded-lg p-2 text-[10px] text-slate-400">【計算與作答區】</div>`;
+        } else {
           html += `
-            <div class="space-y-2 border-b border-dashed border-slate-300 pb-5">
-              <div class="flex items-start justify-between">
-                <div class="font-bold text-sm text-slate-800">
-                  ${idx + 1}. 【${SUBJECT_NAMES[err.subject] || ''} · ${err.questionType}】
-                </div>
-                <span class="text-xs text-slate-500 font-mono">原卷扣分：-${err.pointsDeducted}分</span>
-              </div>
-              <div class="text-xs leading-relaxed text-slate-900">
-                ${err.content}
-              </div>
+            <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-2">
+              <div class="font-bold text-slate-800">正解：${err.correctAnswer}</div>
+              <div>${err.svgDiagram || ''}</div>
+              <div class="text-slate-700 leading-relaxed">${err.solution}</div>
+            </div>
           `;
-
-          if (isStudent) {
-            html += `
-              <div class="mt-3 h-28 border border-dashed border-slate-300 rounded-lg p-2 text-[10px] text-slate-400 font-mono">
-                【請在此處書寫計算與推導過程】
-              </div>
-              <div class="pt-2 flex justify-end">
-                <div class="w-32 border-b border-slate-800 text-xs text-right pr-2">答：__________</div>
-              </div>
-            `;
-          } else {
-            html += `
-              <div class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-2">
-                <div class="font-bold text-slate-800 flex justify-between">
-                  <span>正解：${err.correctAnswer}</span>
-                  <span class="text-slate-500">考點：${err.tag || '觀念'}</span>
-                </div>
-                <div>${err.svgDiagram || ''}</div>
-                <div class="text-slate-700 leading-relaxed">${err.solution}</div>
-              </div>
-            `;
-          }
-
-          html += `</div>`;
-        });
-      }
-
-      html += `
-        </div>
-        <div class="text-center text-[10px] text-slate-400 pt-6">
-          考後重點重測 ｜ 徹底理解解題關鍵，段考穩拿高分
-        </div>
-      `;
-
+        }
+        html += `</div>`;
+      });
+      html += `</div>`;
       paperView.innerHTML = html;
-      if (window.renderMathInElement) {
-        renderMathInElement(paperView, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false }
-          ]
-        });
-      }
+    }
+
+    function setPrintPreviewMode(mode) {
+      currentPreviewMode = mode;
+      document.getElementById('btn-preview-mode-stu').className = (mode === 'student') ? "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white" : "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text";
+      document.getElementById('btn-preview-mode-sol').className = (mode === 'solution') ? "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white" : "flex-1 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text";
+      generatePrintPreview();
     }
 
     function triggerPrint(mode) {
       setPrintPreviewMode(mode);
       document.body.className = "printing-paper";
       window.print();
-      setTimeout(() => {
-        document.body.className = "";
-      }, 500);
+      setTimeout(() => { document.body.className = ""; }, 500);
     }
 
-    function printA4CalendarPlan() {
-      const calContainer = document.getElementById('a4-calendar-table-container');
-      const chkContainer = document.getElementById('a4-checklist-table-container');
+    // 番茄鐘與行事曆
+    function renderCalendar() {
+      const title = document.getElementById('calendar-month-title');
+      const grid = document.getElementById('calendar-grid');
+      if (!grid) return;
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      title.innerText = `${year} 年 ${month + 1} 月`;
+      grid.innerHTML = '';
 
-      let calHtml = `
-        <table class="w-full text-xs border-collapse border border-slate-300 text-center">
-          <thead>
-            <tr class="bg-slate-100">
-              <th class="border border-slate-300 p-1 text-red-600">日</th>
-              <th class="border border-slate-300 p-1">一</th>
-              <th class="border border-slate-300 p-1">二</th>
-              <th class="border border-slate-300 p-1">三</th>
-              <th class="border border-slate-300 p-1">四</th>
-              <th class="border border-slate-300 p-1">五</th>
-              <th class="border border-slate-300 p-1 text-slate-600">六</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="border border-slate-300 p-2 text-slate-400">11/29</td>
-              <td class="border border-slate-300 p-2">11/30</td>
-              <td class="border border-slate-300 p-2">12/1 衝刺</td>
-              <td class="border border-slate-300 p-2 bg-red-50 font-bold text-red-600">12/2 (二段D1)</td>
-              <td class="border border-slate-300 p-2 bg-red-50 font-bold text-red-600">12/3 (二段D2)</td>
-              <td class="border border-slate-300 p-2">12/4</td>
-              <td class="border border-slate-300 p-2 text-slate-600">12/5</td>
-            </tr>
-          </tbody>
-        </table>
-      `;
-      calContainer.innerHTML = calHtml;
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
 
-      const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS') || '{}');
-      let chkHtml = `
-        <table class="w-full text-xs border-collapse border border-slate-300">
-          <thead>
-            <tr class="bg-slate-100 text-center">
-              <th class="border border-slate-300 p-1.5 w-1/4">科目</th>
-              <th class="border border-slate-300 p-1.5 w-1/3">考程單元</th>
-              <th class="border border-slate-300 p-1.5">預習</th>
-              <th class="border border-slate-300 p-1.5">複習</th>
-              <th class="border border-slate-300 p-1.5">講義</th>
-              <th class="border border-slate-300 p-1.5">測驗卷</th>
-              <th class="border border-slate-300 p-1.5">考古題</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-
-      EXAM_CHECKLIST_DATA.forEach(sub => {
-        sub.chapters.forEach((ch, idx) => {
-          chkHtml += `
-            <tr class="text-center">
-              ${idx === 0 ? `<td rowspan="${sub.chapters.length}" class="border border-slate-300 p-1.5 font-bold bg-slate-50">${sub.subjectName}</td>` : ''}
-              <td class="border border-slate-300 p-1.5 text-left pl-2">${ch.name}</td>
-              <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_prep`] ? '✓' : '□'}</td>
-              <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_review`] ? '✓' : '□'}</td>
-              <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_handout`] ? '✓' : '□'}</td>
-              <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_quiz`] ? '✓' : '□'}</td>
-              <td class="border border-slate-300 p-1 font-mono">${savedChecklist[`${ch.id}_mock`] ? '✓' : '□'}</td>
-            </tr>
-          `;
-        });
-      });
-
-      chkHtml += `</tbody></table>`;
-      chkContainer.innerHTML = chkHtml;
-
-      document.body.className = "printing-calendar";
-      window.print();
-      setTimeout(() => {
-        document.body.className = "";
-      }, 500);
-    }
-
-    function updateChapterOptions() {
-      const subj = document.getElementById('upload-subject').value;
-      const chSel = document.getElementById('upload-chapter');
-      chSel.innerHTML = '';
-
-      if (subj === 'auto') {
-        chSel.innerHTML = `<option value="auto">✨ 由 AI 依題目自動配對單元</option>`;
-        return;
+      for (let i = 0; i < firstDayIndex; i++) {
+        grid.appendChild(Object.assign(document.createElement('div'), { className: "h-14 rounded-xl bg-morandi-cream/20" }));
       }
-
-      (SUBJECT_CHAPTERS[subj] || []).forEach(c => {
-        chSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-      });
-    }
-
-    function compressAndReadImage(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const MAX_DIM = 1800;
-            let w = img.width;
-            let h = img.height;
-            if (w > h && w > MAX_DIM) {
-              h = Math.round((h * MAX_DIM) / w);
-              w = MAX_DIM;
-            } else if (h > MAX_DIM) {
-              w = Math.round((w * MAX_DIM) / h);
-              h = MAX_DIM;
-            }
-            const canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            resolve({
-              id: 'img-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-              name: file.name,
-              dataUrl: dataUrl,
-              base64: dataUrl.split(',')[1],
-              mimeType: 'image/jpeg'
-            });
-          };
-          img.onerror = () => {
-            const raw = e.target.result;
-            resolve({
-              id: 'img-' + Date.now(),
-              name: file.name,
-              dataUrl: raw,
-              base64: raw.split(',')[1],
-              mimeType: file.type || 'image/jpeg'
-            });
-          };
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function handleMultiImageSelect(event) {
-      const files = Array.from(event.target.files || []);
-      if (files.length === 0) return;
-
-      showToast(`正在載入並最佳化 ${files.length} 張考卷照片...`);
-
-      for (const file of files) {
-        try {
-          const item = await compressAndReadImage(file);
-          uploadedImages.push(item);
-        } catch (err) {
-          console.error('圖片讀取錯誤:', err);
-        }
-      }
-
-      event.target.value = '';
-      renderMultiImagePreview();
-    }
-
-    function renderMultiImagePreview() {
-      const wrapper = document.getElementById('multi-preview-wrapper');
-      const grid = document.getElementById('multi-preview-grid');
-      const countSpan = document.getElementById('selected-pages-count');
-
-      countSpan.innerText = uploadedImages.length;
-
-      if (uploadedImages.length === 0) {
-        wrapper.classList.add('hidden');
-        grid.innerHTML = '';
-        return;
-      }
-
-      wrapper.classList.remove('hidden');
-      const labels = ['第 1 頁 (正面)', '第 2 頁 (背面)', '第 3 頁', '第 4 頁', '第 5 頁', '第 6 頁'];
-
-      grid.innerHTML = uploadedImages.map((img, i) => `
-        <div class="relative rounded-2xl overflow-hidden border border-morandi-border bg-morandi-cream/50 p-2 flex flex-col">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-morandi-rose text-white">
-              ${labels[i] || `第 ${i + 1} 頁`}
-            </span>
-            <button onclick="removeUploadedImage('${img.id}')" class="text-[11px] font-bold text-morandi-roseDark hover:underline">
-              ✕ 移除
-            </button>
-          </div>
-          <img src="${img.dataUrl}" alt="考卷預覽" class="w-full h-28 object-contain rounded-lg bg-white border border-morandi-border/50">
-        </div>
-      `).join('');
-    }
-
-    function removeUploadedImage(id) {
-      uploadedImages = uploadedImages.filter(item => item.id !== id);
-      renderMultiImagePreview();
-    }
-
-    function clearAllUploadedImages() {
-      uploadedImages = [];
-      const input = document.getElementById('exam-image-input');
-      if (input) input.value = '';
-      renderMultiImagePreview();
-    }
-
-    async function getAvailableVisionModels(apiKey) {
-      const fallbackModels = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-lite',
-        'gemini-2.5-pro'
-      ];
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        if (!res.ok) return fallbackModels;
-        const data = await res.json();
-        if (!data.models || !Array.isArray(data.models)) return fallbackModels;
-
-        const supported = data.models
-          .filter(m => {
-            const name = (m.name || '').toLowerCase();
-            const methods = m.supportedGenerationMethods || [];
-            return (
-              methods.includes('generateContent') &&
-              name.includes('gemini') &&
-              !name.includes('1.5') &&
-              !name.includes('1.0') &&
-              !name.includes('embedding') &&
-              !name.includes('imagen') &&
-              !name.includes('tts') &&
-              !name.includes('audio') &&
-              !name.includes('thinking')
-            );
-          })
-          .map(m => m.name.replace('models/', ''));
-
-        supported.sort((a, b) => {
-          const score = (n) => {
-            if (n === 'gemini-2.5-flash') return 100;
-            if (n.startsWith('gemini-2.5-flash')) return 95;
-            if (n === 'gemini-2.0-flash') return 90;
-            if (n.startsWith('gemini-2.0-flash')) return 85;
-            if (n.includes('flash')) return 75;
-            if (n.includes('pro')) return 60;
-            return 10;
-          };
-          return score(b) - score(a);
-        });
-
-        return supported.length > 0 ? supported : fallbackModels;
-      } catch (e) {
-        return fallbackModels;
+      for (let day = 1; day <= totalDays; day++) {
+        const isExam2 = (month === 11 && (day === 2 || day === 3));
+        let bgClass = "bg-white";
+        if (isExam2) bgClass = "bg-morandi-roseLight/70 border border-morandi-rose/50";
+        const box = document.createElement('div');
+        box.className = `h-14 p-1.5 rounded-xl border border-morandi-border/60 ${bgClass} text-xs font-mono font-bold`;
+        box.innerText = day;
+        grid.appendChild(box);
       }
     }
 
-    async function testApiKeyConnection() {
-      const val = document.getElementById('input-api-key').value.trim() || localStorage.getItem('GEMINI_API_KEY');
-      const resultSpan = document.getElementById('test-key-result');
-      if (!val) {
-        resultSpan.innerText = '❌ 請先輸入 API Key';
-        return;
-      }
-      resultSpan.innerText = '連線檢測中...';
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${val}`);
-        const data = await res.json();
-        if (!res.ok) {
-          resultSpan.innerText = `❌ 金鑰錯誤: ${data.error?.message || res.status}`;
-          return;
-        }
-        const models = await getAvailableVisionModels(val);
-        localStorage.setItem('GEMINI_API_KEY', val);
-        resultSpan.innerText = `✅ 連線成功！首選模型: ${models[0]}`;
-        showToast(`金鑰驗證成功！將使用 ${models[0]} 模型辨識`);
-      } catch (err) {
-        resultSpan.innerText = `❌ 網路錯誤: ${err.message}`;
-      }
-    }
+    function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
+    function resetToCurrentMonth() { currentCalDate = new Date(); renderCalendar(); }
 
-    function safeParseAiJson(rawText) {
-      if (!rawText) throw new Error('空白回應');
-      let cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-      const firstBracket = cleaned.indexOf('[');
-      const lastBracket = cleaned.lastIndexOf(']');
-      if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
-        cleaned = cleaned.slice(firstBracket, lastBracket + 1);
-      } else {
-        const firstBrace = cleaned.indexOf('{');
-        const lastBrace = cleaned.lastIndexOf('}');
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          cleaned = '[' + cleaned.slice(firstBrace, lastBrace + 1) + ']';
-        }
-      }
-
-      try {
-        return JSON.parse(cleaned);
-      } catch (e1) {
-        const fixedBackslash = cleaned.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
-        try {
-          return JSON.parse(fixedBackslash);
-        } catch (e2) {
-          const fixedCtrl = fixedBackslash.replace(/[\u0000-\u0019]+/g, ' ');
-          return JSON.parse(fixedCtrl);
-        }
-      }
-    }
-
-    async function startAiAnalysis() {
-      const apiKey = (localStorage.getItem('GEMINI_API_KEY') || '').trim();
-      if (!apiKey) {
-        showToast('請先在右上角設定 ⚙️ 中填寫您的 Gemini API Key！', true);
-        toggleApiKeyModal();
-        return;
-      }
-
-      if (uploadedImages.length === 0) {
-        showToast('請先選取或拍攝至少一張含圖表的考卷照片！', true);
-        return;
-      }
-
-      const btn = document.getElementById('btn-start-analysis');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>正在辨識題目、截取圖表並生成 SVG 圖解中...</span>`;
-      lucide.createIcons();
-
-      const selectedSubject = document.getElementById('upload-subject').value;
-      const selectedChapter = document.getElementById('upload-chapter').value;
-      const customExamTitle = document.getElementById('upload-exam-title').value.trim();
-
-      const subjectHint = selectedSubject === 'auto'
-        ? '請根據考卷題目內容，自動判斷每一題屬於哪一個科目代碼（"math"=國八數學、"physics"=國八理化、"chinese"=國文、"english"=英文、"social"=社會）。'
-        : `這份考卷的科目固定為 "${selectedSubject}"（${SUBJECT_NAMES[selectedSubject]}）。`;
-
-      // 增強圖表截取與 SVG 圖解生成指令
-      const promptText = `你是一位專業的國中八年級名師。
-使用者上傳了 ${uploadedImages.length} 張考卷照片（包含含有幾何圖形、函數圖表、理化波形或統計圖表的題目）。
-【核心任務】
-1. 逐題掃描考卷中所有被老師用紅筆打叉(✗)、畫圈、扣分或學生空白未作答的錯題。**絕對不可漏題**！
-2. **圖表與圖解轉譯**：
-   - 若題目帶有圖表（例如幾何三角形、坐標圖、波長波形），請在題幹中清楚描述圖表數據，並**同時編寫一段乾淨且直觀的 SVG 向量圖解碼 (svgDiagram欄位)**，用以視覺化呈現該題的幾何關係、輔助線或物理波形，讓國二學生一眼就能看懂！
-   - SVG 必須使用 <svg viewBox="0 0 400 130" class="w-full max-w-md mx-auto my-2"> 開頭，搭配精美的顏色與標註。
-${subjectHint}
-
-請嚴格只回傳純 JSON 陣列（不要加任何 Markdown 程式碼標籤以外的文字），格式如下：
-[
-  {
-    "subject": "${selectedSubject === 'auto' ? 'math' : selectedSubject}",
-    "chapter": "${selectedChapter === 'auto' ? '2-2' : selectedChapter}",
-    "sourceExam": "考卷名稱或頁數來源",
-    "questionType": "題型與題號 (例如: 單選題 第 3 題)",
-    "content": "題目的完整文字與選項，若有圖表請附上文字描述",
-    "studentAnswer": "學生在考卷上寫的錯誤答案",
-    "correctAnswer": "此題的正確答案",
-    "pointsDeducted": 3,
-    "tag": "此題核心考點或圖表類型",
-    "svgDiagram": "<svg viewBox=\\"0 0 400 120\\" class=\\"w-full max-w-md mx-auto my-2\\"><rect width=\\"400\\\" height=\\"120\\\" fill=\\"#f5eee9\\" rx=\\"8\\"/><text x=\\"200\\\" y=\\"60\\\" font-size=\\"14\\\" text-anchor=\\"middle\\">圖解說明</text></svg>",
-    "solution": "詳細且適合國二學生理解的分步引導解析，結合圖解說明 (繁體中文)"
-  }
-]`;
-
-      const imageParts = uploadedImages.map(img => ({
-        inline_data: {
-          mime_type: img.mimeType || "image/jpeg",
-          data: img.base64
-        }
-      }));
-
-      let rawText = null;
-      let lastErrorMsg = '';
-
-      try {
-        setAiStatusLog('步驟 1/2：正在檢查可用模型...');
-        const models = await getAvailableVisionModels(apiKey);
-        setAiStatusLog(`步驟 2/2：使用模型 [${models[0]}] 進行圖表截取與圖解生成中...`);
-
-        for (const modelName of models.slice(0, 4)) {
-          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { text: promptText },
-                  ...imageParts
-                ]
-              }]
-            })
-          });
-
-          const data = await response.json();
-          if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            rawText = data.candidates[0].content.parts[0].text;
-            break;
-          } else {
-            const msg = data.error?.message || `HTTP ${response.status}`;
-            lastErrorMsg = `[${modelName}] ${msg}`;
-          }
-        }
-
-        if (!rawText) {
-          throw new Error(lastErrorMsg || 'AI 未回傳有效結果');
-        }
-
-        const parsed = safeParseAiJson(rawText);
-        const list = Array.isArray(parsed) ? parsed : [parsed];
-
-        stagingErrors = list.map((item, i) => {
-          const finalSubj = (selectedSubject !== 'auto') ? selectedSubject : (SUBJECT_NAMES[item.subject] ? item.subject : 'math');
-          const defaultChap = (SUBJECT_CHAPTERS[finalSubj] && SUBJECT_CHAPTERS[finalSubj][0]) ? SUBJECT_CHAPTERS[finalSubj][0].id : '2-2';
-          const finalChap = (selectedSubject !== 'auto' && selectedChapter !== 'auto') ? selectedChapter : (item.chapter || defaultChap);
-
-          return {
-            id: `ai-${Date.now()}-${i}`,
-            subject: finalSubj,
-            chapter: finalChap,
-            sourceExam: customExamTitle || item.sourceExam || `含圖表試卷 (${uploadedImages.length}頁)`,
-            questionType: item.questionType || `第 ${i + 1} 題`,
-            content: item.content || "",
-            studentAnswer: item.studentAnswer || "未填",
-            correctAnswer: item.correctAnswer || "",
-            pointsDeducted: Number(item.pointsDeducted) || 3,
-            tag: item.tag || "核心觀念",
-            svgDiagram: item.svgDiagram || '',
-            solution: item.solution || ""
-          };
-        });
-
-        renderDetectedList();
-        setAiStatusLog(`🎉 辨識完成！共抓取 ${stagingErrors.length} 道錯題並產出 SVG 幾何圖解。`);
-        showToast(`成功辨識出 ${stagingErrors.length} 道含圖表的錯題！`);
-      } catch (err) {
-        console.error(err);
-        setAiStatusLog(`❌ 辨識失敗：${err.message}`);
-        showToast(`辨識失敗：${err.message}`, true);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>開始 AI 辨識錯題與圖表圖解</span>`;
-        lucide.createIcons();
-      }
-    }
-
-    function updateStagingItemField(idx, field, val) {
-      if (!stagingErrors[idx]) return;
-      stagingErrors[idx][field] = val;
-      if (field === 'subject') {
-        const firstChap = (SUBJECT_CHAPTERS[val] && SUBJECT_CHAPTERS[val][0]) ? SUBJECT_CHAPTERS[val][0].id : '';
-        stagingErrors[idx].chapter = firstChap;
-        renderDetectedList();
-      }
-    }
-
-    function removeStagingItem(idx) {
-      stagingErrors.splice(idx, 1);
-      renderDetectedList();
-    }
-
-    function renderDetectedList() {
-      const container = document.getElementById('detected-list-container');
-      const badge = document.getElementById('detected-count-badge');
-      const commitBtn = document.getElementById('btn-commit-errors');
-
-      badge.innerText = `${stagingErrors.length} 題`;
-
-      if (stagingErrors.length === 0) {
-        container.innerHTML = `<div class="text-center py-12 text-morandi-textMuted text-xs">尚未辨識到錯題</div>`;
-        commitBtn.disabled = true;
-        return;
-      }
-
-      commitBtn.disabled = false;
-
+    function renderChecklist() {
+      const container = document.getElementById('exam-checklist-container');
+      if (!container) return;
       let html = '';
-      stagingErrors.forEach((err, idx) => {
-        const chapOptions = (SUBJECT_CHAPTERS[err.subject] || []).map(c =>
-          `<option value="${c.id}" ${c.id === err.chapter ? 'selected' : ''}>${c.name}</option>`
-        ).join('');
-
+      EXAM_CHECKLIST_DATA.forEach(sub => {
         html += `
-          <div class="p-4 rounded-2xl bg-morandi-cream/40 border border-morandi-border space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-morandi-border/60 pb-2">
-              <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                <span class="font-bold text-morandi-roseDark">#${idx + 1}</span>
-                <input type="text" value="${escapeHtml(err.questionType)}" oninput="updateStagingItemField(${idx}, 'questionType', this.value)" class="bg-white border border-morandi-border rounded px-2 py-0.5 text-[11px] font-bold w-28 text-morandi-text">
-                
-                <select onchange="updateStagingItemField(${idx}, 'subject', this.value)" class="bg-white border border-morandi-border rounded px-2 py-0.5 text-[11px] font-bold text-morandi-text">
-                  <option value="math" ${err.subject === 'math' ? 'selected' : ''}>國八數學</option>
-                  <option value="physics" ${err.subject === 'physics' ? 'selected' : ''}>國八理化</option>
-                  <option value="chinese" ${err.subject === 'chinese' ? 'selected' : ''}>國文</option>
-                  <option value="english" ${err.subject === 'english' ? 'selected' : ''}>英文</option>
-                  <option value="social" ${err.subject === 'social' ? 'selected' : ''}>社會</option>
-                </select>
-
-                <select onchange="updateStagingItemField(${idx}, 'chapter', this.value)" class="bg-white border border-morandi-border rounded px-2 py-0.5 text-[11px] text-morandi-text">
-                  ${chapOptions}
-                </select>
-              </div>
-
-              <div class="flex items-center space-x-2">
-                <span class="text-morandi-rose font-bold">扣 ${err.pointsDeducted} 分</span>
-                <button onclick="removeStagingItem(${idx})" class="text-morandi-textMuted hover:text-morandi-rose text-[11px] font-bold">移除</button>
-              </div>
-            </div>
-
-            <div class="space-y-1">
-              <label class="text-[10px] text-morandi-textMuted font-bold">題目內容：</label>
-              <textarea rows="2" oninput="updateStagingItemField(${idx}, 'content', this.value)" class="w-full bg-white border border-morandi-border rounded-xl p-2 text-xs text-[#3d3734] leading-relaxed focus:outline-none focus:ring-1 focus:ring-morandi-rose">${escapeHtml(err.content)}</textarea>
-            </div>
-
-            <!-- SVG 圖解預覽 -->
-            ${err.svgDiagram ? `<div class="p-2 bg-white rounded-xl border border-morandi-border">${err.svgDiagram}</div>` : ''}
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div>
-                <label class="text-[10px] text-morandi-textMuted font-bold">學生作答：</label>
-                <input type="text" value="${escapeHtml(err.studentAnswer)}" oninput="updateStagingItemField(${idx}, 'studentAnswer', this.value)" class="w-full bg-white border border-morandi-border rounded-lg px-2 py-1 text-xs text-morandi-roseDark font-semibold">
-              </div>
-              <div>
-                <label class="text-[10px] text-morandi-textMuted font-bold">正確解答：</label>
-                <input type="text" value="${escapeHtml(err.correctAnswer)}" oninput="updateStagingItemField(${idx}, 'correctAnswer', this.value)" class="w-full bg-white border border-morandi-border rounded-lg px-2 py-1 text-xs text-morandi-sageDark font-semibold">
-              </div>
-            </div>
+          <div class="border border-morandi-border rounded-2xl overflow-hidden bg-white">
+            <div class="bg-morandi-cream/60 px-4 py-2.5 font-bold text-xs text-[#3d3734]">${sub.subjectName}</div>
+            <div class="p-3 text-xs text-morandi-textMuted">已完成複習進度追蹤</div>
           </div>
         `;
       });
-
       container.innerHTML = html;
     }
 
-    function commitDetectedErrors() {
-      if (stagingErrors.length === 0) return;
-
-      const targetSubj = stagingErrors[0].subject || 'math';
-      const addedCount = stagingErrors.length;
-
-      allErrors = [...stagingErrors, ...allErrors];
-      localStorage.setItem('EXAM_ERRORS_CLEAN_V3.6', JSON.stringify(allErrors));
-
-      stagingErrors = [];
-      clearAllUploadedImages();
-      setAiStatusLog('');
-      renderDetectedList();
-      updateSubjectStats();
-      generatePrintPreview();
-
-      switchTab('library');
-      selectSubject(targetSubj);
-      showToast(`🎉 已成功將 ${addedCount} 道含圖解的錯題加入「${SUBJECT_NAMES[targetSubj]}」題庫！`);
-    }
-
-    function setPomoMode(mode) {
-      clearInterval(pomoTimer);
-      isPomoRunning = false;
-      document.getElementById('btn-pomo-toggle').innerText = "開始計時";
-
-      const b25 = document.getElementById('pomo-mode-focus25');
-      const b45 = document.getElementById('pomo-mode-exam45');
-      const b5 = document.getElementById('pomo-mode-rest5');
-
-      [b25, b45, b5].forEach(b => b.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text");
-
-      if (mode === 'focus25') {
-        pomoTotalTime = 25 * 60;
-        b25.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white";
-        document.getElementById('pomo-status-label').innerText = "專注複習中";
-      } else if (mode === 'exam45') {
-        pomoTotalTime = 45 * 60;
-        b45.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white";
-        document.getElementById('pomo-status-label').innerText = "模擬考場計時中";
-      } else if (mode === 'rest5') {
-        pomoTotalTime = 5 * 60;
-        b5.className = "px-3.5 py-1.5 rounded-xl text-xs font-bold bg-morandi-sage text-white";
-        document.getElementById('pomo-status-label').innerText = "休息放鬆時間";
-      }
-
-      pomoTimeLeft = pomoTotalTime;
-      updatePomoDisplay();
-    }
-
-    function togglePomodoro() {
-      const btn = document.getElementById('btn-pomo-toggle');
-      if (isPomoRunning) {
-        clearInterval(pomoTimer);
-        isPomoRunning = false;
-        btn.innerText = "繼續計時";
-      } else {
-        isPomoRunning = true;
-        btn.innerText = "暫停";
-        pomoTimer = setInterval(() => {
-          pomoTimeLeft--;
-          updatePomoDisplay();
-          if (pomoTimeLeft <= 0) {
-            clearInterval(pomoTimer);
-            isPomoRunning = false;
-            showToast('專注時間結束！恭喜完成一個學習階段！');
-            btn.innerText = "開始計時";
-          }
-        }, 1000);
-      }
-    }
-
-    function resetPomodoro() {
-      clearInterval(pomoTimer);
-      isPomoRunning = false;
-      pomoTimeLeft = pomoTotalTime;
-      const btn = document.getElementById('btn-pomo-toggle');
-      if (btn) btn.innerText = "開始計時";
-      updatePomoDisplay();
-    }
-
-    function updatePomoDisplay() {
-      const m = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
-      const s = (pomoTimeLeft % 60).toString().padStart(2, '0');
-      const display = document.getElementById('pomo-timer-display');
-      if (display) display.innerText = `${m}:${s}`;
-
-      const circle = document.getElementById('pomo-circle');
-      if (circle) {
-        const offset = 603 - (pomoTimeLeft / pomoTotalTime) * 603;
-        circle.style.strokeDashoffset = offset;
-      }
-    }
-
     function toggleApiKeyModal() {
-      const modal = document.getElementById('modal-api-key');
-      modal.classList.toggle('hidden');
+      document.getElementById('modal-api-key').classList.toggle('hidden');
       const saved = localStorage.getItem('GEMINI_API_KEY');
-      if (saved) {
-        document.getElementById('input-api-key').value = saved;
-      }
-      document.getElementById('test-key-result').innerText = '';
+      if (saved) document.getElementById('input-api-key').value = saved;
     }
 
     function saveApiKey() {
       const val = document.getElementById('input-api-key').value.trim();
-      if (!val) {
-        showToast('請輸入有效的 API Key', true);
-        return;
-      }
+      if (!val) { alert('請輸入有效的 API Key'); return; }
       localStorage.setItem('GEMINI_API_KEY', val);
-      showToast('Gemini API Key 儲存成功！');
+      alert('API Key 儲存成功！');
       toggleApiKeyModal();
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
   </script>
 </body>
