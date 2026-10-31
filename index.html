@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>段考複習與錯題管理系統</title>
+  <title>段考複習與錯題管理系統 (完整強化版)</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -53,7 +53,6 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* 列印專屬修復：徹底杜絕列印空白頁 */
     @media print {
       header, nav, #tab-dashboard, #tab-calendar, #tab-library, #tab-camera, #tab-generator, #tab-pomodoro, #modal-api-key, .no-print {
         display: none !important;
@@ -112,11 +111,10 @@
       <div class="flex items-center space-x-3">
         <div>
           <h1 class="font-bold text-base sm:text-lg text-[#3d3734]">段考複習與錯題管理系統</h1>
-          <p class="text-xs text-morandi-textMuted">SVG 圖形解題 · 全科目考程進度管理</p>
+          <p class="text-xs text-morandi-textMuted">AI 智慧辨識 · 多張考卷圖解分類</p>
         </div>
       </div>
 
-      <!-- 倒數考程徽章 -->
       <div class="flex items-center space-x-2 sm:space-x-3">
         <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-morandi-roseLight/70 border border-morandi-rose/30 text-morandi-roseDark text-xs font-semibold">
           <i data-lucide="clock" class="w-3.5 h-3.5"></i>
@@ -132,7 +130,7 @@
           <span class="text-[10px]">天</span>
         </div>
 
-        <button onclick="toggleApiKeyModal()" class="p-2 rounded-xl text-morandi-textMuted hover:text-morandi-clay hover:bg-morandi-cream transition" title="API Key 設定">
+        <button onclick="toggleApiKeyModal()" class="p-2 rounded-xl text-morandi-textMuted hover:text-morandi-clay hover:bg-morandi-cream transition" title="API Key 設定與測試">
           <i data-lucide="settings" class="w-5 h-5"></i>
         </button>
       </div>
@@ -241,7 +239,6 @@
         </div>
       </div>
 
-      <!-- 月曆卡片 -->
       <div class="bg-white rounded-3xl p-6 border border-morandi-border shadow-sm space-y-4">
         <div class="flex items-center justify-between border-b border-[#f0e4dc] pb-3">
           <div class="flex items-center space-x-3">
@@ -271,7 +268,6 @@
         <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2"></div>
       </div>
 
-      <!-- 複習進度勾選表 (五維度) -->
       <div class="bg-white rounded-3xl p-6 border border-morandi-border shadow-sm space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-morandi-border pb-4">
           <div class="flex items-center space-x-3">
@@ -299,18 +295,6 @@
       </div>
     </section>
 
-    <!-- 隱藏列印專用檢視 -->
-    <div id="a4-calendar-print-view" class="hidden bg-white text-slate-800 p-8 space-y-6">
-      <div class="border-b-2 border-slate-800 pb-3 flex justify-between items-end">
-        <div>
-          <h1 class="text-xl font-bold tracking-wide">115學年度第一學期 八年級 第二次段考 複習進度與考程總表</h1>
-          <p class="text-xs text-slate-600 mt-1">考試日期：12/2 (三) ～ 12/3 (四) ｜ 班級：______ 座號：______ 姓名：______</p>
-        </div>
-      </div>
-      <div id="a4-calendar-table-container"></div>
-      <div id="a4-checklist-table-container"></div>
-    </div>
-
     <!-- 頁面 3: 錯題圖解庫 (Library) -->
     <section id="tab-library" class="hidden space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -323,7 +307,6 @@
         </div>
       </div>
 
-      <!-- 單一科目切換列 (科目已簡化) -->
       <div class="bg-white p-4 rounded-3xl border border-morandi-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
           <button onclick="selectSubject('math')" id="subj-btn-math" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-rose text-white shadow-sm">數學</button>
@@ -355,7 +338,7 @@
         <div class="lg:col-span-5 space-y-4">
           <div class="bg-white p-6 rounded-3xl border border-morandi-border shadow-sm space-y-4">
             <div>
-              <label class="block text-xs font-bold text-[#3d3734] mb-1">科目歸類模式</label>
+              <label class="block text-xs font-bold text-[#3d3734] mb-1">科目與章節歸類模式</label>
               <select id="upload-subject-mode" onchange="toggleSubjectMode()" class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-medium text-morandi-text mb-2">
                 <option value="ai">🤖 AI 自動智慧判斷科目與章節</option>
                 <option value="manual">手動指定科目與章節</option>
@@ -392,7 +375,6 @@
               </label>
             </div>
 
-            <!-- 已選取照片預覽網格 -->
             <div id="multi-image-preview-grid" class="grid grid-cols-2 gap-3"></div>
 
             <div class="flex items-center justify-between">
@@ -519,32 +501,35 @@
 
   </main>
 
-  <!-- 彈出視窗: API Key 設定 -->
+  <!-- 彈出視窗: API Key 設定與連線測試 -->
   <div id="modal-api-key" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 border border-morandi-border shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="font-bold text-base text-[#3d3734]">Gemini API Key 設定</h3>
+        <h3 class="font-bold text-base text-[#3d3734]">Gemini API Key 設定與連線測試</h3>
         <button onclick="toggleApiKeyModal()" class="text-morandi-textMuted hover:text-morandi-clay">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
       <p class="text-xs text-morandi-textMuted">
-        請輸入您的 Google Gemini API Key。金鑰僅會保存在您目前的瀏覽器本機中 (LocalStorage)，不會上傳至任何伺服器。
+        請輸入您的 Google Gemini API Key（免費）。金鑰僅會保存在您目前的瀏覽器本機中 (LocalStorage)。
       </p>
       <div>
         <label class="block text-xs font-semibold text-morandi-text mb-1">API Key</label>
         <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-mono text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
       </div>
-      <div class="flex justify-end space-x-2 pt-2">
-        <button onclick="toggleApiKeyModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-morandi-textMuted hover:bg-morandi-cream transition">取消</button>
-        <button onclick="saveApiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-rose hover:bg-morandi-roseDark text-white transition">儲存金鑰</button>
+      <div id="api-test-result" class="text-xs font-medium"></div>
+      <div class="flex items-center justify-between pt-2">
+        <button onclick="testApiKeyConnection()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-sage text-white hover:bg-morandi-sageDark transition">測試連線</button>
+        <div class="space-x-2">
+          <button onclick="toggleApiKeyModal()" class="px-3 py-2 rounded-xl text-xs font-bold text-morandi-textMuted hover:bg-morandi-cream transition">取消</button>
+          <button onclick="saveApiKey()" class="px-4 py-2 rounded-xl text-xs font-bold bg-morandi-rose hover:bg-morandi-roseDark text-white transition">儲存金鑰</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- JavaScript 核心邏輯 -->
   <script>
-    // 章節定義（社會科已細分歷史、地理、公民的第 3 章與第 4 章）
     const SUBJECT_CHAPTERS = {
       math: [
         { id: "2-2", name: "2-2 根式的運算與化簡" },
@@ -580,7 +565,6 @@
       ]
     };
 
-    // 二段各科五維度檢核項目資料 (社會科已獨立細分)
     const EXAM_CHECKLIST_DATA = [
       {
         subjectKey: "math",
@@ -650,13 +634,8 @@
     let stagingImages = [];
     let stagingErrors = [];
 
-    let pomoTimer = null;
-    let pomoTimeLeft = 25 * 60;
-    let pomoTotalTime = 25 * 60;
-    let isPomoRunning = false;
-
     window.addEventListener('DOMContentLoaded', () => {
-      const savedErrors = localStorage.getItem('EXAM_ERRORS_CLEAN_V4.0');
+      const savedErrors = localStorage.getItem('EXAM_ERRORS_CLEAN_V4.1');
       if (savedErrors) {
         try { allErrors = JSON.parse(savedErrors); } catch(e) { allErrors = []; }
       } else {
@@ -714,7 +693,7 @@
       if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 
-    // 拍照上傳多張照片處理
+    // 照片上傳多張/正反面處理
     function handleMultipleImagesSelect(event) {
       const files = event.target.files;
       if (!files || files.length === 0) return;
@@ -735,21 +714,17 @@
     function renderStagingImagePreviews() {
       const grid = document.getElementById('multi-image-preview-grid');
       if (!grid) return;
-
       if (stagingImages.length === 0) {
         grid.innerHTML = '';
         return;
       }
-
       let html = '';
       stagingImages.forEach((img, idx) => {
         html += `
           <div class="relative rounded-2xl overflow-hidden border border-morandi-border bg-morandi-cream group h-32">
             <img src="${img.dataUrl}" alt="考卷" class="w-full h-full object-cover">
-            <div class="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full">
-              第 ${idx + 1} 頁
-            </div>
-            <button onclick="removeStagingImage(${idx})" class="absolute top-1 right-1 bg-rose-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-rose-600">×</button>
+            <div class="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full">第 ${idx + 1} 頁</div>
+            <button onclick="removeStagingImage(${idx})" class="absolute top-1 right-1 bg-rose-500 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center">×</button>
           </div>
         `;
       });
@@ -784,7 +759,7 @@
       });
     }
 
-    // AI 拍照辨識解析多張考卷 (支援自動判斷科目與章節，強制生成 SVG 幾何圖解)
+    // AI 拍照辨識解析多張考卷 (自動判斷科目、章節與 SVG 圖解生成)
     async function startAiAnalysisMulti() {
       const apiKey = localStorage.getItem('GEMINI_API_KEY');
       if (!apiKey) {
@@ -812,7 +787,7 @@
         parts.push({
           text: `你是一位資深國中教師。這是一份或多份學生的平時考卷照片（含正面與背面）。請逐題掃描卷面上所有被紅筆打叉(✗)、扣分或空白的錯題。
           請自動判斷每題所屬的科目（math、physics、chinese、english、social）與對應章節代號。
-          **最重要要求**：如果題目含有幾何、數線、座標或理化波形圖表，請務必在 "svgDiagram" 欄位中手動編寫一段高質感的精美 SVG 向量圖解程式碼（例如 <svg viewBox="0 0 420 130" ...>...</svg>），讓學生能一眼看懂圖形與解題關鍵！
+          如果題目含有幾何、數線、座標或理化波形圖表，請務必在 "svgDiagram" 欄位中手動編寫一段高質感的精美 SVG 向量圖解程式碼（例如 <svg viewBox="0 0 420 130" ...>...</svg>）。
           請以嚴格的 JSON 陣列格式回傳，不要有額外 markdown 標籤：
           [
             {
@@ -832,11 +807,10 @@
 
         stagingImages.forEach(img => {
           const base64 = img.dataUrl.split(',')[1];
-          parts.push({
-            inline_data: { mime_type: "image/jpeg", data: base64 }
-          });
+          parts.push({ inline_data: { mime_type: "image/jpeg", data: base64 } });
         });
 
+        // 使用最穩定相容的 gemini-2.5-flash 模型
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -844,6 +818,10 @@
         });
 
         const data = await resp.json();
+        if (data.error) {
+          throw new Error(data.error.message || 'API 呼叫失敗');
+        }
+
         const rawText = data.candidates[0].content.parts[0].text;
         const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(cleaned);
@@ -866,7 +844,7 @@
         renderDetectedList();
       } catch (err) {
         console.error(err);
-        alert('辨識失敗，請檢查 API Key 是否正確或照片是否清晰！');
+        alert('辨識失敗：' + err.message + '\n請檢查 API Key 是否正確或網路是否順暢。');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>開始 AI 辨識與 SVG 圖解生成</span>`;
@@ -920,7 +898,7 @@
     function commitDetectedErrors() {
       if (stagingErrors.length === 0) return;
       allErrors = [...stagingErrors, ...allErrors];
-      localStorage.setItem('EXAM_ERRORS_CLEAN_V4.0', JSON.stringify(allErrors));
+      localStorage.setItem('EXAM_ERRORS_CLEAN_V4.1', JSON.stringify(allErrors));
       alert(`成功將 ${stagingErrors.length} 道錯題與 SVG 圖解分類加入對應科目題庫！`);
       stagingErrors = [];
       clearStagingImages();
@@ -930,12 +908,12 @@
       switchTab('library');
     }
 
-    // 五維度進度勾選表渲染與儲存
+    // 進度表渲染與儲存
     function renderChecklist() {
       const container = document.getElementById('exam-checklist-container');
       if (!container) return;
 
-      const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS_V4.0') || '{}');
+      const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS_V4.1') || '{}');
       let totalBoxes = 0;
       let checkedBoxes = 0;
 
@@ -997,13 +975,13 @@
     }
 
     function toggleChecklistItem(key) {
-      const saved = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS_V4.0') || '{}');
+      const saved = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS_V4.1') || '{}');
       saved[key] = !saved[key];
-      localStorage.setItem('EXAM_CHECKLIST_STATUS_V4.0', JSON.stringify(saved));
+      localStorage.setItem('EXAM_CHECKLIST_STATUS_V4.1', JSON.stringify(saved));
       renderChecklist();
     }
 
-    // 錯題圖解庫與篩選
+    // 錯題圖解庫
     function selectSubject(subjKey) {
       currentSubject = subjKey;
       ['math', 'physics', 'chinese', 'english', 'social'].forEach(s => {
@@ -1102,7 +1080,7 @@
       if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
     }
 
-    // A4 列印與預覽
+    // A4 列印
     function generatePrintPreview() {
       const paperView = document.getElementById('printable-a4-view');
       const title = document.getElementById('gen-paper-title').value;
@@ -1161,7 +1139,7 @@
       setTimeout(() => { document.body.className = ""; }, 500);
     }
 
-    // 番茄鐘與行事曆
+    // 月曆與番茄鐘
     function renderCalendar() {
       const title = document.getElementById('calendar-month-title');
       const grid = document.getElementById('calendar-grid');
@@ -1190,17 +1168,38 @@
 
     function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
     function resetToCurrentMonth() { currentCalDate = new Date(); renderCalendar(); }
+    function printA4CalendarPlan() { document.body.className = "printing-calendar"; window.print(); setTimeout(() => { document.body.className = ""; }, 500); }
 
-    function printA4CalendarPlan() {
-      document.body.className = "printing-calendar";
-      window.print();
-      setTimeout(() => { document.body.className = ""; }, 500);
-    }
-
+    // API Key 設定與連線測試功能
     function toggleApiKeyModal() {
       document.getElementById('modal-api-key').classList.toggle('hidden');
       const saved = localStorage.getItem('GEMINI_API_KEY');
       if (saved) document.getElementById('input-api-key').value = saved;
+      document.getElementById('api-test-result').innerHTML = '';
+    }
+
+    async function testApiKeyConnection() {
+      const val = document.getElementById('input-api-key').value.trim();
+      const resEl = document.getElementById('api-test-result');
+      if (!val) {
+        resEl.innerHTML = '<span class="text-rose-500">請先輸入 API Key</span>';
+        return;
+      }
+      resEl.innerHTML = '<span class="text-amber-600">正在測試連線中...</span>';
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${val}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+        });
+        const data = await resp.json();
+        if (data.error) {
+          throw new Error(data.error.message);
+        }
+        resEl.innerHTML = '<span class="text-emerald-600 font-bold">✅ API Key 連線成功！可以使用 AI 辨識。</span>';
+      } catch (err) {
+        resEl.innerHTML = `<span class="text-rose-500 font-bold">❌ 連線失敗: ${err.message}</span>`;
+      }
     }
 
     function saveApiKey() {
@@ -1213,3 +1212,4 @@
   </script>
 </body>
 </html>
+  
