@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -502,6 +503,22 @@
         <input type="password" id="input-api-key" placeholder="AIzaSy..." class="w-full bg-morandi-cream border border-morandi-border rounded-xl px-3 py-2 text-xs font-mono text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
       </div>
       <div id="test-connection-result" class="text-xs font-medium"></div>
+      
+      <!-- 備份與還原功能 -->
+      <div class="pt-3 border-t border-morandi-border space-y-2">
+        <label class="block text-xs font-bold text-[#3d3734]">資料備份與還原 (JSON)</label>
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="exportBackupJson()" class="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-morandi-cream border border-morandi-border text-morandi-clayDark hover:bg-morandi-border transition flex items-center justify-center space-x-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>匯出備份 (JSON)</span>
+          </button>
+          <button type="button" onclick="document.getElementById('import-json-input').click()" class="flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-morandi-cream border border-morandi-border text-morandi-clayDark hover:bg-morandi-border transition flex items-center justify-center space-x-1">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i><span>匯入還原</span>
+          </button>
+          <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importBackupJson(event)">
+        </div>
+        <p class="text-[11px] text-morandi-textMuted">更換裝置或清除快取前，建議先匯出 JSON 備份檔保存。</p>
+      </div>
+
       <div class="flex justify-between items-center pt-2">
         <button type="button" onclick="testApiKeyConnection()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-morandi-sage text-white hover:bg-morandi-sageDark transition flex items-center space-x-1 cursor-pointer">
           <i data-lucide="wifi" class="w-3.5 h-3.5"></i><span>測試連線</span>
@@ -688,104 +705,185 @@
 
       EXAM_CHECKLIST_DATA.forEach(sub => {
         html += `
-          <div class="border border-morandi-border rounded-2xl overflow-hidden bg-white">
-            <div class="bg-morandi-cream/60 px-4 py-2.5 border-b border-morandi-border flex items-center justify-between">
-              <span class="font-bold text-xs sm:text-sm text-[#3d3734] flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-morandi-${sub.badgeColor}"></span>
-                <span>${sub.subjectName}</span>
-              </span>
+          <div class="border border-morandi-border rounded-2xl p-4 bg-morandi-cream/20 space-y-3">
+            <div class="flex items-center justify-between border-b border-morandi-border/60 pb-2">
+              <span class="font-bold text-sm text-[#3d3734]">${sub.subjectName}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-white border border-morandi-border text-morandi-clayDark">${sub.chapters.length} 個單元</span>
             </div>
-            <div class="divide-y divide-[#f7f2ed]">
+            <div class="space-y-2">
         `;
+
         sub.chapters.forEach(ch => {
-          const dims = [{key: 'prep', label: '預習'}, {key: 'review', label: '複習'}, {key: 'handout', label: '講義'}, {key: 'quiz', label: '測驗卷'}, {key: 'mock', label: '考古題'}];
+          const dims = [
+            { key: 'prep', label: '預習' },
+            { key: 'review', label: '複習' },
+            { key: 'handout', label: '講義' },
+            { key: 'quiz', label: '測驗卷' },
+            { key: 'mock', label: '考古題' }
+          ];
+
           html += `
-            <div class="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-morandi-cream/20 transition">
-              <span class="text-xs font-medium text-morandi-text">${ch.name}</span>
-              <div class="grid grid-cols-5 gap-2 sm:gap-3 shrink-0">
+            <div class="bg-white p-3 rounded-xl border border-morandi-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="font-medium text-xs text-[#3d3734]">${ch.name}</div>
+              <div class="flex items-center gap-2 flex-wrap">
           `;
+
           dims.forEach(d => {
+            const itemKey = `${ch.id}_${d.key}`;
+            const isChecked = !!savedChecklist[itemKey];
             totalBoxes++;
-            const boxKey = `${ch.id}_${d.key}`;
-            const isChecked = !!savedChecklist[boxKey];
             if (isChecked) checkedBoxes++;
+
             html += `
-              <label class="flex items-center space-x-1 cursor-pointer select-none text-[11px] text-morandi-textMuted hover:text-morandi-clay">
-                <input type="checkbox" onchange="toggleChecklistItem('${boxKey}')" ${isChecked ? 'checked' : ''} class="w-3.5 h-3.5 rounded text-morandi-rose focus:ring-0 border-morandi-border">
+              <label class="cursor-pointer inline-flex items-center space-x-1 text-[11px] px-2 py-1 rounded-lg border transition select-none ${isChecked ? 'bg-morandi-roseLight/60 border-morandi-rose/40 text-morandi-roseDark font-bold' : 'bg-morandi-cream/40 border-morandi-border text-morandi-textMuted hover:bg-morandi-cream'}">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleChecklist('${itemKey}')" class="hidden">
+                <span>${isChecked ? '✓' : '○'}</span>
                 <span>${d.label}</span>
               </label>
             `;
           });
-          html += `</div></div>`;
+
+          html += `
+              </div>
+            </div>
+          `;
         });
-        html += `</div></div>`;
+
+        html += `
+            </div>
+          </div>
+        `;
       });
+
       container.innerHTML = html;
+
       const pct = totalBoxes > 0 ? Math.round((checkedBoxes / totalBoxes) * 100) : 0;
-      if (document.getElementById('checklist-progress-text')) document.getElementById('checklist-progress-text').innerText = `${pct}% (${checkedBoxes}/${totalBoxes})`;
-      if (document.getElementById('checklist-progress-bar')) document.getElementById('checklist-progress-bar').style.width = `${pct}%`;
-      if (document.getElementById('stat-checklist-pct')) document.getElementById('stat-checklist-pct').innerText = `${pct}%`;
+      const pctText = document.getElementById('checklist-progress-text');
+      const pctBar = document.getElementById('checklist-progress-bar');
+      const statPct = document.getElementById('stat-checklist-pct');
+      if (pctText) pctText.innerText = `${pct}%`;
+      if (pctBar) pctBar.style.width = `${pct}%`;
+      if (statPct) statPct.innerText = `${pct}%`;
+      if (window.lucide) lucide.createIcons();
     }
 
-    function toggleChecklistItem(key) {
-      const saved = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS') || '{}');
-      saved[key] = !saved[key];
-      localStorage.setItem('EXAM_CHECKLIST_STATUS', JSON.stringify(saved));
+    function toggleChecklist(key) {
+      const savedChecklist = JSON.parse(localStorage.getItem('EXAM_CHECKLIST_STATUS') || '{}');
+      savedChecklist[key] = !savedChecklist[key];
+      localStorage.setItem('EXAM_CHECKLIST_STATUS', JSON.stringify(savedChecklist));
       renderChecklist();
     }
 
+    // ==========================================
+    // 行事曆渲染函式
+    // ==========================================
     function renderCalendar() {
-      const title = document.getElementById('calendar-month-title');
       const grid = document.getElementById('calendar-grid');
-      if (!grid) return;
+      const title = document.getElementById('calendar-month-title');
+      if (!grid || !title) return;
+
       const year = currentCalDate.getFullYear();
       const month = currentCalDate.getMonth();
       title.innerText = `${year} 年 ${month + 1} 月`;
-      grid.innerHTML = '';
-      const firstDayIndex = new Date(year, month, 1).getDay();
+
+      const firstDay = new Date(year, month, 1).getDay();
       const totalDays = new Date(year, month + 1, 0).getDate();
 
-      for (let i = 0; i < firstDayIndex; i++) {
-        const empty = document.createElement('div');
-        empty.className = "h-14 sm:h-16 rounded-xl bg-morandi-cream/20";
-        grid.appendChild(empty);
+      let html = '';
+      for (let i = 0; i < firstDay; i++) {
+        html += `<div class="p-2 sm:p-3 rounded-xl bg-morandi-cream/20 border border-transparent"></div>`;
       }
-      const today = new Date();
-      for (let day = 1; day <= totalDays; day++) {
-        const dateBox = document.createElement('div');
-        const isToday = (today.getFullYear() === year && today.getMonth() === month && today.getDate() === day);
-        const isExam2 = (month === 11 && (day === 2 || day === 3));
-        const isExam3 = (month === 0 && (day === 18 || day === 19));
-        let bgClass = "bg-white hover:bg-morandi-cream/50";
-        let badge = "";
-        if (isExam2) { bgClass = "bg-morandi-roseLight/70 border border-morandi-rose/50"; badge = `<span class="mt-1 text-[9px] font-bold px-1 py-0.5 rounded bg-morandi-rose text-white scale-90 inline-block">二段</span>`; }
-        else if (isExam3) { bgClass = "bg-morandi-sageLight/70 border border-morandi-sage/50"; badge = `<span class="mt-1 text-[9px] font-bold px-1 py-0.5 rounded bg-morandi-sage text-white scale-90 inline-block">三段</span>`; }
-        else if (isToday) { bgClass = "bg-morandi-cream border-2 border-morandi-clay"; }
-        dateBox.className = `h-14 sm:h-16 p-1.5 rounded-xl border border-morandi-border/60 flex flex-col justify-between ${bgClass} transition`;
-        dateBox.innerHTML = `<div class="flex justify-between items-start"><span class="text-xs font-mono font-bold ${isToday ? 'text-morandi-clayDark' : 'text-morandi-text'}">${day}</span></div><div>${badge}</div>`;
-        grid.appendChild(dateBox);
-      }
-    }
-    function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
-    function resetToCurrentMonth() { currentCalDate = new Date(); renderCalendar(); }
 
-    function selectSubject(subjKey) {
-      currentSubject = subjKey;
+      for (let day = 1; day <= totalDays; day++) {
+        const isExam2 = (year === 2026 && month === 11 && (day === 2 || day === 3));
+        const isExam3 = (year === 2027 && month === 0 && day === 18);
+        const isSprint = (year === 2026 && month === 11 && day === 1);
+
+        let badgeHtml = '';
+        let cellClass = 'bg-morandi-cream/30 border-morandi-border/60 hover:bg-morandi-cream';
+
+        if (isExam2) {
+          cellClass = 'bg-morandi-roseLight border-morandi-rose text-morandi-roseDark font-bold';
+          badgeHtml = `<span class="mt-1 block text-[10px] px-1 py-0.5 rounded bg-morandi-rose text-white text-center">二段考</span>`;
+        } else if (isExam3) {
+          cellClass = 'bg-morandi-sageLight border-morandi-sage text-morandi-sageDark font-bold';
+          badgeHtml = `<span class="mt-1 block text-[10px] px-1 py-0.5 rounded bg-morandi-sageDark text-white text-center">三段考</span>`;
+        } else if (isSprint) {
+          badgeHtml = `<span class="mt-1 block text-[10px] px-1 py-0.5 rounded bg-morandi-clayLight text-morandi-clayDark text-center font-bold">考前衝刺</span>`;
+        }
+
+        html += `
+          <div class="min-h-[58px] p-1.5 sm:p-2 rounded-xl border ${cellClass} transition flex flex-col justify-between">
+            <span class="text-xs font-mono font-bold">${day}</span>
+            ${badgeHtml}
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function changeMonth(delta) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function resetToCurrentMonth() {
+      currentCalDate = new Date();
+      renderCalendar();
+    }
+
+    // ==========================================
+    // 科目切換邏輯
+    // ==========================================
+    function selectSubject(subj) {
+      currentSubject = subj;
       ['math', 'physics', 'chinese', 'english', 'social'].forEach(s => {
         const btn = document.getElementById(`subj-btn-${s}`);
         if (btn) {
-          btn.className = s === subjKey 
+          btn.className = s === subj
             ? "px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-rose text-white shadow-sm"
             : "px-4 py-2 rounded-xl text-xs font-bold transition bg-morandi-cream text-morandi-text hover:bg-morandi-border";
         }
       });
-      const filterChap = document.getElementById('filter-chapter');
-      if (filterChap) {
-        filterChap.innerHTML = '<option value="all">全部單元</option>';
-        (SUBJECT_CHAPTERS[subjKey] || []).forEach(c => {
-          filterChap.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+
+      const chSel = document.getElementById('filter-chapter');
+      if (chSel) {
+        chSel.innerHTML = '<option value="all">全部單元</option>';
+        (SUBJECT_CHAPTERS[subj] || []).forEach(c => {
+          chSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
         });
       }
+      renderLibrary();
+    }
+
+    // 控制單題解析的展開與收合
+    function toggleSolution(id) {
+      const el = document.getElementById(id);
+      const icon = document.getElementById(`icon-${id}`);
+      const text = document.getElementById(`text-${id}`);
+      if (!el) return;
+
+      const isHidden = el.classList.contains('hidden');
+      if (isHidden) {
+        el.classList.remove('hidden');
+        if (text) text.innerText = '收起解析';
+        if (icon) icon.setAttribute('data-lucide', 'chevron-up');
+      } else {
+        el.classList.add('hidden');
+        if (text) text.innerText = '展開完整解析與圖解';
+        if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // 刪除單筆錯題
+    function deleteSingleError(id) {
+      if (!confirm('確定要從題庫中刪除這道錯題嗎？')) return;
+      allErrors = allErrors.filter(e => e.id !== id);
+      localStorage.setItem('EXAM_ERRORS_V3', JSON.stringify(allErrors));
+      updateCountdowns();
       renderLibrary();
     }
 
@@ -1000,8 +1098,23 @@
         if (!data) throw new Error(lastErr || '所有可用模型皆無法連線，請檢查 API Key 或網路');
 
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-        const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const parsed = JSON.parse(cleanedJson);
+        
+        // 增強型 JSON 清理邏輯：修復反斜線、移除 markdown 圍欄，並精準擷取最外層中括號
+        let cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const firstBracket = cleanedJson.indexOf('[');
+        const lastBracket = cleanedJson.lastIndexOf(']');
+        if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+          cleanedJson = cleanedJson.substring(firstBracket, lastBracket + 1);
+        }
+
+        let parsed;
+        try {
+          parsed = JSON.parse(cleanedJson);
+        } catch (jsonErr) {
+          // 若直接 parse 失敗，通常為 LaTeX 反斜線問題，做安全轉義處理
+          const escaped = cleanedJson.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+          parsed = JSON.parse(escaped);
+        }
 
         stagingErrors = parsed.map((item, i) => ({
           id: `ai-${Date.now()}-${i}`,
@@ -1448,6 +1561,72 @@
       localStorage.setItem('GEMINI_API_KEY', val);
       alert('Gemini API Key 儲存成功！');
       toggleApiKeyModal();
+    }
+
+    // ==========================================
+    // 備份與還原功能 (JSON 匯出 / 匯入)
+    // ==========================================
+    function exportBackupJson() {
+      if (allErrors.length === 0) {
+        if (!confirm('目前題庫中沒有錯題，確定要匯出空白備份檔嗎？')) return;
+      }
+      const backupData = {
+        version: "3.8",
+        exportDate: new Date().toISOString(),
+        totalCount: allErrors.length,
+        errors: allErrors
+      };
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.href = url;
+      downloadAnchor.download = `dhjh_exam_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackupJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          let targetList = [];
+          if (Array.isArray(imported)) {
+            targetList = imported;
+          } else if (imported && Array.isArray(imported.errors)) {
+            targetList = imported.errors;
+          } else {
+            alert('檔案格式錯誤，必須包含錯題清單！');
+            return;
+          }
+
+          if (confirm(`確認匯入？這將會與您現有的題庫進行合併（共 ${targetList.length} 題）。`)) {
+            // 合併題庫並避免 id 重複
+            const existingIds = new Set(allErrors.map(item => item.id));
+            targetList.forEach(item => {
+              if (!existingIds.has(item.id)) {
+                allErrors.push(item);
+                existingIds.add(item.id);
+              }
+            });
+            localStorage.setItem('EXAM_ERRORS_V3', JSON.stringify(allErrors));
+            updateCountdowns();
+            renderLibrary();
+            alert(`🎉 成功匯入並更新題庫！目前題庫共計 ${allErrors.length} 道錯題。`);
+            toggleApiKeyModal();
+          }
+        } catch (err) {
+          alert(`無法解析檔案：${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+      // 清空 input 讓同一個檔案可重複選取觸發
+      event.target.value = '';
     }
 
     // iPad / 行動裝置專屬：API Key 彈窗安全開啟與切換
