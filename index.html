@@ -460,19 +460,22 @@
         </div>
 
         <!-- 自訂時間輸入區 (點選自訂時顯示) -->
-        <div id="pomo-custom-input-box" class="hidden flex items-center justify-center gap-2 pt-1">
-          <label class="text-xs font-bold text-morandi-text">設定分鐘：</label>
-          <input type="number" id="pomo-custom-minutes" min="1" max="180" value="30" class="w-20 bg-morandi-cream border border-morandi-border rounded-xl px-2.5 py-1 text-xs text-center font-bold text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
+        <div id="pomo-custom-input-box" class="hidden flex items-center justify-center gap-2 pt-1 bg-morandi-cream/50 p-3 rounded-2xl border border-morandi-border/60">
+          <label for="pomo-custom-minutes" class="text-xs font-bold text-morandi-text">設定分鐘：</label>
+          <input type="number" id="pomo-custom-minutes" min="1" max="180" value="30" class="w-20 bg-white border border-morandi-border rounded-xl px-2.5 py-1 text-xs text-center font-bold text-morandi-text focus:outline-none focus:ring-1 focus:ring-morandi-rose">
           <span class="text-xs text-morandi-textMuted">分鐘</span>
-          <button onclick="applyCustomPomoTime()" class="px-3 py-1 rounded-xl text-xs font-bold bg-morandi-rose text-white hover:bg-morandi-roseDark transition">套用</button>
+          <button onclick="applyCustomPomoTime()" class="px-3 py-1 rounded-xl text-xs font-bold bg-morandi-rose text-white hover:bg-morandi-roseDark transition shadow-sm">套用</button>
         </div>
 
-        <div class="relative w-56 h-56 mx-auto flex items-center justify-center">
-          <svg class="w-full h-full transform -rotate-90">
-            <circle cx="112" cy="112" r="96" stroke="#f4ede4" stroke-width="10" fill="transparent" />
-            <circle id="pomo-circle" cx="112" cy="112" r="96" stroke="#c78283" stroke-width="10" stroke-linecap="round" fill="transparent" stroke-dasharray="603" stroke-dashoffset="0" class="transition-all duration-1000" />
+        <!-- 圓形倒數容器：PC 版嚴格置中與尺寸鎖定 -->
+        <div class="relative w-56 h-56 mx-auto flex items-center justify-center select-none">
+          <svg viewBox="0 0 224 224" class="w-56 h-56 block">
+            <g transform="rotate(-90 112 112)">
+              <circle cx="112" cy="112" r="96" stroke="#f4ede4" stroke-width="10" fill="transparent" />
+              <circle id="pomo-circle" cx="112" cy="112" r="96" stroke="#c78283" stroke-width="10" stroke-linecap="round" fill="transparent" stroke-dasharray="603.18" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.3s ease;" />
+            </g>
           </svg>
-          <div class="absolute flex flex-col items-center">
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span id="pomo-timer-display" class="text-4xl font-mono font-bold text-[#3d3734]">25:00</span>
             <span id="pomo-status-label" class="text-xs text-morandi-textMuted mt-1">專注複習中</span>
           </div>
@@ -1276,24 +1279,30 @@
         if (b) b.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-cream text-morandi-text transition hover:bg-morandi-border";
       });
 
-      if (customInputBox) customInputBox.classList.add('hidden');
-
       if (mode === 'focus25') {
+        if (customInputBox) customInputBox.classList.add('hidden');
         pomoTotalTime = 25 * 60;
         if (b25) b25.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-rose text-white shadow-sm transition";
         if (statusLabel) statusLabel.innerText = "25分 專注複習中";
       } else if (mode === 'exam45') {
+        if (customInputBox) customInputBox.classList.add('hidden');
         pomoTotalTime = 45 * 60;
         if (b45) b45.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-clayDark text-white shadow-sm transition";
         if (statusLabel) statusLabel.innerText = "45分 模擬考場計時中";
       } else if (mode === 'rest5') {
+        if (customInputBox) customInputBox.classList.add('hidden');
         pomoTotalTime = 5 * 60;
         if (b5) b5.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-sage text-white shadow-sm transition";
         if (statusLabel) statusLabel.innerText = "5分 休息放鬆時間";
       } else if (mode === 'custom') {
-        if (bCustom) bCustom.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-roseDark text-white shadow-sm transition";
         if (customInputBox) customInputBox.classList.remove('hidden');
-        const customMins = parseInt(document.getElementById('pomo-custom-minutes')?.value) || 30;
+        if (bCustom) bCustom.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-morandi-roseDark text-white shadow-sm transition";
+        let customMins = parseInt(document.getElementById('pomo-custom-minutes')?.value, 10);
+        if (isNaN(customMins) || customMins <= 0) {
+          customMins = 30;
+          const input = document.getElementById('pomo-custom-minutes');
+          if (input) input.value = 30;
+        }
         pomoTotalTime = customMins * 60;
         if (statusLabel) statusLabel.innerText = `自訂 ${customMins} 分鐘專注中`;
       }
@@ -1304,7 +1313,7 @@
 
     function applyCustomPomoTime() {
       const input = document.getElementById('pomo-custom-minutes');
-      let val = parseInt(input?.value);
+      let val = parseInt(input?.value, 10);
       if (isNaN(val) || val <= 0) val = 30;
       if (val > 180) val = 180;
       if (input) input.value = val;
@@ -1328,6 +1337,9 @@
         isPomoRunning = false;
         if (btn) btn.innerText = "繼續計時";
       } else {
+        if (!pomoTimeLeft || pomoTimeLeft <= 0 || isNaN(pomoTimeLeft)) {
+          pomoTimeLeft = pomoTotalTime > 0 ? pomoTotalTime : 25 * 60;
+        }
         isPomoRunning = true;
         if (btn) btn.innerText = "暫停";
         
@@ -1350,23 +1362,27 @@
     function resetPomodoro() {
       clearInterval(pomoTimer);
       isPomoRunning = false;
-      pomoTimeLeft = pomoTotalTime;
+      pomoTimeLeft = pomoTotalTime > 0 ? pomoTotalTime : 25 * 60;
       const btn = document.getElementById('btn-pomo-toggle');
       if (btn) btn.innerText = "開始計時";
       updatePomoDisplay();
     }
 
     function updatePomoDisplay() {
-      const m = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
-      const s = (pomoTimeLeft % 60).toString().padStart(2, '0');
+      const safeTimeLeft = (isNaN(pomoTimeLeft) || pomoTimeLeft < 0) ? 0 : pomoTimeLeft;
+      const safeTotalTime = (isNaN(pomoTotalTime) || pomoTotalTime <= 0) ? (25 * 60) : pomoTotalTime;
+
+      const m = Math.floor(safeTimeLeft / 60).toString().padStart(2, '0');
+      const s = (safeTimeLeft % 60).toString().padStart(2, '0');
       const display = document.getElementById('pomo-timer-display');
       if (display) display.innerText = `${m}:${s}`;
 
       const circle = document.getElementById('pomo-circle');
       if (circle) {
-        const perimeter = 603; // 2 * PI * 96
-        const offset = perimeter - (pomoTimeLeft / pomoTotalTime) * perimeter;
-        circle.style.strokeDashoffset = offset;
+        const perimeter = 603.18; // 2 * Math.PI * 96
+        const progress = safeTimeLeft / safeTotalTime;
+        const offset = perimeter * (1 - progress);
+        circle.style.strokeDashoffset = offset.toFixed(2);
       }
     }
 
