@@ -699,6 +699,9 @@ border-style: dashed;
 .border-\[\#a9645a\] {
 border-color: #a9645a;
 }
+.border-\[\#d6e2ee\]\! {
+border-color: #d6e2ee !important;
+}
 .border-\[\#e2d6ca\] {
 border-color: #e2d6ca;
 }
@@ -743,6 +746,9 @@ background-color: #ebe4dc;
 }
 .bg-\[\#eef3f8\] {
 background-color: #eef3f8;
+}
+.bg-\[\#f2f6fa\]\! {
+background-color: #f2f6fa !important;
 }
 .bg-\[\#f4ede5\] {
 background-color: #f4ede5;
@@ -1843,7 +1849,12 @@ const DEFAULT_EXAMS = [
 ];
 const DIMS = [['pre', '預習'], ['rev', '複習'], ['handout', '講義'], ['quiz', '考卷'], ['past', '考古題']];
 const RATE_DAYS = { again: 1, hard: 3, good: 7 };
-const DEFAULT_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.6-flash'];
+const MODEL_SETS = {
+  fast: ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-flash-lite-latest'],
+  accurate: ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-flash-latest']
+};
+const aiMode = () => localStorage.getItem('AI_MODE') === 'accurate' ? 'accurate' : 'fast';
+const DEFAULT_MODELS = MODEL_SETS.fast;
 
 // =====================================================================
 // 小工具
@@ -2095,6 +2106,7 @@ function renderHome() {
   }).join('');
 
   el.innerHTML = `
+    ${aiStatusLine()}
     ${needBackup ? `
     <div class="card-flat border-[#ecd9b0]! bg-[#fbf5e8]! p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3 text-[#7d5d1f]">${icon('alert')}<div><b>記得備份錯題庫</b><div class="text-sm opacity-80">${S.meta.lastBackupAt ? `上次備份是 ${diffDays(S.meta.lastBackupAt, t)} 天前` : '還沒有備份過'}。iPad 長時間沒開啟時，瀏覽器可能會清掉資料。</div></div></div>
@@ -2266,12 +2278,12 @@ function renderLibrary() {
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
       <div><h2 class="section-title serif">錯題庫</h2><p class="text-sm muted mt-1">共 <b class="num" id="lib-count">0</b> 題・點「看解析」展開詳解
-        ${S.errors.some(aiBusy) ? `・<span class="text-[#3e5b78] font-semibold">AI 背景分析中 ${S.errors.filter(aiBusy).length} 題</span>` : ''}
         ${S.errors.some(e => e.ai === 'error') ? `・<button class="underline text-[#a03f35] font-semibold" onclick="retryAi()">重試 ${S.errors.filter(e => e.ai === 'error').length} 題分析失敗的題目</button>` : ''}</p></div>
       <div class="flex gap-2">
         <button class="btn btn-primary" onclick="switchTab('upload')">${icon('plus')}新增錯題</button>
       </div>
     </div>
+    ${aiStatusLine()}
     <div class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
       ${['all', ...SUBJ_ORDER].map(s => `<button class="pill ${LIB.subject === s ? 'on' : ''}" onclick="LIB.subject='${s}';LIB.chapter='all';renderLibrary()">${s === 'all' ? '全部科目' : SUBJECTS[s].name}<span class="cnt num">${s === 'all' ? S.errors.length : S.errors.filter(e => e.subject === s).length}</span></button>`).join('')}
     </div>
@@ -3231,7 +3243,7 @@ async function regenSolution() {
 學生的答案：${it.studentAnswer || '（未填）'}
 正確答案：${it.correctAnswer || '（請自行解題）'}
 請依照上面的「正確答案」寫解析：國中生看得懂，最多 4 行，每行一句話或一個算式，最後一行用「★」開頭寫關鍵觀念或口訣；數學式用 LaTeX 並以 $...$ 包住。
-只回傳 JSON：{"solution":"第 1 步：…\\n第 2 步：…\\n★ …","tag":"核心考點（10 字內）"}` }, { inline_data: { mime_type: 'image/jpeg', data: crop.split(',')[1] } }]));
+只回傳 JSON：{"solution":"第 1 步：…\\n第 2 步：…\\n★ …","tag":"核心考點（10 字內）"}` }, { inline_data: { mime_type: 'image/jpeg', data: crop.split(',')[1] } }], true, { wait: true }));
     if (j.solution) it.solution = j.solution;
     if (j.tag && !it.tag) it.tag = j.tag;
     it.unsure = (it.unsure || []).filter(k => k !== 'solution');
@@ -3344,7 +3356,7 @@ async function aiScan() {
     for (let i = 0; i < targets.length; i++) {
       const p = targets[i];
       UP.progress = `AI 辨識中（${i + 1} / ${targets.length}）…`; renderUpload();
-      const j = parseJsonLoose(await gemini([{ text: scanPrompt() }, { inline_data: { mime_type: 'image/jpeg', data: p.src.split(',')[1] } }]));
+      const j = parseJsonLoose(await gemini([{ text: scanPrompt() }, { inline_data: { mime_type: 'image/jpeg', data: (await smallImage(p.src, 1800)).split(',')[1] } }], true, { wait: true, mode: 'accurate' }));
       const qs = Array.isArray(j) ? j : (j.questions || []);
       const paper = Array.isArray(j) ? null : j.paper;
       if (paper && paper.score != null && !isNaN(+paper.score) && !UP.scores.length) {
@@ -3411,7 +3423,7 @@ async function commitStaging() {
 }
 
 // ---- 存入後的背景分析（最多同時 2 題，關掉網頁下次開啟會繼續）----
-const BG = { running: 0, active: new Set(), timer: null };
+const BG = { running: 0, active: new Set(), timer: null, resumeTimer: null, gapMs: 4500, status: '' };
 function analyzePrompt(e) {
   return `你是台灣國中各科的資深老師，正在幫學生整理「錯題本」。這張截圖是考卷上「一題學生答錯的題目」（照片拍的，已批改過）。
 
@@ -3431,26 +3443,39 @@ function analyzePrompt(e) {
 
 科目代碼只能是：math、physics、chinese、english、social。
 單元請從下列清單選最接近的代碼（都不符合就填空字串）：
-${chapterListForPrompt()}
-${(e.aiKeep || []).includes('subject') ? `\n這題的科目是：${e.subject}（${SUBJECTS[e.subject].name}）。` : ''}
+${(e.aiKeep || []).includes('subject') ? `${e.subject}（${SUBJECTS[e.subject].name}）：` + chaptersOf(e.subject).map(c => `${c.id}=${c.name}`).join('；') + `\n這題的科目是：${e.subject}（${SUBJECTS[e.subject].name}）。` : chapterListForPrompt()}
 
 只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
 }
 const aiBusy = e => e.ai === 'pending' || e.ai === 'running';
+async function smallImage(url, maxW = 1000) {
+  const img = await loadImage(url);
+  if (img.naturalWidth <= maxW) return url;
+  const c = document.createElement('canvas'); c.width = maxW; c.height = Math.round(img.naturalHeight * maxW / img.naturalWidth);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+function aiPausedUntil() { return +(S.meta.aiPausedUntil || 0); }
 function bgAnalyze() {
   if (!localStorage.getItem('GEMINI_API_KEY')) return;
-  while (BG.running < 2) {
-    const e = S.errors.find(x => x.ai === 'pending' && !BG.active.has(x.id));
-    if (!e) break;
-    BG.running++; BG.active.add(e.id);
-    bgOne(e).finally(() => { BG.running--; BG.active.delete(e.id); setTimeout(bgAnalyze, 600); });
+  if (BG.running) return;
+  const until = aiPausedUntil();
+  if (until > Date.now()) {
+    clearTimeout(BG.resumeTimer);
+    BG.resumeTimer = setTimeout(bgAnalyze, Math.min(until - Date.now() + 1000, 2147000000));
+    bgRefresh(); return;
   }
+  const e = S.errors.find(x => x.ai === 'pending');
+  if (!e) { BG.status = ''; bgRefresh(); return; }
+  BG.running = 1; BG.active.add(e.id);
+  bgOne(e).finally(() => { BG.running = 0; BG.active.delete(e.id); setTimeout(bgAnalyze, BG.gapMs); });
 }
 async function bgOne(e) {
-  e.ai = 'running'; bgRefresh();
+  e.ai = 'running'; BG.status = ''; bgRefresh();
   try {
     const v = await getImg(e.id); if (!v) throw new Error('找不到截圖');
-    const j = parseJsonLoose(await gemini([{ text: analyzePrompt(e) }, { inline_data: { mime_type: 'image/jpeg', data: v.orig.split(',')[1] } }]));
+    const img = await smallImage(v.orig);
+    const j = parseJsonLoose(await gemini([{ text: analyzePrompt(e) }, { inline_data: { mime_type: 'image/jpeg', data: img.split(',')[1] } }]));
     const cur = S.errors.find(x => x.id === e.id); if (!cur) return;
     const keep = cur.aiKeep || [];
     for (const k of ['questionType', 'content', 'studentAnswer', 'correctAnswer', 'tag', 'solution']) if (!keep.includes(k) && j[k]) cur[k] = String(j[k]);
@@ -3458,12 +3483,33 @@ async function bgOne(e) {
     if (!keep.includes('chapter') && chaptersOf(cur.subject).find(c => c.id === j.chapter)) { cur.chapter = j.chapter; cur.chapterName = chapterName(cur); }
     cur.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !keep.includes(k));
     cur.ai = 'done'; cur.aiErr = '';
+    S.meta.aiCount = S.meta.aiCount || {}; const t = todayKey(); S.meta.aiCount[t] = (S.meta.aiCount[t] || 0) + 1;
+    Object.keys(S.meta.aiCount).forEach(d => { if (diffDays(d, t) > 14) delete S.meta.aiCount[d]; });
+    persist('meta');
   } catch (err) {
     const cur = S.errors.find(x => x.id === e.id);
-    if (cur) { cur.ai = 'error'; cur.aiErr = err.message; }
+    if (err instanceof QuotaError) {
+      // 額度問題：題目維持待分析，暫停後自動繼續
+      if (cur) cur.ai = 'pending';
+      S.meta.aiPausedUntil = Date.now() + err.retryMs;
+      BG.status = err.kind === 'day'
+        ? `今天的免費額度用完了，台灣時間 ${fmtClock(S.meta.aiPausedUntil)} 後會自動繼續分析`
+        : `每分鐘的次數已滿，休息一下後自動繼續（約 ${Math.ceil(err.retryMs / 1000)} 秒）`;
+      if (err.kind === 'minute') BG.gapMs = Math.min(15000, BG.gapMs + 2000);
+      persist('meta');
+    } else if (cur) { cur.ai = 'error'; cur.aiErr = err.message; }
   }
   await persist('errors');
   bgRefresh();
+}
+function aiStatusLine() {
+  const pend = S.errors.filter(aiBusy).length;
+  if (!pend) return '';
+  const until = aiPausedUntil();
+  const msg = until > Date.now() ? (BG.status || `AI 暫停中，台灣時間 ${fmtClock(until)} 後自動繼續`) : `AI 背景分析中，一次一題（還有 ${pend} 題）`;
+  return `<div class="card-flat border-[#d6e2ee]! bg-[#f2f6fa]! px-4 py-3 mb-4 text-sm text-[#3e5b78] flex flex-wrap items-center justify-between gap-2">
+    <span class="flex items-center gap-2">${until > Date.now() ? icon('clock', 'w-4 h-4') : '<span class="spin"></span>'}${esc(msg)}${until > Date.now() ? `（還有 ${pend} 題待分析）` : ''}</span>
+    ${until > Date.now() ? `<button class="btn btn-sm btn-line" onclick="S.meta.aiPausedUntil=0;persist('meta');BG.status='';bgAnalyze()">現在再試一次</button>` : ''}</div>`;
 }
 function bgRefresh() {
   clearTimeout(BG.timer);
@@ -3486,26 +3532,53 @@ function reanalyze(id) {
 
 // ---- Gemini ----
 let workingModel = null;
+const noThinkCfg = new Set();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function gemini(parts, json = true) {
+class QuotaError extends Error { constructor(kind, retryMs, msg) { super(msg); this.kind = kind; this.retryMs = retryMs; } }
+function nextQuotaReset() {
+  // 免費額度每天在美國太平洋時間午夜重置
+  const now = Date.now();
+  for (let h = 1; h <= 26; h++) {
+    const t = Math.ceil(now / 3600000) * 3600000 + (h - 1) * 3600000;
+    const hr = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', hour12: false }).format(new Date(t));
+    if (hr === 0 || hr === 24) return t + 60000;
+  }
+  return now + 12 * 3600000;
+}
+function fmtClock(t) { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function parseQuota(err) {
+  const details = (err.error && err.error.details) || [];
+  let retryMs = 0, perDay = false;
+  for (const d of details) {
+    if (/RetryInfo/.test(d['@type'] || '') && d.retryDelay) retryMs = Math.ceil(parseFloat(d.retryDelay) * 1000);
+    if (/QuotaFailure/.test(d['@type'] || '')) for (const v of d.violations || []) if (/PerDay|per_day|PerDayPer/i.test((v.quotaId || '') + (v.quotaMetric || ''))) perDay = true;
+  }
+  if (!perDay && /per day|daily/i.test(err.error?.message || '')) perDay = true;
+  return { retryMs, perDay };
+}
+// opts.wait：遇到每分鐘上限時，是否自動等待後重試（互動操作用）
+async function gemini(parts, json = true, opts = {}) {
   const key = localStorage.getItem('GEMINI_API_KEY');
-  if (!key) { throw new Error('請先設定 Gemini API Key'); }
+  if (!key) throw new Error('請先設定 Gemini API Key');
   const custom = (localStorage.getItem('GEMINI_MODEL') || '').trim();
-  const models = [...new Set([workingModel, custom, ...DEFAULT_MODELS].filter(Boolean))];
-  const errs = [];
+  const set = MODEL_SETS[opts.mode || aiMode()];
+  const models = custom ? [custom] : [...new Set([set.includes(workingModel) ? workingModel : null, ...set].filter(Boolean))];
+  let lastMsg = '';
   for (const m of models) {
     for (let attempt = 0; attempt < 3; attempt++) {
+      const gc = json ? { responseMimeType: 'application/json', temperature: 0.2 } : { temperature: 0.4 };
+      if (!noThinkCfg.has(m)) gc.thinkingConfig = { thinkingLevel: 'low' };
       let res;
       try {
         res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-          body: JSON.stringify({ contents: [{ parts }], generationConfig: json ? { responseMimeType: 'application/json', temperature: 0.2 } : { temperature: 0.4 } })
+          body: JSON.stringify({ contents: [{ parts }], generationConfig: gc })
         });
-      } catch (e) { errs.push({ m, status: 0, msg: '網路連線失敗' }); await sleep(2000 * (attempt + 1)); continue; }
+      } catch (e) { lastMsg = '網路連線失敗，請確認網路後再重試'; await sleep(2000 * (attempt + 1)); continue; }
       if (res.ok) {
         const data = await res.json();
         workingModel = m;
-        const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+        const text = (data.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
         if (!text) throw new Error('AI 沒有回應內容（可能被安全機制擋下）');
         return text;
       }
@@ -3513,17 +3586,24 @@ async function gemini(parts, json = true) {
       const msg = err.error?.message || `HTTP ${res.status}`;
       if (res.status === 400 && /api key/i.test(msg)) throw new Error('API Key 無效，請到設定重新輸入');
       if (res.status === 403) throw new Error('API Key 沒有使用權限，請到 Google AI Studio 確認');
-      errs.push({ m, status: res.status, msg });
-      // 忙碌或請求太多：等一下再試同一個模型
-      if ([429, 500, 503].includes(res.status) && attempt < 2) { await sleep(4000 * (attempt + 1)); continue; }
-      break;
+      if (res.status === 400 && /thinking/i.test(msg) && !noThinkCfg.has(m)) { noThinkCfg.add(m); attempt--; continue; }
+      if (res.status === 429) {
+        const q = parseQuota(err);
+        if (q.perDay) throw new QuotaError('day', nextQuotaReset() - Date.now(), `今天的免費額度用完了，台灣時間 ${fmtClock(nextQuotaReset())} 後恢復`);
+        const wait = Math.max(q.retryMs, 15000);
+        if (opts.wait && attempt < 2 && wait <= 65000) { await sleep(wait); continue; }
+        throw new QuotaError('minute', wait, `每分鐘的次數已滿，約 ${Math.ceil(wait / 1000)} 秒後可以再試`);
+      }
+      if ([500, 503].includes(res.status) && attempt < 2) { await sleep(4000 * (attempt + 1)); lastMsg = 'Google AI 伺服器忙碌中，請稍後再重試'; continue; }
+      if ([500, 503].includes(res.status)) { lastMsg = 'Google AI 伺服器忙碌中，請稍後再重試'; break; }
+      // 模型不存在或已停用：換下一個模型
+      lastMsg = msg;
+      if (res.status === 404 || /not found|no longer available|not supported|deprecated/i.test(msg)) break;
+      throw new Error('AI 回應錯誤：' + msg.slice(0, 100));
     }
     if (workingModel === m) workingModel = null;
   }
-  if (errs.some(e => e.status === 429)) throw new Error('請求太多或今天的免費額度用完了，請稍等一兩分鐘再重試');
-  if (errs.some(e => e.status === 503 || e.status === 500)) throw new Error('Google AI 伺服器忙碌中，請稍後再重試');
-  if (errs.length && errs.every(e => e.status === 0)) throw new Error('網路連線失敗，請確認網路後再重試');
-  throw new Error('目前無法使用 AI 模型，請到設定按「測試連線」檢查（' + (errs[0]?.msg || '未知錯誤').slice(0, 80) + '）');
+  throw new Error(/忙碌|網路/.test(lastMsg) ? lastMsg : '目前無法使用 AI 模型，請到設定按「測試連線」檢查（' + (lastMsg || '未知錯誤').slice(0, 80) + '）');
 }
 function sanitizeSvg(str) {
   if (!str || !/<svg[\s>]/i.test(str)) return '';
@@ -3548,7 +3628,7 @@ async function aiDiagram(id) {
 要求：輸出一個 SVG，viewBox 寬約 400、高約 220；溫暖手繪教科書風格：深褐外框 stroke="#4a4441"、填色用莫蘭迪色 #c5dcb6、#95c6de、#e39286、#f4e4ba；用紅色箭頭（#c0392b）與中文字標出關鍵；字體大小至少 12；不要用外部圖片或字型。
 只回傳 JSON：{"svg":"<svg ...>...</svg>"}` }];
     if (e.hasImage) { const im = await getImg(id); if (im) parts.push({ inline_data: { mime_type: 'image/jpeg', data: im.orig.split(',')[1] } }); }
-    const j = parseJsonLoose(await gemini(parts));
+    const j = parseJsonLoose(await gemini(parts, true, { wait: true }));
     const svg = sanitizeSvg(j.svg || '');
     if (!svg) throw new Error('AI 沒有產生有效的圖');
     e.svgDiagram = svg; await persist('errors');
@@ -3933,8 +4013,14 @@ async function openSettings() {
       <div class="flex gap-2"><input id="set-key" type="password" class="input" placeholder="AIza…" value="${esc(key)}" autocomplete="off">
         <button class="btn btn-line btn-icon" aria-label="顯示" onclick="const i=$('#set-key');i.type=i.type==='password'?'text':'password'">${icon('eye', 'w-[18px] h-[18px]')}</button></div>
       <p class="text-xs muted mt-1">金鑰只存在這台裝置的瀏覽器中。</p>
+      <div class="mt-3"><label class="label">分析模式</label>
+        <div class="flex gap-2">
+          <button class="pill flex-1 justify-center ${aiMode() === 'fast' ? 'on' : ''}" onclick="localStorage.setItem('AI_MODE','fast');workingModel=null;openSettings()">速度（Flash-Lite，建議）</button>
+          <button class="pill flex-1 justify-center ${aiMode() === 'accurate' ? 'on' : ''}" onclick="localStorage.setItem('AI_MODE','accurate');workingModel=null;openSettings()">精準（Flash）</button>
+        </div>
+        <p class="text-xs muted mt-1">速度模式較快、免費額度較多；如果常把紅筆字母認錯，再改用精準模式。兩種模式的額度分開計算。${S.meta.aiCount && S.meta.aiCount[todayKey()] ? `今天已分析 ${S.meta.aiCount[todayKey()]} 題。` : ''}</p></div>
       <details class="mt-2"><summary class="text-sm font-semibold muted cursor-pointer">進階：指定模型名稱</summary>
-        <input id="set-model" class="input mt-2" placeholder="留空＝自動（${DEFAULT_MODELS[0]}）" value="${esc(localStorage.getItem('GEMINI_MODEL') || '')}"></details>
+        <input id="set-model" class="input mt-2" placeholder="留空＝依分析模式自動選擇" value="${esc(localStorage.getItem('GEMINI_MODEL') || '')}"></details>
       <div id="set-test" class="hidden mt-2 p-3 rounded-xl text-sm font-medium"></div>
       <div class="flex justify-end gap-2 mt-3">
         <button class="btn btn-sm btn-line" onclick="testKey()">測試連線</button>
@@ -3973,7 +4059,10 @@ async function testKey() {
   const m = ($('#set-model')?.value || '').trim(); m ? localStorage.setItem('GEMINI_MODEL', m) : localStorage.removeItem('GEMINI_MODEL');
   workingModel = null;
   try { await gemini([{ text: '請只回覆 OK' }], false); box.className = 'mt-2 p-3 rounded-xl text-sm font-medium bg-[#e4efe8] text-[#3f6150]'; box.textContent = `✅ 連線成功（模型：${workingModel}）`; }
-  catch (e) { box.className = 'mt-2 p-3 rounded-xl text-sm font-medium bg-[#fbeceb] text-[#a03f35]'; box.textContent = '❌ ' + e.message; }
+  catch (e) {
+    box.className = 'mt-2 p-3 rounded-xl text-sm font-medium bg-[#fbeceb] text-[#a03f35]';
+    box.textContent = '❌ ' + e.message + (e.kind === 'minute' ? '（這是每分鐘的上限，等一下就會恢復）' : e.kind === 'day' ? '（這是每天的上限；可以切換到另一種分析模式試試，兩種模式的額度分開計算）' : '');
+  }
   finally {
     prev ? localStorage.setItem('GEMINI_API_KEY', prev) : localStorage.removeItem('GEMINI_API_KEY');
     prevM ? localStorage.setItem('GEMINI_MODEL', prevM) : localStorage.removeItem('GEMINI_MODEL');
