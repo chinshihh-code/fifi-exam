@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -546,7 +545,10 @@
         { id: "3-2", name: "3-2 聲音的產生與傳播" },
         { id: "3-3", name: "3-3 回聲與超聲波" },
         { id: "4-1", name: "4-1 光的傳播與光速" },
-        { id: "4-2", name: "4-2 光的反向與平面鏡" }
+        { id: "4-2", name: "4-2 光的反射與平面鏡" },
+        { id: "4-3", name: "4-3 光的折射與透鏡" },
+        { id: "4-4", name: "4-4 光學儀器" },
+        { id: "4-5", name: "4-5 色光與顏色" }
       ],
       chinese: [
         { id: "c-4", name: "第四課 課文與文法分析" },
@@ -587,9 +589,12 @@
         chapters: [
           { id: "p31", name: "3-1 波的傳播與週期波" },
           { id: "p32", name: "3-2 聲音的傳播與三要素" },
+          { id: "p33", name: "3-3 回聲與超聲波" },
           { id: "p41", name: "4-1 光的傳播與針孔成像" },
           { id: "p42", name: "4-2 光的反射與面鏡" },
-          { id: "p43", name: "4-3 光的折射與透鏡" }
+          { id: "p43", name: "4-3 光的折射與透鏡" },
+          { id: "p44", name: "4-4 光學儀器與視覺成像" },
+          { id: "p45", name: "4-5 色光與顏色呈現" }
         ]
       },
       {
@@ -878,6 +883,27 @@
       if (window.lucide) lucide.createIcons();
     }
 
+    // 將條列式/分步換行解析格式化為清晰的一行一步
+    function formatSolutionSteps(solText) {
+      if (!solText) return '';
+      // 依換行符切割並去除空白行
+      const lines = solText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length <= 1) {
+        // 如果原本沒有換行，依序號（如 1. 2. Step 或句號）做排版
+        return `<div class="space-y-1.5 leading-relaxed">${escapeHtml(solText)}</div>`;
+      }
+      return `
+        <div class="space-y-1.5 font-normal leading-relaxed">
+          ${lines.map(line => `
+            <div class="flex items-start space-x-1.5">
+              <span class="text-morandi-rose font-bold select-none">•</span>
+              <span class="flex-1">${escapeHtml(line)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     // 刪除單筆錯題
     function deleteSingleError(id) {
       if (!confirm('確定要從題庫中刪除這道錯題嗎？')) return;
@@ -904,20 +930,53 @@
       }
 
       let html = '';
-      filtered.forEach(err => {
+      filtered.forEach((err, idx) => {
+        const solId = `solution-box-${err.id || idx}`;
         html += `
-          <div class="bg-white rounded-3xl border border-morandi-border shadow-sm p-6 space-y-4">
+          <div class="bg-white rounded-3xl border border-morandi-border shadow-sm p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between border-b border-[#f7f2ed] pb-3">
-              <span class="px-2.5 py-1 rounded-lg bg-morandi-roseLight text-morandi-roseDark font-bold text-xs">${err.questionType}</span>
-              <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-morandi-cream text-morandi-textMuted">${err.tag || '核心觀念'}</span>
+              <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-1 rounded-lg bg-morandi-roseLight text-morandi-roseDark font-bold text-xs">${err.questionType}</span>
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-morandi-cream text-morandi-textMuted">${err.tag || '核心觀念'}</span>
+              </div>
+              <button onclick="deleteSingleError('${err.id}')" class="text-xs text-morandi-textMuted hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-morandi-cream">刪除錯題</button>
             </div>
-            <div class="text-sm text-[#3d3734] leading-relaxed">${err.content}</div>
+
+            <div class="text-sm text-[#3d3734] leading-relaxed font-medium">${err.content}</div>
+
             <div class="p-3 rounded-2xl bg-morandi-roseLight/30 border border-morandi-rose/20 text-xs flex items-center justify-between">
               <span class="text-morandi-roseDark font-semibold">當時作答：${err.studentAnswer}</span>
               <span class="text-morandi-rose font-bold">正解：${err.correctAnswer}</span>
             </div>
-            ${err.svgDiagram ? `<div class="my-2">${err.svgDiagram}</div>` : ''}
-            <div class="p-4 rounded-2xl bg-morandi-cream/50 text-xs text-[#3d3734] leading-relaxed">${err.solution}</div>
+
+            <!-- 解析展開 / 收合控制按鈕 -->
+            <div class="pt-1">
+              <button onclick="toggleSolution('${solId}')" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-morandi-cream hover:bg-morandi-border text-morandi-clayDark text-xs font-bold transition">
+                <i data-lucide="chevron-down" id="icon-${solId}" class="w-4 h-4"></i>
+                <span id="text-${solId}">展開完整解析與手繪圖解</span>
+              </button>
+            </div>
+
+            <!-- 折疊區域：SVG 手繪圖解與一步一行解析 -->
+            <div id="${solId}" class="hidden space-y-3 pt-2 border-t border-dashed border-morandi-border">
+              ${err.svgDiagram ? `
+                <div class="p-3 bg-morandi-cream/30 rounded-2xl border border-morandi-border/60 flex flex-col items-center">
+                  <div class="text-[11px] font-bold text-morandi-textMuted mb-2 flex items-center space-x-1">
+                    <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-morandi-rose"></i>
+                    <span>重點圖解／手繪感筆記解析：</span>
+                  </div>
+                  <div class="w-full overflow-x-auto flex justify-center">${err.svgDiagram}</div>
+                </div>
+              ` : ''}
+
+              <div class="p-4 rounded-2xl bg-morandi-cream/40 text-xs text-[#3d3734] border border-morandi-border/50">
+                <div class="font-bold text-morandi-clayDark mb-2 flex items-center space-x-1">
+                  <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-morandi-rose"></i>
+                  <span>分步思考歷程 (一步一行)：</span>
+                </div>
+                ${formatSolutionSteps(err.solution)}
+              </div>
+            </div>
           </div>
         `;
       });
@@ -1041,25 +1100,30 @@
       const chapterChoice = document.getElementById('upload-chapter').value;
 
       const promptText = `
-你是一位專業的國中各科名師。
+你是一位專業的國中各科名師與親切的名師家教。
 這是一張或多張學生的平時測驗卷照片（可能包含正反面）。
 【任務要求】：
 1. 請逐題徹底掃描整張考卷的所有題目，絕對不可略過任何題目。
 2. 找出所有被老師打叉(✗)、畫圈、扣分，或學生空白沒作答的錯題。
-3. 若題目有幾何圖形、波形、數線或電路圖，請務必在 svgDiagram 欄位中生成標準、簡潔美觀的 SVG 幾何圖解代碼（例如 <svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md mx-auto my-2">...</svg>），若無圖形則填入空字串 ""。
-4. 嚴格輸出純 JSON 陣列，不得使用 markdown 語法包裝：
+3. 【圖解生成規範】：
+   - 只要題目涉及幾何、角度、函數圖形、數線、光線折射反射、透鏡成像、音叉波形、化學微觀或地理地圖等，請在 svgDiagram 欄位中生成向量 SVG。
+   - 【風格】：除了標準幾何圖形，非常歡迎採用「好看的手繪感筆記解析風格」（可包含手繪感微圓角線條、箭頭標記、註解氣泡、彩色重點高亮圈選等，例如 <svg viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg" class="w-full max-w-md mx-auto my-2">...</svg>）。若完全不需任何圖示則填空字串 ""。
+4. 【解析文字規範】：
+   - 嚴禁長篇大論與密集大段落！文字務必淺顯易懂、直擊盲點。
+   - 運算與推導必須「一個計算過程一行」，嚴格使用換行符號 \\n 分行，每行清楚表達一個小步驟（例如：\\n步驟1：利用畢氏定理求高\\n步驟2：底邊 = 12\\n步驟3：面積 = (12 × 5) ÷ 2 = 30）。
+5. 嚴格輸出純 JSON 陣列，不得使用 markdown 語法包裝：
 [
   {
     "subject": "math 或 physics 或 chinese 或 english 或 social",
-    "chapter": "對應單元編號 (例如 2-2, 3-1, 3-2, h-3, g-3 等)",
+    "chapter": "對應單元編號 (例如 2-2, 3-1, 4-3, 4-5, h-3, g-3 等)",
     "questionType": "題型與題號 (例如: 單選題 第 3 題)",
     "content": "題目的完整文字 (數學式請用 LaTeX $...$ 包裹)",
     "studentAnswer": "學生寫的錯誤答案或空白",
     "correctAnswer": "此題正確答案",
     "pointsDeducted": 扣分數字,
     "tag": "此題核心考點或公式",
-    "svgDiagram": "<svg>...</svg> 圖形幾何圖解或空字串",
-    "solution": "詳細淺顯易懂的圖解解題步驟與引導解析"
+    "svgDiagram": "<svg>...</svg> 手繪感或幾何向量圖解或空字串",
+    "solution": "精簡步驟解析，一步一行，用 \\n 隔開每個算式步驟"
   }
 ]
 `;
@@ -1259,8 +1323,8 @@
                   <span>正解：${err.correctAnswer}</span>
                   <span class="text-slate-500">考點：${err.tag || '觀念'}</span>
                 </div>
-                ${err.svgDiagram ? `<div class="my-2">${err.svgDiagram}</div>` : ''}
-                <div class="text-slate-700 leading-relaxed">${err.solution}</div>
+                ${err.svgDiagram ? `<div class="my-2 flex justify-center">${err.svgDiagram}</div>` : ''}
+                <div class="text-slate-700 leading-relaxed font-mono whitespace-pre-line">${err.solution}</div>
               </div>
             `;
           }
