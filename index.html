@@ -653,6 +653,9 @@ border-radius: var(--radius-md);
 .rounded-md\! {
 border-radius: var(--radius-md) !important;
 }
+.rounded-none\! {
+border-radius: 0 !important;
+}
 .rounded-sm {
 border-radius: var(--radius-sm);
 }
@@ -728,6 +731,9 @@ background-color: #e7efe9;
 }
 .bg-\[\#ebe4dc\] {
 background-color: #ebe4dc;
+}
+.bg-\[\#eef3f8\] {
+background-color: #eef3f8;
 }
 .bg-\[\#f4ede5\] {
 background-color: #f4ede5;
@@ -1011,6 +1017,9 @@ white-space: pre-line;
 }
 .text-\[\#3b3532\]\! {
 color: #3b3532 !important;
+}
+.text-\[\#3e5b78\] {
+color: #3e5b78;
 }
 .text-\[\#3f6150\] {
 color: #3f6150;
@@ -1554,6 +1563,7 @@ inherits: false;
     /* Upload review */
     .pbox { position:absolute; border:2px solid #d0473a; background: rgba(208,71,58,.07); border-radius:4px; touch-action:none; cursor:pointer; }
     .pbox.sel { border:3px solid #b8322a; background: rgba(208,71,58,.12); box-shadow: 0 0 0 2px #fff; cursor:move; }
+    .pbox .pdel { position:absolute; right:22px; top:-25px; width:26px; height:22px; border-radius:6px; background:#3b3532; color:#fff; font-weight:800; line-height:20px; touch-action:none; }
     .pbox .ptag { position:absolute; left:-2px; top:-22px; background:#d0473a; color:#fff; font-size:12px; font-weight:800; padding:1px 7px; border-radius:6px 6px 6px 0; white-space:nowrap; }
     .pbox .ph { position:absolute; width:30px; height:30px; touch-action:none; }
     .pbox .ph::after { content:""; position:absolute; left:8px; top:8px; width:14px; height:14px; border-radius:50%; background:#fff; border:3px solid #b8322a; }
@@ -1565,6 +1575,8 @@ inherits: false;
     .qn.sel { outline:3px solid var(--ink); outline-offset:2px; }
     .ans-btn { width:46px; height:46px; border-radius:12px; border:1px solid var(--line); background:var(--surface); font-weight:800; font-size:1.05rem; color:var(--ink-2); }
     .ans-btn.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+    .spin { width:14px; height:14px; border-radius:50%; border:2px solid currentColor; border-right-color:transparent; animation: spin .8s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .unsure { background:#fff6dc; box-shadow: 0 0 0 2px #f0d58a; border-radius:14px; padding:.5rem; }
 
     /* Calendar */
@@ -2830,7 +2842,7 @@ function eraserDone(ok) {
 // =====================================================================
 // 拍照新增：上傳 → AI 辨識 → 逐題確認 → 存入
 // =====================================================================
-const UP = { photos: [], staging: [], scores: [], subject: 'auto', title: '', busy: false, progress: '', cur: null, sel: null, drawFor: null, drawMode: false, zoom: 1 };
+const UP = { photos: [], staging: [], scores: [], subject: 'auto', title: '', busy: false, progress: '', cur: null, sel: null, drawFor: null, drawMode: true, zoom: 1 };
 // photo: { id, src, w, h, scanned, sections: [{ id, name, nums: [] }] }
 // staging item: { id, photoId, sec, num, box|null, include, preview, unsure:[], subject, chapter, questionType, content, studentAnswer, correctAnswer, tag, solution }
 const curPhoto = () => UP.photos.find(p => p.id === UP.cur) || UP.photos[0];
@@ -2844,7 +2856,7 @@ function renderUpload() {
   if (!UP.photos.length) {
     el.innerHTML = `
       <div class="mb-4"><h2 class="section-title serif">拍照新增錯題</h2>
-        <p class="text-sm muted mt-1 leading-relaxed">拍下批改後的考卷（可一次多張）。AI 先找出錯題，接著由你對照考卷勾選題號、確認答案，再存入錯題庫。</p></div>
+        <p class="text-sm muted mt-1 leading-relaxed">拍下批改後的考卷（可一次多張），直接在照片上框出錯題；每框一題，AI 就在背景讀出答案、寫好解析，你再檢查一下就能存入。</p></div>
       <div class="card p-5">
         <div class="grid sm:grid-cols-2 gap-3">
           <div><label class="label">科目</label>
@@ -2856,7 +2868,7 @@ function renderUpload() {
           <div class="font-bold">拍照或選擇考卷照片</div>
           <div class="text-sm muted mt-1">可一次選多張；正面、背面分開拍也沒問題</div>
         </button>
-        ${!hasKey ? `<div class="text-sm muted mt-3">尚未設定 Gemini API Key：仍可上傳照片，自己在照片上框出錯題。<button class="underline font-semibold" onclick="openSettings()">設定 API Key</button></div>` : ''}
+        ${!hasKey ? `<div class="text-sm muted mt-3">尚未設定 Gemini API Key：仍可上傳照片、框出錯題，答案與解析需自己填寫。<button class="underline font-semibold" onclick="openSettings()">設定 API Key</button></div>` : ''}
       </div>
       <input type="file" id="up-file" accept="image/*" multiple class="hidden" onchange="addPhotos(event)">`;
     return;
@@ -2866,10 +2878,10 @@ function renderUpload() {
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
       <div><h2 class="section-title serif">審驗錯題</h2>
-        <p class="text-sm muted mt-1">對照考卷勾選題號：紅色＝要存入的錯題。漏掉的題目點灰色題號，再到照片上框出來。</p></div>
+        <p class="text-sm muted mt-1">在照片上拖曳框出錯題（含圖表），每框一題 AI 會自動分析；右邊檢查答案和解析後存入。</p></div>
       <div class="flex flex-wrap gap-2">
         <button class="btn btn-line" onclick="$('#up-file').click()">${icon('imageplus', 'w-4 h-4')}加入照片</button>
-        ${hasKey ? `<button class="btn ${unscanned ? 'btn-primary' : 'btn-line'}" onclick="aiScan()" ${UP.busy ? 'disabled' : ''}>${icon('sparkles', 'w-4 h-4')}${UP.busy ? esc(UP.progress || 'AI 辨識中…') : unscanned ? `AI 辨識錯題（${unscanned} 張）` : '重新辨識這張'}</button>` : `<button class="btn btn-line" onclick="openSettings()">設定 API Key 以使用 AI</button>`}
+        ${hasKey ? `<button class="btn btn-line" onclick="aiScan()" ${UP.busy ? 'disabled' : ''}>${icon('sparkles', 'w-4 h-4')}${UP.busy ? esc(UP.progress || 'AI 辨識中…') : unscanned ? 'AI 自動找錯題（較慢）' : '讓 AI 重新找這張'}</button>` : `<button class="btn btn-line" onclick="openSettings()">設定 API Key 以使用 AI</button>`}
         <button class="btn btn-ghost" onclick="clearPhotos()">全部清除</button>
       </div>
     </div>
@@ -2898,11 +2910,14 @@ function renderUpLeft() {
   box.innerHTML = `
     ${UP.photos.length > 1 ? `<div class="flex gap-2 overflow-x-auto pb-2 mb-2 border-b border-[#f1ebe4]">
       ${UP.photos.map((ph, i) => { const n = UP.staging.filter(s => s.photoId === ph.id && s.include).length; return `
-        <button class="relative shrink-0 rounded-xl overflow-hidden border-2 ${ph.id === p.id ? 'border-[#a9645a]' : 'border-transparent'}" onclick="UP.cur='${ph.id}';UP.drawFor=null;UP.drawMode=false;renderUpload()">
+        <button class="relative shrink-0 rounded-xl overflow-hidden border-2 ${ph.id === p.id ? 'border-[#a9645a]' : 'border-transparent'}" onclick="UP.cur='${ph.id}';UP.drawFor=null;renderUpload()">
           <img src="${ph.src}" class="h-16 w-auto block"><span class="absolute bottom-1 left-1 chip bg-white/90! text-[#3b3532]! px-1.5! py-0! text-[.7rem]!">第 ${i + 1} 張・${n} 題</span></button>`; }).join('')}
     </div>` : ''}
     <div class="flex flex-wrap items-center gap-1.5 mb-2">
-      <button class="btn btn-sm ${UP.drawMode ? 'btn-dark' : 'btn-line'}" onclick="UP.drawMode=!UP.drawMode;UP.drawFor=null;renderUpLeft()">${icon('crop', 'w-4 h-4')}${UP.drawMode ? '畫框中…（點此取消）' : '畫新框'}</button>
+      <div class="flex rounded-xl border border-[#e9e1d8] overflow-hidden">
+        <button class="btn btn-sm rounded-none! ${UP.drawMode ? 'btn-dark' : 'btn-ghost'}" onclick="UP.drawMode=true;renderUpLeft()">${icon('crop', 'w-4 h-4')}畫框</button>
+        <button class="btn btn-sm rounded-none! ${!UP.drawMode ? 'btn-dark' : 'btn-ghost'}" onclick="UP.drawMode=false;UP.drawFor=null;renderUpLeft()">${icon('maximize', 'w-4 h-4')}移動照片</button>
+      </div>
       <button class="btn btn-sm btn-line btn-icon" aria-label="縮小" onclick="UP.zoom=Math.max(1,UP.zoom-0.5);renderUpLeft()">−</button>
       <span class="text-sm num muted w-12 text-center">${Math.round(UP.zoom * 100)}%</span>
       <button class="btn btn-sm btn-line btn-icon" aria-label="放大" onclick="UP.zoom=Math.min(3,UP.zoom+0.5);renderUpLeft()">＋</button>
@@ -2910,9 +2925,10 @@ function renderUpLeft() {
       <button class="btn btn-sm btn-ghost btn-icon" title="旋轉照片" aria-label="旋轉照片" onclick="rotatePhoto('${p.id}')">${icon('rotate', 'w-[18px] h-[18px]')}</button>
       <button class="btn btn-sm btn-ghost btn-icon text-[#b0463b]!" title="移除這張照片" aria-label="移除這張照片" onclick="removePhoto('${p.id}')">${icon('trash', 'w-[18px] h-[18px]')}</button>
     </div>
-    ${drawing ? `<div class="mb-2 rounded-xl bg-[#3b3532] text-white text-sm font-semibold px-3 py-2 flex items-center justify-between gap-2">
-      <span>${target ? `請在照片上拖曳，框出「${esc(target.questionType)}」` : '在照片上拖曳，框出要新增的題目'}</span>
-      <button class="underline shrink-0" onclick="UP.drawFor=null;UP.drawMode=false;renderUpLeft()">取消</button></div>` : ''}
+    ${target ? `<div class="mb-2 rounded-xl bg-[#3b3532] text-white text-sm font-semibold px-3 py-2 flex items-center justify-between gap-2">
+      <span>請在照片上拖曳，框出「${esc(target.questionType)}」</span>
+      <button class="underline shrink-0" onclick="UP.drawFor=null;renderUpLeft()">取消</button></div>`
+      : `<div class="mb-2 text-sm muted">${UP.drawMode ? '畫框模式：手指拖曳框出一題錯題（含圖表）；點紅框可選取、拖角調整。' : '移動照片模式：可以捲動、查看照片；要框題目請切回「畫框」。'}</div>`}
     <div id="pv-scroll" class="overflow-auto rounded-xl bg-[#f4ede5] max-h-[calc(100vh-290px)] min-h-[320px]">
       <div id="pv-wrap" class="relative select-none" style="width:${UP.zoom * 100}%;touch-action:${drawing ? 'none' : 'pan-x pan-y'}">
         <img src="${p.src}" class="block w-full h-auto pointer-events-none" draggable="false" alt="考卷照片">
@@ -2929,7 +2945,8 @@ function renderBoxes() {
   host.innerHTML = UP.staging.filter(s => s.photoId === p.id && s.include && s.box).map(s => {
     const [x0, y0, x1, y1] = s.box, sel = s.id === UP.sel;
     return `<div class="pbox ${sel ? 'sel' : ''}" data-id="${s.id}" style="left:${x0 / p.w * 100}%;top:${y0 / p.h * 100}%;width:${(x1 - x0) / p.w * 100}%;height:${(y1 - y0) / p.h * 100}%">
-      <span class="ptag">${esc(s.num || '')}</span>
+      <span class="ptag">${esc(s.num || '')}${s.ai === 'pending' || s.ai === 'running' ? ' ⋯' : s.ai === 'error' ? ' ！' : ''}</span>
+      ${sel ? `<button class="pdel" data-del="${s.id}" aria-label="刪除這個框">×</button>` : ''}
       ${sel ? '<i class="ph nw" data-h="nw"></i><i class="ph ne" data-h="ne"></i><i class="ph sw" data-h="sw"></i><i class="ph se" data-h="se"></i>' : ''}</div>`;
   }).join('');
 }
@@ -2941,12 +2958,13 @@ function renderBoxes() {
     const p = curPhoto(), pt = ptPhoto(ev);
     const h = ev.target.dataset && ev.target.dataset.h;
     const pb = ev.target.closest('.pbox');
-    if (UP.drawFor || UP.drawMode) { drag = { mode: 'new', start: pt, cur: pt }; ev.preventDefault(); return; }
-    if (pb) {
+    if (ev.target.dataset && ev.target.dataset.del) { ev.preventDefault(); deleteItem(ev.target.dataset.del); return; }
+    if (pb && !UP.drawFor) {
       const it = UP.staging.find(s => s.id === pb.dataset.id); if (!it) return;
       if (UP.sel !== it.id) { selectItem(it.id, false); return; }
-      drag = { mode: h || 'move', start: pt, box: it.box.slice(), id: it.id }; ev.preventDefault();
+      drag = { mode: h || 'move', start: pt, box: it.box.slice(), id: it.id }; ev.preventDefault(); return;
     }
+    if (UP.drawFor || UP.drawMode) { drag = { mode: 'new', start: pt, cur: pt }; ev.preventDefault(); }
   });
   document.addEventListener('pointermove', ev => {
     if (!drag) return;
@@ -2982,16 +3000,17 @@ function renderBoxes() {
       if (box[2] - box[0] < 30 || box[3] - box[1] < 20) return;
       let it = UP.drawFor ? UP.staging.find(s => s.id === UP.drawFor) : null;
       if (!it) {
-        const sec = ensureSection(p, '手動新增');
-        const num = String(sec.nums.length + 1); sec.nums.push(num);
-        it = newStaging(p, null, { sec: sec.id, num, questionType: `手動新增 第 ${num} 題` });
+        const sec = ensureSection(p, MANUAL_SEC);
+        const num = String(Math.max(0, ...sec.nums.map(n => +n || 0)) + 1); sec.nums.push(num);
+        it = newStaging(p, null, { sec: sec.id, num, questionType: `第 ${num} 題（AI 分析後更新）` });
         UP.staging.push(it);
       }
       it.box = box; it.include = true;
-      UP.drawFor = null; UP.drawMode = false;
+      UP.drawFor = null;
       UP.sel = it.id;
       renderUpLeft(); renderUpRight(); renderUpFoot();
       updatePreview(it);
+      if (!it.fromAi && !it.ai) queueAnalyze(it);
     } else updatePreview(UP.staging.find(s => s.id === d.id));
   };
   document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
@@ -3009,6 +3028,7 @@ function updatePreview(it) {
     }
   }, 150);
 }
+const MANUAL_SEC = '已框選的錯題';
 function ensureSection(p, name) {
   p.sections = p.sections || [];
   let s = p.sections.find(x => x.id === name);
@@ -3045,7 +3065,7 @@ function renderUpChips() {
   const secs = p.sections || [];
   box.innerHTML = `
     <div class="flex items-center justify-between gap-2 mb-2">
-      <div class="font-bold">題號勾選${UP.photos.length > 1 ? `<span class="text-sm muted font-semibold">（第 ${UP.photos.indexOf(p) + 1} 張）</span>` : ''}</div>
+      <div class="font-bold">題目清單${UP.photos.length > 1 ? `<span class="text-sm muted font-semibold">（第 ${UP.photos.indexOf(p) + 1} 張）</span>` : ''}</div>
       <div class="flex items-center gap-3 text-xs muted"><span class="flex items-center gap-1"><span class="qn on w-5! h-5! min-w-0! rounded-md!"></span>錯題</span><span class="flex items-center gap-1"><span class="qn nobox w-5! h-5! min-w-0! rounded-md!"></span>待框選</span></div>
     </div>
     ${secs.length ? secs.map(sec => `
@@ -3057,7 +3077,7 @@ function renderUpChips() {
           const on = it && it.include, cls = on ? (it.box ? 'on' : 'nobox') : '';
           return `<button class="qn ${cls} ${it && it.id === UP.sel ? 'sel' : ''}" onclick="toggleQ('${esc(sec.id)}','${esc(n)}')">${esc(n)}</button>`;
         }).join('')}</div>
-      </div>`).join('') : `<div class="text-sm muted">${p.scanned ? 'AI 沒有讀到題號。' : '按上方「AI 辨識錯題」後，這裡會列出各大題的題號。'}也可以自己新增大題，或直接在照片上「畫新框」。</div>`}
+      </div>`).join('') : `<div class="text-sm muted">直接在照片上拖曳框出錯題，框好的題目會列在這裡。也可以按「AI 自動找錯題」讓 AI 先找一遍。</div>`}
     <button class="btn btn-sm btn-ghost mt-3" onclick="addSection()">${icon('plus', 'w-4 h-4')}新增大題</button>`;
 }
 function selectItem(id, scroll = true) {
@@ -3065,7 +3085,6 @@ function selectItem(id, scroll = true) {
   const it = selItem();
   if (it && it.photoId !== UP.cur) { UP.cur = it.photoId; renderUpLeft(); }
   UP.drawFor = it && it.include && !it.box ? it.id : null;
-  UP.drawMode = false;
   renderUpLeft(); renderUpChips(); renderUpEditor();
   if (scroll && it && it.box) {
     const sc = $('#pv-scroll'), p = curPhoto();
@@ -3122,6 +3141,7 @@ function answerField(it, key, label) {
 function setField(key, v, quiet) {
   const it = selItem(); if (!it) return;
   it[key] = v;
+  it.touched = [...new Set([...(it.touched || []), key])];
   it.unsure = (it.unsure || []).filter(k => k !== key);
   if (!quiet) renderUpEditor();
 }
@@ -3139,9 +3159,14 @@ function renderUpEditor() {
         <input class="input text-center font-bold" value="${esc(it.questionType)}" oninput="setField('questionType',this.value,true)">
         <button class="btn btn-sm btn-line btn-icon" aria-label="下一題" onclick="stepItem(1)" ${idx < 0 || idx >= list.length - 1 ? 'disabled' : ''}>${icon('right', 'w-[18px] h-[18px]')}</button>
       </div>
+      ${it.ai === 'pending' || it.ai === 'running' ? `<div class="rounded-xl bg-[#eef3f8] text-[#3e5b78] px-3 py-2 text-sm font-semibold mb-3 flex items-center gap-2"><span class="spin"></span>AI 分析中…（可以先框下一題）</div>` : ''}
+      ${it.ai === 'error' ? `<div class="rounded-xl bg-[#fbeceb] text-[#a03f35] px-3 py-2 text-sm mb-3 flex items-center justify-between gap-2"><span>AI 分析失敗：${esc(it.aiErr || '')}</span><button class="btn btn-sm btn-line" onclick="queueAnalyze(selItem())">重試</button></div>` : ''}
       ${!it.include ? `<div class="rounded-xl bg-[#f4ede5] px-3 py-2 text-sm mb-3 flex items-center justify-between">這題目前沒有勾選<button class="btn btn-sm btn-primary" onclick="toggleQ('${esc(it.sec)}','${esc(it.num)}')">勾選為錯題</button></div>` : ''}
       ${it.box ? `<div class="qimg mx-auto">${it.preview ? `<img id="ed-prev" src="${it.preview}" style="width:100%">` : '<div id="ed-prev-ph" class="p-6 text-center muted text-sm">產生預覽中…</div>'}</div>
-        <div class="flex justify-end mt-1.5"><button class="btn btn-sm btn-ghost" onclick="restageSel()">${icon('maximize', 'w-4 h-4')}全螢幕調整框選</button></div>`
+        <div class="flex flex-wrap justify-end gap-1 mt-1.5">
+          ${localStorage.getItem('GEMINI_API_KEY') && it.ai !== 'running' && it.ai !== 'pending' ? `<button class="btn btn-sm btn-ghost" onclick="queueAnalyze(selItem(),true)">${icon('refresh', 'w-4 h-4')}重新分析</button>` : ''}
+          <button class="btn btn-sm btn-ghost" onclick="restageSel()">${icon('maximize', 'w-4 h-4')}全螢幕調整框選</button>
+          <button class="btn btn-sm btn-ghost text-[#b0463b]!" onclick="deleteItem(UP.sel)">${icon('trash', 'w-4 h-4')}刪除這題</button></div>`
         : `<div class="rounded-2xl border-2 border-dashed border-[#a9645a] p-5 text-center text-sm font-semibold text-[#8a4c43]">這題還沒框選：請在照片上拖曳，框出這一題（含圖表）</div>`}
       <div class="space-y-4 mt-3">
         <div class="grid grid-cols-2 gap-2">
@@ -3188,12 +3213,90 @@ async function regenSolution() {
   renderUpEditor();
   const d = $('#up-editor details'); if (d) d.open = true;
 }
+// ---- 框選後自動分析（背景，最多同時 3 題）----
+const AQ = { queue: [], running: 0 };
+function queueAnalyze(it, force) {
+  if (!it || !it.box || !localStorage.getItem('GEMINI_API_KEY')) return;
+  if (force) it.touched = [];
+  it.ai = 'pending'; it.aiErr = '';
+  if (!AQ.queue.includes(it.id)) AQ.queue.push(it.id);
+  refreshItem(it); pumpAnalyze();
+}
+function pumpAnalyze() {
+  while (AQ.running < 3 && AQ.queue.length) {
+    const qid = AQ.queue.shift();
+    const it = UP.staging.find(s => s.id === qid);
+    if (!it || !it.box) continue;
+    AQ.running++;
+    analyzeOne(it).finally(() => { AQ.running--; pumpAnalyze(); });
+  }
+}
+function analyzePrompt(it) {
+  return `你是台灣國中各科的資深老師，正在幫學生整理「錯題本」。這張截圖是考卷上「一題學生答錯的題目」（照片拍的，已批改過）。
+
+【批改記號的意義】
+- 學生用黑色或藍色筆作答：選擇題把選項字母寫在題號前的括號附近；非選題寫在作答區。
+- 老師用紅筆批改：會在旁邊用紅筆寫上「正確答案」（例如紅色的 A）、或畫圈、打叉。
+- 紅色的長斜線或大勾是批改記號。
+
+【請回答】
+1. 題型與題號（例如「單選 第 8 題」「題組 第 3 題」「填充 第 2 題」）。
+2. 學生的答案、正確答案（以紅筆訂正為準；老師沒寫的話，請自行解題）。
+3. 完整題目文字（含選項）。
+4. 核心考點（10 字內）。
+5. 國中生看得懂的解析：最多 4 行，每行一句話或一個算式；最後一行用「★」開頭，寫關鍵觀念或口訣。數學式用 LaTeX 並以 $...$ 包住。
+6. 科目代碼與單元代碼。
+7. 沒有把握的欄位（例如字跡模糊、看不清楚紅筆字母）放進 unsure 陣列，可用：studentAnswer、correctAnswer、solution、content、tag。
+
+科目代碼只能是：math、physics、chinese、english、social。
+單元請從下列清單選最接近的代碼（都不符合就填空字串）：
+${chapterListForPrompt()}
+${UP.subject !== 'auto' ? `\n這份考卷的科目是：${UP.subject}（${SUBJECTS[UP.subject].name}）。` : ''}
+
+只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
+}
+async function analyzeOne(it) {
+  it.ai = 'running'; refreshItem(it);
+  try {
+    const p = UP.photos.find(x => x.id === it.photoId); if (!p) throw new Error('找不到照片');
+    const crop = await cropImage(p.src, it.box, 1200, false);
+    const j = parseJsonLoose(await gemini([{ text: analyzePrompt(it) }, { inline_data: { mime_type: 'image/jpeg', data: crop.orig.split(',')[1] } }]));
+    const t = it.touched || [];
+    for (const k of ['questionType', 'content', 'studentAnswer', 'correctAnswer', 'tag', 'solution']) if (!t.includes(k) && j[k]) it[k] = String(j[k]);
+    if (!t.includes('subject') && UP.subject === 'auto' && SUBJECTS[j.subject]) { it.subject = j.subject; it.chapter = ''; }
+    if (!t.includes('chapter') && chaptersOf(it.subject).find(c => c.id === j.chapter)) it.chapter = j.chapter;
+    it.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !t.includes(k));
+    it.ai = 'done';
+  } catch (e) { it.ai = 'error'; it.aiErr = e.message; }
+  refreshItem(it);
+}
+function refreshItem(it) {
+  if (currentTab !== 'upload') return;
+  renderBoxes(); renderUpChips(); renderUpFoot();
+  if (UP.sel === it.id) {
+    const ed = $('#up-editor');
+    // 正在打字時不要重畫，避免打斷輸入
+    if (ed && ed.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { if (it.ai === 'done') toast('這題的 AI 分析完成了，離開欄位後會更新'); it.pendingRender = true; }
+    else renderUpEditor();
+  }
+}
+document.addEventListener('focusout', () => setTimeout(() => { const it = selItem(); if (it && it.pendingRender && !$('#up-editor')?.contains(document.activeElement)) { it.pendingRender = false; renderUpEditor(); } }, 50));
+function deleteItem(id) {
+  const it = UP.staging.find(s => s.id === id); if (!it) return;
+  const p = UP.photos.find(x => x.id === it.photoId);
+  if (it.sec === MANUAL_SEC && p) { const sec = (p.sections || []).find(s => s.id === MANUAL_SEC); if (sec) sec.nums = sec.nums.filter(n => n !== it.num); UP.staging = UP.staging.filter(s => s.id !== id); }
+  else { it.include = false; it.box = it.box; }
+  AQ.queue = AQ.queue.filter(x => x !== id);
+  if (UP.sel === id) UP.sel = null;
+  renderUpLeft(); renderUpChips(); renderUpEditor(); renderUpFoot();
+}
 function renderUpFoot() {
   const box = $('#up-foot'); if (!box) return;
   const list = includedItems(), nobox = list.filter(s => !s.box).length;
+  const busy = list.filter(s => s.ai === 'pending' || s.ai === 'running').length;
   box.innerHTML = `
-    <div class="text-sm"><b class="text-lg num">${list.length}</b> 題要存入${nobox ? `<span class="text-[#a03f35] font-semibold">（${nobox} 題還沒框選）</span>` : ''}</div>
-    <button class="btn btn-sage btn-lg" onclick="commitStaging()" ${UP.busy || !list.length ? 'disabled' : ''}>${icon('check')}存入錯題庫</button>`;
+    <div class="text-sm"><b class="text-lg num">${list.length}</b> 題要存入${nobox ? `<span class="text-[#a03f35] font-semibold">（${nobox} 題還沒框選）</span>` : ''}${busy ? `<span class="text-[#3e5b78] font-semibold">（AI 分析中 ${busy} 題）</span>` : ''}</div>
+    <button class="btn btn-sage btn-lg" onclick="commitStaging()" ${UP.busy || busy || !list.length ? 'disabled' : ''}>${icon('check')}${busy ? '等待 AI 分析…' : '存入錯題庫'}</button>`;
 }
 
 async function addPhotos(ev) {
@@ -3218,7 +3321,7 @@ async function removePhoto(id) {
 }
 async function clearPhotos() {
   if (UP.staging.some(s => s.include) && !(await confirmBox('全部清除會清掉尚未存入的錯題，確定嗎？'))) return;
-  Object.assign(UP, { photos: [], staging: [], scores: [], cur: null, sel: null, drawFor: null, drawMode: false, zoom: 1 });
+  Object.assign(UP, { photos: [], staging: [], scores: [], cur: null, sel: null, drawFor: null, drawMode: true, zoom: 1 }); AQ.queue = [];
   renderUpload();
 }
 function newStaging(photo, box, f = {}) {
@@ -3293,7 +3396,7 @@ async function aiScan() {
       if (paper && paper.title && !UP.title) UP.title = paper.title;
       if (UP.subject === 'auto' && paper && SUBJECTS[paper.subject]) UP.subject = paper.subject;
       UP.staging = UP.staging.filter(s => s.photoId !== p.id || !s.fromAi);
-      p.sections = (p.sections || []).filter(s => s.id === '手動新增' || UP.staging.some(x => x.photoId === p.id && x.sec === s.id));
+      p.sections = (p.sections || []).filter(s => s.id === MANUAL_SEC || UP.staging.some(x => x.photoId === p.id && x.sec === s.id));
       for (const sec of (Array.isArray(j.sections) ? j.sections : [])) {
         if (!sec || !sec.name) continue;
         const s = ensureSection(p, String(sec.name).trim());
@@ -3338,7 +3441,7 @@ async function commitStaging() {
     UP.scores.filter(s => s.include && s.score !== '' && s.score != null).forEach(s => S.scores.push({ id: uid('sc'), date: s.date || todayKey(), subject: s.subject, title: s.title || source, score: +s.score }));
     await persist('errors', 'scores');
     toast(`已存入 ${items.length} 題！`, 'success');
-    Object.assign(UP, { photos: [], staging: [], scores: [], title: '', busy: false, cur: null, sel: null, drawFor: null, drawMode: false, zoom: 1 });
+    Object.assign(UP, { photos: [], staging: [], scores: [], title: '', busy: false, cur: null, sel: null, drawFor: null, drawMode: true, zoom: 1 });
     switchTab('library');
   } catch (e) { UP.busy = false; toast('存入失敗：' + e.message, 'error'); renderUpFoot(); }
 }
