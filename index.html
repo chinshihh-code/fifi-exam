@@ -979,6 +979,12 @@ color: color-mix(in srgb, #fff 60%, transparent);
 color: color-mix(in oklab, var(--color-white) 60%, transparent);
 }
 }
+.text-white\/70 {
+color: color-mix(in srgb, #fff 70%, transparent);
+@supports (color: color-mix(in lab, red, red)) {
+color: color-mix(in oklab, var(--color-white) 70%, transparent);
+}
+}
 .tabular-nums {
 --tw-numeric-spacing: tabular-nums;
 font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
@@ -1519,6 +1525,13 @@ inherits: false;
     .h.n::after, .h.s::after { width:26px; height:8px; border-radius:4px; left:4px; top:13px; }
     .h.w::after, .h.e::after { width:8px; height:26px; border-radius:4px; left:13px; top:4px; }
 
+    #eraser { position:fixed; inset:0; z-index:9500; background:#25201d; display:flex; flex-direction:column; }
+    #eraser.hidden { display:none; }
+    #er-stage { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:12px; }
+    #er-canvas { background:#fff; touch-action:none; cursor:crosshair; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+    #eraser .pill { background: rgba(255,255,255,.1); border-color: transparent; color:#fff; }
+    #eraser .pill.on { background:#fff; color: var(--ink); }
+
     /* Calendar */
     .cal-cell { min-height:5.2rem; border-radius:14px; border:1px solid var(--line-soft); background:#fff; padding:.35rem .4rem; display:flex; flex-direction:column; gap:.2rem; overflow:hidden; text-align:left; }
     .cal-cell:hover { border-color: var(--rose); }
@@ -1681,6 +1694,28 @@ inherits: false;
     </div>
     <div class="flex justify-center gap-2 px-4 pt-3 pb-[max(14px,env(safe-area-inset-bottom))]">
       <button class="btn btn-sm bg-white/10! text-white!" onclick="cropSelectAll()"><span data-icon="maximize"></span>整張</button>
+    </div>
+  </div>
+
+  <!-- 手動擦除筆跡 -->
+  <div id="eraser" class="hidden">
+    <div class="flex items-center justify-between gap-2 px-4 pt-[max(12px,env(safe-area-inset-top))] pb-3 text-white">
+      <button class="btn btn-sm bg-white/10! text-white!" onclick="eraserDone(false)">取消</button>
+      <div class="text-center">
+        <div class="font-bold">擦除筆跡</div>
+        <div class="text-xs text-white/60">用手指塗過要擦掉的手寫答案；只會改練習用版本</div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="eraserDone(true)"><span data-icon="check"></span>完成</button>
+    </div>
+    <div id="er-stage"><canvas id="er-canvas"></canvas></div>
+    <div class="flex flex-wrap justify-center items-center gap-2 px-4 pt-3 pb-[max(14px,env(safe-area-inset-bottom))] text-white">
+      <span class="text-sm text-white/70">筆刷</span>
+      <button class="pill er-size" data-size="10" onclick="setBrush(10)">小</button>
+      <button class="pill er-size" data-size="22" onclick="setBrush(22)">中</button>
+      <button class="pill er-size" data-size="40" onclick="setBrush(40)">大</button>
+      <span class="w-3"></span>
+      <button class="btn btn-sm bg-white/10! text-white!" onclick="eraserUndo()"><span data-icon="undo"></span>復原</button>
+      <button class="btn btn-sm bg-white/10! text-white!" onclick="eraserReset()">全部還原</button>
     </div>
   </div>
 
@@ -2088,7 +2123,7 @@ function renderReview() {
         </div>
         ${!RV.flipped ? `
           ${front}
-          <p class="text-sm muted mt-3 flex items-center gap-1.5">${icon('info', 'w-4 h-4')}紅筆訂正已自動隱藏。先在紙上算一算，想好答案再翻開。</p>
+          <p class="text-sm muted mt-3 flex items-center gap-1.5">${icon('info', 'w-4 h-4')}已隱藏紅筆訂正（自己寫的答案可在編輯裡擦除）。先在紙上算一算，想好答案再翻開。</p>
           <button class="btn btn-dark btn-lg w-full mt-5" onclick="RV.flipped=true;renderReview()">${icon('eye')}翻開答案</button>
         ` : `
           <div class="flip-in">
@@ -2161,7 +2196,9 @@ function renderLibrary() {
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
       <div><h2 class="section-title serif">錯題庫</h2><p class="text-sm muted mt-1">共 <b class="num" id="lib-count">0</b> 題・點「看解析」展開詳解</p></div>
-      <button class="btn btn-primary" onclick="switchTab('upload')">${icon('plus')}新增錯題</button>
+      <div class="flex gap-2">
+        <button class="btn btn-primary" onclick="switchTab('upload')">${icon('plus')}新增錯題</button>
+      </div>
     </div>
     <div class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
       ${['all', ...SUBJ_ORDER].map(s => `<button class="pill ${LIB.subject === s ? 'on' : ''}" onclick="LIB.subject='${s}';LIB.chapter='all';renderLibrary()">${s === 'all' ? '全部科目' : SUBJECTS[s].name}<span class="cnt num">${s === 'all' ? S.errors.length : S.errors.filter(e => e.subject === s).length}</span></button>`).join('')}
@@ -2224,6 +2261,7 @@ function renderLibList() {
         <div class="p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43] mb-1">解析</div>${formatSteps(e.solution)}</div>
         ${e.svgDiagram ? `<div class="svgbox p-3 rounded-2xl bg-[#fcfaf7] border border-[#f1ebe4]">${e.svgDiagram}</div>` : ''}
         <div class="flex flex-wrap gap-2">
+          ${e.hasImage ? `<button class="btn btn-sm btn-line" onclick="openEdit('${e.id}')">${icon('pencil', 'w-4 h-4')}擦除筆跡／調整截圖</button>` : ''}
           <button class="btn btn-sm btn-line" id="ai-svg-${e.id}" onclick="aiDiagram('${e.id}')">${icon('sparkles', 'w-4 h-4')}${e.svgDiagram ? '重新產生 AI 圖解' : 'AI 產生手繪圖解'}</button>
           ${e.svgDiagram ? `<button class="btn btn-sm btn-ghost" onclick="removeSvg('${e.id}')">移除圖解</button>` : ''}
           <button class="btn btn-sm ${e.mastered ? 'btn-line' : 'btn-soft'}" onclick="toggleMastered('${e.id}')">${e.mastered ? '取消精熟（重新複習）' : '直接標記為已精熟'}</button>
@@ -2295,7 +2333,14 @@ function openEdit(id) {
           <label class="text-sm">垂直（左右邊界拉直）<b id="ed-shear-v" class="num ml-1">0°</b>
             <input type="range" id="ed-shear" min="-6" max="6" step="0.1" value="0" class="w-full accent-[#a9645a] h-8" oninput="skewPreview()"></label>
         </div>
-        <div class="text-xs muted">拖曳滑桿時，對照圖上的文字列和框線，調到看起來是正的就好。</div>
+        <div class="text-xs muted">拖曳滑桿時，對照圖上的文字列和框線，調到看起來是正的就好。（調整角度會重設擦除的筆跡）</div>
+      </div>
+      <div id="ed-cleanbox" class="${e.hasImage ? '' : 'hidden'} mt-3 p-3 rounded-2xl bg-[#faf6f1]">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2"><span class="text-sm font-bold">練習用版本（擦掉答案，用在複習和練習卷）</span>
+          <div class="flex gap-2">
+            <button class="btn btn-sm btn-soft" onclick="editErase()">${icon('pencil', 'w-4 h-4')}手動擦除</button>
+          </div></div>
+        <div class="qimg"><img id="ed-clean" alt="練習用版本"></div>
       </div>
       <div class="flex gap-2 mt-2">
         <button class="btn btn-sm btn-line" onclick="$('#ed-file').click()">${icon('imageplus', 'w-4 h-4')}${e.hasImage ? '更換截圖' : '加入截圖'}</button>
@@ -2309,7 +2354,16 @@ function openEdit(id) {
       <textarea id="ed-svg" rows="4" class="textarea mt-2 font-mono text-xs!">${esc(e.svgDiagram)}</textarea></details>`;
   openModal('modal-edit');
   hydrateImages($('#edit-body'));
-  if (e.hasImage) getImg(e.id).then(v => { EDIT.base = v; setSkewSliders(v && v.skew); });
+  if (e.hasImage) getImg(e.id).then(v => { EDIT.base = v; setSkewSliders(v && v.skew); showEditClean(); });
+}
+function editCur() { return EDIT.newImg || EDIT.base; }
+function showEditClean() { const v = editCur(), el = $('#ed-clean'); if (v && el) { el.src = v.clean || v.orig; if (v.w) el.style.width = Math.min(v.w, 640) + 'px'; } }
+async function editErase() {
+  const v = editCur(); if (!v) return;
+  const out = await openEraser(v.clean || v.orig, v.cleanBase || v.clean);
+  if (!out) return;
+  EDIT.newImg = Object.assign({}, v, { cleanBase: v.cleanBase || v.clean, clean: out });
+  showEditClean();
 }
 function setSkewSliders(sk) {
   sk = sk || { rot: 0, shear: 0 };
@@ -2326,6 +2380,7 @@ function skewPreview() {
     EDIT.newImg = await upgradeImage(base, { rot, shear });
     EDIT.removeImg = false;
     $('#ed-img-box').innerHTML = `<div class="qimg"><img src="${EDIT.newImg.orig}"></div>`;
+    showEditClean();
   }, 120);
 }
 async function skewAuto() {
@@ -2333,6 +2388,7 @@ async function skewAuto() {
   EDIT.newImg = await upgradeImage(base);
   setSkewSliders(EDIT.newImg.skew);
   $('#ed-img-box').innerHTML = `<div class="qimg"><img src="${EDIT.newImg.orig}"></div>`;
+  showEditClean();
 }
 async function editPickImage(ev) {
   const f = ev.target.files[0]; ev.target.value = '';
@@ -2343,7 +2399,7 @@ async function editPickImage(ev) {
   EDIT.newImg = await cropImage(photo.src, box);
   EDIT.base = { raw: EDIT.newImg.raw };
   EDIT.removeImg = false;
-  $('#ed-skew').classList.remove('hidden'); setSkewSliders(EDIT.newImg.skew);
+  $('#ed-skew').classList.remove('hidden'); $('#ed-cleanbox').classList.remove('hidden'); setSkewSliders(EDIT.newImg.skew); showEditClean();
   $('#ed-img-box').innerHTML = `<div class="qimg"><img src="${EDIT.newImg.orig}"></div>`;
 }
 async function saveEdit() {
@@ -2358,7 +2414,7 @@ async function saveEdit() {
   e.content = $('#ed-content').value.trim();
   e.solution = $('#ed-sol').value.trim();
   e.svgDiagram = sanitizeSvg($('#ed-svg').value.trim());
-  if (EDIT.newImg) { await setImg(e.id, EDIT.newImg); e.hasImage = true; }
+  if (EDIT.newImg) { await setImg(e.id, EDIT.newImg); e.hasImage = true; $$(`img[data-img="${e.id}"]`).forEach(el => delete el.dataset.loaded); }
   else if (EDIT.removeImg) { await delImg(e.id); e.hasImage = false; }
   await persist('errors');
   closeModal('modal-edit'); renderLibList(); toast('已儲存修改', 'success');
@@ -2685,6 +2741,54 @@ function cropDone(ok) {
   const end = () => { CR.drag = null; };
   document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
   window.addEventListener('resize', () => { if (!$('#cropper').classList.contains('hidden')) layoutCropper(); });
+})();
+
+// =====================================================================
+// 清除手寫筆跡（練習用版本 clean）：手動橡皮擦
+// =====================================================================
+// ---- 手動橡皮擦 ----
+const ER = { resolve: null, base: '', undo: [], brush: 22, drawing: false, last: null };
+function openEraser(cleanUrl, baseUrl) {
+  return new Promise(async resolve => {
+    ER.resolve = resolve; ER.base = baseUrl || cleanUrl; ER.undo = [];
+    const img = await loadImage(cleanUrl);
+    const c = $('#er-canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    $('#eraser').classList.remove('hidden'); hydrateIcons($('#eraser'));
+    document.body.style.overflow = 'hidden';
+    setBrush(ER.brush);
+    requestAnimationFrame(layoutEraser);
+  });
+}
+function layoutEraser() {
+  const st = $('#er-stage').getBoundingClientRect(), c = $('#er-canvas');
+  const s = Math.min((st.width - 24) / c.width, (st.height - 24) / c.height, 2.5);
+  c.style.width = c.width * s + 'px'; c.style.height = c.height * s + 'px';
+}
+function setBrush(px) { ER.brush = px; $$('.er-size').forEach(b => b.classList.toggle('on', +b.dataset.size === px)); }
+function eraserUndo() { const c = $('#er-canvas'); const d = ER.undo.pop(); if (d) c.getContext('2d').putImageData(d, 0, 0); }
+async function eraserReset() { const c = $('#er-canvas'); ER.undo.push(c.getContext('2d').getImageData(0, 0, c.width, c.height)); const img = await loadImage(ER.base); c.getContext('2d').drawImage(img, 0, 0); }
+function eraserDone(ok) {
+  $('#eraser').classList.add('hidden'); document.body.style.overflow = '';
+  const r = ER.resolve; ER.resolve = null;
+  if (r) r(ok ? $('#er-canvas').toDataURL('image/jpeg', 0.86) : null);
+}
+(function initEraser() {
+  const c = () => $('#er-canvas');
+  function pos(ev) { const el = c(), b = el.getBoundingClientRect(); return [(ev.clientX - b.left) * el.width / b.width, (ev.clientY - b.top) * el.height / b.height, el.width / b.width]; }
+  function stroke(a, b, k) {
+    const ctx = c().getContext('2d'); ctx.strokeStyle = '#fff'; ctx.fillStyle = '#fff'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = ER.brush * k; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  }
+  document.addEventListener('pointerdown', ev => {
+    if (ev.target.id !== 'er-canvas') return;
+    const el = c(); ER.undo.push(el.getContext('2d').getImageData(0, 0, el.width, el.height)); if (ER.undo.length > 20) ER.undo.shift();
+    ER.drawing = true; const p = pos(ev); ER.last = p; stroke(p, [p[0] + .01, p[1]], p[2]); ev.preventDefault();
+  });
+  document.addEventListener('pointermove', ev => { if (!ER.drawing) return; const p = pos(ev); stroke(ER.last, p, p[2]); ER.last = p; ev.preventDefault(); }, { passive: false });
+  const end = () => { ER.drawing = false; };
+  document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+  window.addEventListener('resize', () => { if (!$('#eraser').classList.contains('hidden')) layoutEraser(); });
 })();
 
 // =====================================================================
