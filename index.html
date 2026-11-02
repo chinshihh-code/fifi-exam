@@ -313,6 +313,9 @@ margin-top: calc(var(--spacing) * 7);
 .mt-auto {
 margin-top: auto;
 }
+.mr-1 {
+margin-right: var(--spacing);
+}
 .mb-0\! {
 margin-bottom: 0px !important;
 }
@@ -514,6 +517,9 @@ min-width: 6rem;
 .min-w-\[8\.5rem\] {
 min-width: 8.5rem;
 }
+.min-w-\[12rem\] {
+min-width: 12rem;
+}
 .min-w-\[34px\]\! {
 min-width: 34px !important;
 }
@@ -550,6 +556,9 @@ cursor: pointer;
 }
 .resize {
 resize: both;
+}
+.scroll-mt-24 {
+scroll-margin-top: calc(var(--spacing) * 24);
 }
 .grid-cols-2 {
 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1024,6 +1033,9 @@ font-size: 3.2rem;
 .text-\[3\.6rem\] {
 font-size: 3.6rem;
 }
+.text-\[3rem\] {
+font-size: 3rem;
+}
 .leading-none {
 --tw-leading: 1;
 line-height: 1;
@@ -1202,9 +1214,6 @@ display: inline;
 }
 .sm\:grid-cols-2 {
 grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.sm\:grid-cols-3 {
-grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .sm\:grid-cols-\[1\.4fr_\.8fr_1\.1fr_110px_auto\] {
 grid-template-columns: 1.4fr .8fr 1.1fr 110px auto;
@@ -1661,6 +1670,17 @@ inherits: false;
     .paper .qopts.short { grid-template-columns: 1fr 1fr; }
     .paper .qfig { display:block; margin:1.5mm 0; height:auto; max-width:100%; }
     .paper .ai-mark { display:inline-block; margin-top:1mm; font-size:8pt; font-weight:700; color:#8a5a00; background:#fff3cd; border:.5pt solid #f0d58a; border-radius:1.5mm; padding:.5mm 2mm; cursor:pointer; }
+.sq { font-size:1.02rem; line-height:1.75; }
+    .sq .qstem { margin-bottom:.35rem; }
+    .sq .qopts { display:grid; grid-template-columns:1fr; gap:.15rem 1.5rem; }
+    .sq .qopts.short { grid-template-columns:1fr 1fr; }
+    .sq .qfig { display:block; margin:.6rem 0; height:auto; border-radius:8px; }
+    .qz-opt { display:flex; align-items:center; gap:.75rem; width:100%; text-align:left; padding:.8rem 1rem; border-radius:16px; border:2px solid var(--line); background:var(--surface); font-size:1rem; line-height:1.5; }
+    .qz-opt b { width:2.2rem; height:2.2rem; border-radius:12px; background:var(--cream); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .qz-opt.on { border-color:var(--ink); background:#f6f2ee; } .qz-opt.on b { background:var(--ink); color:#fff; }
+    .qz-dot { min-width:40px; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface); font-weight:750; color:var(--muted); }
+    .qz-dot.done { background:#efe7df; color:var(--ink); } .qz-dot.cur { outline:3px solid var(--rose); outline-offset:1px; }
+    .qz-dot.ok { background:#e4efe8; color:#3f6150; border-color:#b5cdbd; } .qz-dot.ng { background:#fbeceb; color:#a03f35; border-color:#e3b4ae; }
     @media print { .paper .ai-mark { display:none !important; } }
     .paper .answer-space { border:.6pt dashed #bbb; border-radius:1.5mm; margin-top:1.5mm; color:#bbb; font-size:7.5pt; padding:1mm 2mm; }
     .paper .sol-row { display:flex; flex-wrap:wrap; gap:4mm; align-items:flex-start; }
@@ -1924,6 +1944,13 @@ function formatQuestionText(t) {
   const short = opts.length && opts.every(o => o[1].replace(/\$[^$]*\$/g, 'xx').length <= 9);
   return `<div class="qstem">${stem.map(esc).join('<br>')}</div>` + (opts.length ? `<div class="qopts ${short ? 'short' : ''}">${opts.map(o => `<div><b>(${o[0]})</b> ${esc(o[1])}</div>`).join('')}</div>` : '');
 }
+// 螢幕上的題目呈現：文字＋圖表 或 截圖（v: 'orig' 原圖／'clean' 擦掉答案版）
+const canText = e => !!e.content && (!e.hasImage || e.figChecked);
+function screenQuestion(e, mode, v = 'orig') {
+  if (mode === 'text' && canText(e)) return `<div class="sq">${formatQuestionText(e.content)}${e.hasImage ? [0, 1, 2, 3].map(i => `<img class="qfig" data-fig="${e.id}" data-i="${i}" alt="">`).join('') : ''}</div>`;
+  if (e.hasImage) return `<div class="qimg"><img data-img="${e.id}" data-v="${v}" alt="原題截圖" loading="lazy"></div>`;
+  return `<div class="sq">${formatQuestionText(e.content)}</div>`;
+}
 function toast(msg, type = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + (type === 'success' ? 'ok' : type === 'error' ? 'err' : '');
@@ -2013,9 +2040,11 @@ async function hydrateImages(root) {
     if (!f) { el.remove(); continue; }
     el.src = f.url; el.dataset.loaded = 1;
     const ch = charHeightOf(v);
-    let mm = ch > 3 ? f.w * PRINT_CH_MM / ch : 60;
-    mm = Math.min(mm, el.closest('.two-col') ? COL_MM : 118);
-    el.style.width = mm.toFixed(1) + 'mm';
+    if (el.closest('.paper')) {
+      let mm = ch > 3 ? f.w * PRINT_CH_MM / ch : 60;
+      mm = Math.min(mm, el.closest('.two-col') ? COL_MM : 118);
+      el.style.width = mm.toFixed(1) + 'mm';
+    } else { el.style.width = (ch > 3 ? Math.round(f.w * 17 / ch) : Math.min(f.w, 480)) + 'px'; el.style.maxWidth = '100%'; }
   }
   for (const el of $$('img[data-img]', root)) {
     if (el.dataset.loaded) continue;
@@ -2139,6 +2168,7 @@ const RV = { active: false, queue: [], idx: 0, flipped: false, tally: { again: 0
 
 function renderHome() {
   const el = $('#tab-home');
+  if (QZ.stage) return renderQuiz();
   if (RV.active) return renderReview();
   const t = todayKey();
   const total = S.errors.length;
@@ -2184,7 +2214,8 @@ function renderHome() {
           ${due.length
             ? `<button class="btn btn-primary btn-lg" onclick="startReview(false)">${icon('play')}開始複習</button>`
             : `<div class="text-[1rem] font-semibold text-[#4d6654] flex items-center gap-2">${icon('checkcircle')}今天的複習都完成了，太棒了！</div>`}
-          <button class="btn btn-line btn-lg" onclick="startReview(true)" ${S.errors.some(e => !e.mastered) ? '' : 'disabled'}>${icon('shuffle')}隨機練習 10 題</button>
+          <button class="btn btn-line btn-lg" onclick="quizSetup()" ${S.errors.some(e => !e.mastered && !aiBusy(e)) ? '' : 'disabled'}>${icon('pencil')}線上錯題卷</button>
+          <button class="btn btn-ghost btn-lg" onclick="startReview(true)" ${S.errors.some(e => !e.mastered) ? '' : 'disabled'}>${icon('shuffle')}隨機 10 題</button>
         </div>
       </div>
       <div class="card p-6 flex flex-col">
@@ -2204,6 +2235,136 @@ function renderHome() {
       <b class="text-[#5e5651]">複習規則：</b>每題翻開答案後選「不會／有點會／會了」，會分別在 <b>明天／3 天後／7 天後</b> 再出現；連續 3 次「會了」就變成<b>已精熟</b>，之後不會再排進每日複習。
     </div>`}
   `;
+}
+
+// =====================================================================
+// 線上錯題卷
+// =====================================================================
+const QZ = { stage: '', subject: 'all', scope: 'learning', count: 10, ids: [], idx: 0, ans: {}, self: {}, result: null };
+const isChoice = e => /^\s*[(（]?[A-E][)）]?\s*$/i.test(e.correctAnswer || '');
+const normAns = a => String(a || '').toUpperCase().replace(/[^A-E]/g, '');
+function quizPool() {
+  return S.errors.filter(e => !aiBusy(e) && (QZ.subject === 'all' || e.subject === QZ.subject) && (QZ.scope === 'all' ? true : QZ.scope === 'due' ? isDue(e) : !e.mastered));
+}
+function quizSetup() { QZ.stage = 'setup'; renderHome(); }
+function quizExit() { Object.assign(QZ, { stage: '', ids: [], ans: {}, self: {}, result: null }); renderNav(); renderHome(); window.scrollTo({ top: 0 }); }
+function quizStart() {
+  const pool = shuffle(quizPool());
+  if (!pool.length) return toast('這個範圍沒有題目');
+  QZ.ids = pool.slice(0, QZ.count === 'all' ? pool.length : QZ.count).map(e => e.id);
+  Object.assign(QZ, { stage: 'doing', idx: 0, ans: {}, self: {}, result: null });
+  renderHome(); window.scrollTo({ top: 0 });
+}
+function quizGo(i) { QZ.idx = Math.max(0, Math.min(QZ.ids.length - 1, i)); renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function quizAnswer(v, quiet) { QZ.ans[QZ.ids[QZ.idx]] = v; if (!quiet) renderHome(); }
+async function quizSubmit() {
+  const left = QZ.ids.filter(id => !QZ.ans[id]).length;
+  if (left && !(await confirmBox(`還有 ${left} 題沒有作答，確定要交卷嗎？`, '交卷'))) return;
+  QZ.stage = 'result'; QZ.applied = {};
+  // 選擇題自動批改並更新複習排程
+  for (const id of QZ.ids) { const e = S.errors.find(x => x.id === id); if (e && isChoice(e)) applyQuizResult(e, normAns(QZ.ans[id]) === normAns(e.correctAnswer)); }
+  persist('errors', 'meta');
+  renderNav(); renderHome(); window.scrollTo({ top: 0 });
+}
+function applyQuizResult(e, ok) {
+  if (QZ.applied[e.id] !== undefined) return;
+  QZ.applied[e.id] = ok;
+  const t = todayKey();
+  e.review.count = (e.review.count || 0) + 1; e.review.last = t;
+  e.review.streak = ok ? (e.review.streak || 0) + 1 : 0;
+  e.review.due = addDays(t, ok ? RATE_DAYS.good : RATE_DAYS.again);
+  if (e.review.streak >= 3) e.mastered = true;
+  S.meta.reviewDays = S.meta.reviewDays || {}; S.meta.reviewDays[t] = (S.meta.reviewDays[t] || 0) + 1;
+}
+function quizSelf(id, ok) {
+  const e = S.errors.find(x => x.id === id); if (!e) return;
+  QZ.self[id] = ok; applyQuizResult(e, ok); persist('errors', 'meta'); renderHome();
+}
+function quizOk(e) { return isChoice(e) ? normAns(QZ.ans[e.id]) === normAns(e.correctAnswer) : QZ.self[e.id]; }
+function renderQuiz() {
+  const el = $('#tab-home');
+  if (QZ.stage === 'setup') {
+    const n = quizPool().length;
+    el.innerHTML = `
+      <div class="max-w-xl mx-auto card p-6">
+        <div class="flex items-center justify-between mb-4"><h2 class="section-title serif">線上錯題卷</h2><button class="btn btn-ghost btn-sm" onclick="quizExit()">${icon('x', 'w-4 h-4')}取消</button></div>
+        <p class="text-sm muted mb-4">直接在 App 上作答，交卷後才會顯示正確答案和解析。</p>
+        <label class="label">科目</label>
+        <div class="flex flex-wrap gap-2 mb-4">${['all', ...SUBJ_ORDER].map(s => `<button class="pill ${QZ.subject === s ? 'on' : ''}" onclick="QZ.subject='${s}';renderHome()">${s === 'all' ? '全部' : SUBJECTS[s].name}</button>`).join('')}</div>
+        <label class="label">範圍</label>
+        <div class="flex flex-wrap gap-2 mb-4">${[['learning', '尚未精熟'], ['due', '今天待複習'], ['all', '全部']].map(([v, l]) => `<button class="pill ${QZ.scope === v ? 'on' : ''}" onclick="QZ.scope='${v}';renderHome()">${l}</button>`).join('')}</div>
+        <label class="label">題數</label>
+        <div class="flex flex-wrap gap-2 mb-6">${[[10, '10 題'], [20, '20 題'], ['all', '全部']].map(([v, l]) => `<button class="pill ${QZ.count === v ? 'on' : ''}" onclick="QZ.count=${v === 'all' ? "'all'" : v};renderHome()">${l}</button>`).join('')}</div>
+        <button class="btn btn-primary btn-lg w-full" onclick="quizStart()" ${n ? '' : 'disabled'}>${icon('play')}開始作答（共 ${QZ.count === 'all' ? n : Math.min(n, QZ.count)} 題）</button>
+        ${n ? '' : '<p class="text-sm muted mt-2 text-center">這個範圍沒有題目</p>'}
+      </div>`;
+    return;
+  }
+  const list = QZ.ids.map(id => S.errors.find(x => x.id === id)).filter(Boolean);
+  if (QZ.stage === 'doing') {
+    const e = list[QZ.idx]; if (!e) return quizExit();
+    const a = QZ.ans[e.id] || '', done = list.filter(x => QZ.ans[x.id]).length;
+    const opts = (String(e.content).match(/[（(]\s*([A-E])\s*[)）]/g) || []).map(x => x.replace(/[^A-E]/g, ''));
+    const letters = [...new Set(opts.length >= 2 ? opts : ['A', 'B', 'C', 'D'])];
+    el.innerHTML = `
+      <div class="max-w-3xl mx-auto">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <button class="btn btn-ghost btn-sm" onclick="confirmBox('要離開這份錯題卷嗎？作答內容不會保留。','離開').then(ok=>ok&&quizExit())">${icon('left', 'w-4 h-4')}離開</button>
+          <span class="text-sm font-semibold muted num">已作答 ${done} / ${list.length}</span>
+          <button class="btn btn-sage btn-sm" onclick="quizSubmit()">${icon('check', 'w-4 h-4')}交卷</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-3">${list.map((x, i) => `<button class="qz-dot num ${QZ.ans[x.id] ? 'done' : ''} ${i === QZ.idx ? 'cur' : ''}" onclick="quizGo(${i})">${i + 1}</button>`).join('')}</div>
+        <div class="card p-5 sm:p-6">
+          <div class="flex flex-wrap items-center gap-2 mb-4"><span class="serif text-xl font-bold mr-1">第 ${QZ.idx + 1} 題</span>${subjChip(e.subject)}<span class="chip chip-muted">${esc(chapterName(e))}</span></div>
+          ${screenQuestion(e, 'text', 'clean')}
+          <div class="mt-5">
+            ${isChoice(e) ? `<div class="grid ${letters.length > 2 ? 'sm:grid-cols-2' : ''} gap-2">${letters.map(L => `<button class="qz-opt ${normAns(a) === L ? 'on' : ''}" onclick="quizAnswer('${L}')"><b>${L}</b><span>選 ${L}</span></button>`).join('')}</div>`
+              : `<label class="label">你的答案</label>
+                 <div class="flex flex-wrap gap-2"><input class="input flex-1 min-w-[12rem]" value="${esc(a === '（已在紙上作答）' ? '' : a)}" placeholder="在這裡輸入答案" oninput="quizAnswer(this.value,true);renderQuizDots()">
+                 <button class="btn ${a === '（已在紙上作答）' ? 'btn-dark' : 'btn-line'}" onclick="quizAnswer('（已在紙上作答）')">我在紙上算好了</button></div>`}
+          </div>
+          <div class="flex justify-between mt-6">
+            <button class="btn btn-line" onclick="quizGo(${QZ.idx - 1})" ${QZ.idx ? '' : 'disabled'}>${icon('left', 'w-4 h-4')}上一題</button>
+            ${QZ.idx < list.length - 1 ? `<button class="btn btn-dark" onclick="quizGo(${QZ.idx + 1})">下一題${icon('right', 'w-4 h-4')}</button>` : `<button class="btn btn-sage" onclick="quizSubmit()">${icon('check', 'w-4 h-4')}交卷</button>`}
+          </div>
+        </div>
+      </div>`;
+    hydrateImages(el); renderMath(el);
+    return;
+  }
+  // 結果
+  const sorted = list.slice().sort((x, y) => (quizOk(x) === false ? 0 : quizOk(x) === undefined ? 1 : 2) - (quizOk(y) === false ? 0 : quizOk(y) === undefined ? 1 : 2));
+  const okN = list.filter(x => quizOk(x) === true).length, pendN = list.filter(x => quizOk(x) === undefined).length;
+  el.innerHTML = `
+    <div class="max-w-3xl mx-auto">
+      <div class="card p-6 text-center">
+        <div class="text-sm font-semibold muted">交卷結果</div>
+        <div class="serif text-[3rem] font-bold num leading-tight mt-1">${okN} <span class="text-2xl muted">/ ${list.length}</span></div>
+        <div class="muted">${pendN ? `還有 ${pendN} 題非選擇題，請看完解析後自己判斷對錯` : okN === list.length ? '全部答對，太棒了！🎉' : '答錯的題目明天會再出現在每日複習'}</div>
+        <div class="flex flex-wrap justify-center gap-1.5 mt-4">${list.map((x, i) => `<a href="#qz-${x.id}" onclick="event.preventDefault();document.getElementById('qz-${x.id}').scrollIntoView({behavior:'smooth',block:'start'})" class="qz-dot num flex items-center justify-center ${quizOk(x) === true ? 'ok' : quizOk(x) === false ? 'ng' : ''}">${i + 1}</a>`).join('')}</div>
+        <div class="flex justify-center gap-3 mt-5"><button class="btn btn-line" onclick="quizSetup()">再做一份</button><button class="btn btn-primary" onclick="quizExit()">回到首頁</button></div>
+      </div>
+      <div class="space-y-4 mt-4">${sorted.map(e => {
+        const ok = quizOk(e), i = list.indexOf(e);
+        return `<div id="qz-${e.id}" class="card p-5 scroll-mt-24">
+          <div class="flex flex-wrap items-center gap-2 mb-3"><span class="serif font-bold text-lg">第 ${i + 1} 題</span>
+            ${ok === true ? '<span class="chip s-physics">答對</span>' : ok === false ? '<span class="chip rate-again">答錯</span>' : '<span class="chip chip-line">請自己判斷</span>'}
+            ${subjChip(e.subject)}<span class="chip chip-muted">${esc(chapterName(e))}</span></div>
+          ${screenQuestion(e, 'text', 'clean')}
+          <div class="grid sm:grid-cols-2 gap-3 mt-4">
+            <div class="rounded-2xl ${ok === false ? 'bg-[#fbeceb]' : 'bg-[#f4ede5]'} px-4 py-3"><div class="text-xs font-semibold muted">你的答案</div><div class="font-bold mt-0.5">${esc(QZ.ans[e.id] || '（未作答）')}</div></div>
+            <div class="rounded-2xl bg-[#e4efe8] px-4 py-3"><div class="text-xs font-semibold text-[#3f6150]">正確答案</div><div class="font-bold text-[#3f6150] mt-0.5">${esc(e.correctAnswer || '見解析')}</div></div>
+          </div>
+          <div class="mt-3 p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43] mb-1">解析${e.tag ? `<span class="font-semibold text-sm muted ml-2">#${esc(e.tag)}</span>` : ''}</div>${formatSteps(e.solution)}</div>
+          ${!isChoice(e) && ok === undefined ? `<div class="flex gap-2 mt-4"><button class="rate-btn rate-again" onclick="quizSelf('${e.id}',false)">😣 我答錯了</button><button class="rate-btn rate-good" onclick="quizSelf('${e.id}',true)">😊 我答對了</button></div>` : ''}
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  hydrateImages(el); renderMath(el);
+}
+function renderQuizDots() {
+  const list = QZ.ids;
+  $$('#tab-home .qz-dot').forEach((b, i) => b.classList.toggle('done', !!QZ.ans[list[i]]));
 }
 
 function startReview(free) {
@@ -2311,7 +2472,7 @@ document.addEventListener('keydown', ev => {
 // =====================================================================
 // 錯題庫
 // =====================================================================
-const LIB = { subject: 'all', chapter: 'all', status: 'all', q: '', open: new Set() };
+const LIB = { subject: 'all', chapter: 'all', status: 'all', q: '', open: new Set(), view: localStorage.getItem('LIB_VIEW') || 'text' };
 function libFiltered() {
   const q = LIB.q.trim().toLowerCase();
   return S.errors.filter(e =>
@@ -2337,11 +2498,13 @@ function renderLibrary() {
     <div class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
       ${['all', ...SUBJ_ORDER].map(s => `<button class="pill ${LIB.subject === s ? 'on' : ''}" onclick="LIB.subject='${s}';LIB.chapter='all';renderLibrary()">${s === 'all' ? '全部科目' : SUBJECTS[s].name}<span class="cnt num">${s === 'all' ? S.errors.length : S.errors.filter(e => e.subject === s).length}</span></button>`).join('')}
     </div>
-    <div class="card-flat p-3 mt-2 grid sm:grid-cols-3 gap-2">
+    <div class="card-flat p-3 mt-2 grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
       <select class="select" onchange="LIB.chapter=this.value;renderLibList()" ${LIB.subject === 'all' ? 'disabled' : ''}>
         <option value="all">${LIB.subject === 'all' ? '先選科目再篩選單元' : '全部單元'}</option>
         ${chs.map(c => `<option value="${esc(c.id)}" ${LIB.chapter === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
       </select>
+      <select class="select" onchange="LIB.view=this.value;localStorage.setItem('LIB_VIEW',this.value);renderLibList()">
+        <option value="text" ${LIB.view === 'text' ? 'selected' : ''}>顯示：文字＋圖表</option><option value="image" ${LIB.view === 'image' ? 'selected' : ''}>顯示：原題截圖</option></select>
       <select class="select" onchange="LIB.status=this.value;renderLibList()">
         ${[['all', '全部狀態'], ['due', '今天待複習'], ['learning', '學習中（未精熟）'], ['mastered', '已精熟'], ['check', 'AI 待確認'], ['noimg', '缺少截圖']].map(([v, l]) => `<option value="${v}" ${LIB.status === v ? 'selected' : ''}>${l}</option>`).join('')}
       </select>
@@ -2380,7 +2543,7 @@ function renderLibList() {
           <button class="btn btn-ghost btn-icon text-[#b0463b]!" onclick="deleteError('${e.id}')" aria-label="刪除">${icon('trash', 'w-[18px] h-[18px]')}</button>
         </div>
       </div>
-      ${e.hasImage ? `<div class="qimg"><img data-img="${e.id}" data-v="orig" alt="原題截圖" loading="lazy"></div>` : `<div class="text-[1rem] leading-relaxed">${esc(e.content)}</div>
+      ${e.hasImage ? screenQuestion(e, LIB.view) : `<div class="text-[1rem] leading-relaxed">${esc(e.content)}</div>
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-[#ecd9b0] bg-[#fbf5e8] px-4 py-3">
           <span class="flex items-center gap-2 text-sm font-semibold text-[#7d5d1f]">${icon('alert', 'w-4 h-4')}缺少原題截圖，複習時看不到題目的圖表</span>
           <button class="btn btn-sm btn-line" onclick="addImageQuick('${e.id}')">${icon('imageplus', 'w-4 h-4')}加入截圖</button>
@@ -2395,6 +2558,7 @@ function renderLibList() {
       ${e.tag || e.source ? `<div class="text-sm muted mt-2">${e.tag ? `#${esc(e.tag)}` : ''}${e.tag && e.source ? '・' : ''}${esc(e.source)}</div>` : ''}
       ${open ? `
       <div class="mt-4 pt-4 divider space-y-4">
+        ${e.hasImage && LIB.view === 'text' && canText(e) ? `<details><summary class="text-sm font-semibold muted cursor-pointer">看原題截圖（含當時的作答與訂正）</summary><div class="qimg mt-2"><img data-img="${e.id}" data-v="orig" alt="原題截圖"></div></details>` : ''}
         <div class="p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43] mb-1">解析</div>${formatSteps(e.solution)}</div>
         ${e.svgDiagram ? `<div class="svgbox p-3 rounded-2xl bg-[#fcfaf7] border border-[#f1ebe4]">${e.svgDiagram}</div>` : ''}
         <div class="flex flex-wrap gap-2">
