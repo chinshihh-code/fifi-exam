@@ -355,6 +355,9 @@ display: table;
 .h-3 {
 height: calc(var(--spacing) * 3);
 }
+.h-3\! {
+height: calc(var(--spacing) * 3) !important;
+}
 .h-3\.5 {
 height: calc(var(--spacing) * 3.5);
 }
@@ -414,6 +417,9 @@ min-height: 320px;
 }
 .w-3 {
 width: calc(var(--spacing) * 3);
+}
+.w-3\! {
+width: calc(var(--spacing) * 3) !important;
 }
 .w-3\.5 {
 width: calc(var(--spacing) * 3.5);
@@ -723,6 +729,9 @@ background-color: #a9645a;
 .bg-\[\#e3d3c3\] {
 background-color: #e3d3c3;
 }
+.bg-\[\#e3ebf3\]\! {
+background-color: #e3ebf3 !important;
+}
 .bg-\[\#e4efe8\] {
 background-color: #e4efe8;
 }
@@ -753,6 +762,9 @@ background-color: #faf6f1;
 .bg-\[\#fbeceb\] {
 background-color: #fbeceb;
 }
+.bg-\[\#fbeceb\]\! {
+background-color: #fbeceb !important;
+}
 .bg-\[\#fbf5e8\] {
 background-color: #fbf5e8;
 }
@@ -761,6 +773,9 @@ background-color: #fbf5e8 !important;
 }
 .bg-\[\#fcfaf7\] {
 background-color: #fcfaf7;
+}
+.bg-\[\#fff1c9\]\! {
+background-color: #fff1c9 !important;
 }
 .bg-transparent {
 background-color: transparent;
@@ -1021,6 +1036,9 @@ color: #3b3532 !important;
 .text-\[\#3e5b78\] {
 color: #3e5b78;
 }
+.text-\[\#3e5b78\]\! {
+color: #3e5b78 !important;
+}
 .text-\[\#3f6150\] {
 color: #3f6150;
 }
@@ -1044,6 +1062,9 @@ color: #73574a;
 }
 .text-\[\#a03f35\] {
 color: #a03f35;
+}
+.text-\[\#a03f35\]\! {
+color: #a03f35 !important;
 }
 .text-\[\#a9645a\] {
 color: #a9645a;
@@ -1822,7 +1843,7 @@ const DEFAULT_EXAMS = [
 ];
 const DIMS = [['pre', '預習'], ['rev', '複習'], ['handout', '講義'], ['quiz', '考卷'], ['past', '考古題']];
 const RATE_DAYS = { again: 1, hard: 3, good: 7 };
-const DEFAULT_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'];
+const DEFAULT_MODELS = ['gemini-flash-latest', 'gemini-3.8-flash', 'gemini-3.6-flash'];
 
 // =====================================================================
 // 小工具
@@ -1970,7 +1991,8 @@ function normErr(e) {
     hasImage: !!e.hasImage, source: e.source || '',
     createdAt: e.createdAt || todayKey(),
     review: Object.assign({ due: todayKey(), streak: 0, count: 0, last: '' }, e.review || {}),
-    mastered: !!e.mastered
+    mastered: !!e.mastered,
+    ai: e.ai || '', aiErr: e.aiErr || '', aiKeep: e.aiKeep || [], unsure: Array.isArray(e.unsure) ? e.unsure : []
   };
 }
 function lsJson(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -2005,7 +2027,7 @@ async function loadState() {
 function groupSubject(groupKey) { return (GROUPS.find(g => g.key === groupKey) || {}).subject; }
 function chaptersOf(sub) { return S.checklistItems.filter(i => groupSubject(i.subject) === sub); }
 function chapterName(e) { const c = S.checklistItems.find(i => i.id === e.chapter); return c ? c.name : (e.chapterName || '未分類單元'); }
-function isDue(e) { return !e.mastered && (!e.review.due || e.review.due <= todayKey()); }
+function isDue(e) { return !e.mastered && !(e.ai === 'pending' || e.ai === 'running') && (!e.review.due || e.review.due <= todayKey()); }
 function upcomingExams() {
   const t = todayKey();
   return S.exams.filter(x => x.date && addDays(x.date, (x.days || 1) - 1) >= t).sort((a, b) => a.date.localeCompare(b.date));
@@ -2124,7 +2146,7 @@ function renderHome() {
 
 function startReview(free) {
   let list;
-  if (free) list = shuffle(S.errors.filter(e => !e.mastered && (RV.filter === 'all' || e.subject === RV.filter))).slice(0, 10);
+  if (free) list = shuffle(S.errors.filter(e => !e.mastered && !aiBusy(e) && (RV.filter === 'all' || e.subject === RV.filter))).slice(0, 10);
   else list = S.errors.filter(isDue).filter(e => RV.filter === 'all' || e.subject === RV.filter)
     .sort((a, b) => (a.review.due || '').localeCompare(b.review.due || ''));
   if (!list.length) list = shuffle(S.errors.filter(e => !e.mastered)).slice(0, 10);
@@ -2233,7 +2255,7 @@ function libFiltered() {
   return S.errors.filter(e =>
     (LIB.subject === 'all' || e.subject === LIB.subject) &&
     (LIB.chapter === 'all' || e.chapter === LIB.chapter) &&
-    (LIB.status === 'all' || (LIB.status === 'due' && isDue(e)) || (LIB.status === 'learning' && !e.mastered) || (LIB.status === 'mastered' && e.mastered) || (LIB.status === 'noimg' && !e.hasImage)) &&
+    (LIB.status === 'all' || (LIB.status === 'due' && isDue(e)) || (LIB.status === 'learning' && !e.mastered) || (LIB.status === 'mastered' && e.mastered) || (LIB.status === 'noimg' && !e.hasImage) || (LIB.status === 'check' && ((e.unsure || []).length || e.ai === 'error'))) &&
     (!q || [e.content, e.tag, e.questionType, e.source, chapterName(e), e.correctAnswer].join(' ').toLowerCase().includes(q))
   );
 }
@@ -2243,7 +2265,9 @@ function renderLibrary() {
   if (LIB.chapter !== 'all' && !chs.find(c => c.id === LIB.chapter)) LIB.chapter = 'all';
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
-      <div><h2 class="section-title serif">錯題庫</h2><p class="text-sm muted mt-1">共 <b class="num" id="lib-count">0</b> 題・點「看解析」展開詳解</p></div>
+      <div><h2 class="section-title serif">錯題庫</h2><p class="text-sm muted mt-1">共 <b class="num" id="lib-count">0</b> 題・點「看解析」展開詳解
+        ${S.errors.some(aiBusy) ? `・<span class="text-[#3e5b78] font-semibold">AI 背景分析中 ${S.errors.filter(aiBusy).length} 題</span>` : ''}
+        ${S.errors.some(e => e.ai === 'error') ? `・<button class="underline text-[#a03f35] font-semibold" onclick="retryAi()">重試 ${S.errors.filter(e => e.ai === 'error').length} 題分析失敗的題目</button>` : ''}</p></div>
       <div class="flex gap-2">
         <button class="btn btn-primary" onclick="switchTab('upload')">${icon('plus')}新增錯題</button>
       </div>
@@ -2257,7 +2281,7 @@ function renderLibrary() {
         ${chs.map(c => `<option value="${esc(c.id)}" ${LIB.chapter === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
       </select>
       <select class="select" onchange="LIB.status=this.value;renderLibList()">
-        ${[['all', '全部狀態'], ['due', '今天待複習'], ['learning', '學習中（未精熟）'], ['mastered', '已精熟'], ['noimg', '缺少截圖']].map(([v, l]) => `<option value="${v}" ${LIB.status === v ? 'selected' : ''}>${l}</option>`).join('')}
+        ${[['all', '全部狀態'], ['due', '今天待複習'], ['learning', '學習中（未精熟）'], ['mastered', '已精熟'], ['check', 'AI 待確認'], ['noimg', '缺少截圖']].map(([v, l]) => `<option value="${v}" ${LIB.status === v ? 'selected' : ''}>${l}</option>`).join('')}
       </select>
       <div class="relative"><span class="absolute left-3 top-1/2 -translate-y-1/2 muted">${icon('search', 'w-4 h-4')}</span>
         <input class="input pl-9!" placeholder="搜尋考點、題目、考卷…" value="${esc(LIB.q)}" oninput="LIB.q=this.value;renderLibList()"></div>
@@ -2276,6 +2300,9 @@ function renderLibList() {
   const t = todayKey();
   box.innerHTML = list.map(e => {
     const open = LIB.open.has(e.id);
+    const aiChip = aiBusy(e) ? `<span class="chip bg-[#e3ebf3]! text-[#3e5b78]!"><span class="spin w-3! h-3!"></span>AI 分析中</span>`
+      : e.ai === 'error' ? `<button class="chip bg-[#fbeceb]! text-[#a03f35]!" title="${esc(e.aiErr)}" onclick="retryAi('${e.id}')">AI 分析失敗・點此重試</button>`
+      : (e.unsure || []).length ? `<button class="chip bg-[#fff1c9]! text-[#6b4e0f]!" onclick="openEdit('${e.id}')">請確認：${e.unsure.map(k => ({ studentAnswer: '我的答案', correctAnswer: '正解', solution: '解析', content: '題目', tag: '考點' })[k] || k).join('、')}</button>` : '';
     const status = e.mastered ? `<span class="chip s-physics">${icon('award', 'w-3.5 h-3.5')}已精熟</span>`
       : isDue(e) ? `<span class="chip s-math">今天複習</span>`
       : `<span class="chip chip-line">${fmtMD(e.review.due)} 複習</span>`;
@@ -2284,7 +2311,7 @@ function renderLibList() {
       <div class="flex items-start justify-between gap-2 mb-3">
         <div class="flex flex-wrap items-center gap-1.5">
           ${subjChip(e.subject)}<span class="chip chip-muted">${esc(chapterName(e))}</span>
-          ${e.questionType ? `<span class="chip chip-line">${esc(e.questionType)}</span>` : ''}${status}
+          ${e.questionType ? `<span class="chip chip-line">${esc(e.questionType)}</span>` : ''}${aiBusy(e) ? '' : status}${aiChip}
         </div>
         <div class="flex shrink-0">
           <button class="btn btn-ghost btn-icon" onclick="openEdit('${e.id}')" aria-label="編輯">${icon('pencil', 'w-[18px] h-[18px]')}</button>
@@ -2310,6 +2337,7 @@ function renderLibList() {
         ${e.svgDiagram ? `<div class="svgbox p-3 rounded-2xl bg-[#fcfaf7] border border-[#f1ebe4]">${e.svgDiagram}</div>` : ''}
         <div class="flex flex-wrap gap-2">
           ${e.hasImage ? `<button class="btn btn-sm btn-line" onclick="openEdit('${e.id}')">${icon('pencil', 'w-4 h-4')}擦除筆跡／調整截圖</button>` : ''}
+          ${localStorage.getItem('GEMINI_API_KEY') && e.hasImage && !aiBusy(e) ? `<button class="btn btn-sm btn-line" onclick="reanalyze('${e.id}')">${icon('refresh', 'w-4 h-4')}AI 重新分析</button>` : ''}
           <button class="btn btn-sm btn-line" id="ai-svg-${e.id}" onclick="aiDiagram('${e.id}')">${icon('sparkles', 'w-4 h-4')}${e.svgDiagram ? '重新產生 AI 圖解' : 'AI 產生手繪圖解'}</button>
           ${e.svgDiagram ? `<button class="btn btn-sm btn-ghost" onclick="removeSvg('${e.id}')">移除圖解</button>` : ''}
           <button class="btn btn-sm ${e.mastered ? 'btn-line' : 'btn-soft'}" onclick="toggleMastered('${e.id}')">${e.mastered ? '取消精熟（重新複習）' : '直接標記為已精熟'}</button>
@@ -2462,6 +2490,7 @@ async function saveEdit() {
   e.content = $('#ed-content').value.trim();
   e.solution = $('#ed-sol').value.trim();
   e.svgDiagram = sanitizeSvg($('#ed-svg').value.trim());
+  e.unsure = [];
   if (EDIT.newImg) { await setImg(e.id, EDIT.newImg); e.hasImage = true; $$(`img[data-img="${e.id}"]`).forEach(el => delete el.dataset.loaded); }
   else if (EDIT.removeImg) { await delImg(e.id); e.hasImage = false; }
   await persist('errors');
@@ -2856,7 +2885,7 @@ function renderUpload() {
   if (!UP.photos.length) {
     el.innerHTML = `
       <div class="mb-4"><h2 class="section-title serif">拍照新增錯題</h2>
-        <p class="text-sm muted mt-1 leading-relaxed">拍下批改後的考卷（可一次多張），直接在照片上框出錯題；每框一題，AI 就在背景讀出答案、寫好解析，你再檢查一下就能存入。</p></div>
+        <p class="text-sm muted mt-1 leading-relaxed">拍下批改後的考卷（可一次多張），在照片上框出錯題後直接存入；AI 會在背景讀出答案、寫好解析，之後到錯題庫檢查即可。</p></div>
       <div class="card p-5">
         <div class="grid sm:grid-cols-2 gap-3">
           <div><label class="label">科目</label>
@@ -2878,7 +2907,7 @@ function renderUpload() {
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
       <div><h2 class="section-title serif">審驗錯題</h2>
-        <p class="text-sm muted mt-1">在照片上拖曳框出錯題（含圖表），每框一題 AI 會自動分析；右邊檢查答案和解析後存入。</p></div>
+        <p class="text-sm muted mt-1">在照片上拖曳框出所有錯題（含圖表），框完直接按「存入錯題庫」；AI 會在背景慢慢分析，結果可到錯題庫檢查。</p></div>
       <div class="flex flex-wrap gap-2">
         <button class="btn btn-line" onclick="$('#up-file').click()">${icon('imageplus', 'w-4 h-4')}加入照片</button>
         ${hasKey ? `<button class="btn btn-line" onclick="aiScan()" ${UP.busy ? 'disabled' : ''}>${icon('sparkles', 'w-4 h-4')}${UP.busy ? esc(UP.progress || 'AI 辨識中…') : unscanned ? 'AI 自動找錯題（較慢）' : '讓 AI 重新找這張'}</button>` : `<button class="btn btn-line" onclick="openSettings()">設定 API Key 以使用 AI</button>`}
@@ -2928,7 +2957,7 @@ function renderUpLeft() {
     ${target ? `<div class="mb-2 rounded-xl bg-[#3b3532] text-white text-sm font-semibold px-3 py-2 flex items-center justify-between gap-2">
       <span>請在照片上拖曳，框出「${esc(target.questionType)}」</span>
       <button class="underline shrink-0" onclick="UP.drawFor=null;renderUpLeft()">取消</button></div>`
-      : `<div class="mb-2 text-sm muted">${UP.drawMode ? '畫框模式：手指拖曳框出一題錯題（含圖表）；點紅框可選取、拖角調整。' : '移動照片模式：可以捲動、查看照片；要框題目請切回「畫框」。'}</div>`}
+      : `<div class="mb-2 text-sm muted">${UP.drawMode ? '畫框模式：手指拖曳框出一題錯題（含圖表）；點紅框可選取、拖角調整。全部框完按「存入」，AI 會在背景分析。' : '移動照片模式：可以捲動、查看照片；要框題目請切回「畫框」。'}</div>`}
     <div id="pv-scroll" class="overflow-auto rounded-xl bg-[#f4ede5] max-h-[calc(100vh-290px)] min-h-[320px]">
       <div id="pv-wrap" class="relative select-none" style="width:${UP.zoom * 100}%;touch-action:${drawing ? 'none' : 'pan-x pan-y'}">
         <img src="${p.src}" class="block w-full h-auto pointer-events-none" draggable="false" alt="考卷照片">
@@ -2945,7 +2974,7 @@ function renderBoxes() {
   host.innerHTML = UP.staging.filter(s => s.photoId === p.id && s.include && s.box).map(s => {
     const [x0, y0, x1, y1] = s.box, sel = s.id === UP.sel;
     return `<div class="pbox ${sel ? 'sel' : ''}" data-id="${s.id}" style="left:${x0 / p.w * 100}%;top:${y0 / p.h * 100}%;width:${(x1 - x0) / p.w * 100}%;height:${(y1 - y0) / p.h * 100}%">
-      <span class="ptag">${esc(s.num || '')}${s.ai === 'pending' || s.ai === 'running' ? ' ⋯' : s.ai === 'error' ? ' ！' : ''}</span>
+      <span class="ptag">${esc(s.num || '')}</span>
       ${sel ? `<button class="pdel" data-del="${s.id}" aria-label="刪除這個框">×</button>` : ''}
       ${sel ? '<i class="ph nw" data-h="nw"></i><i class="ph ne" data-h="ne"></i><i class="ph sw" data-h="sw"></i><i class="ph se" data-h="se"></i>' : ''}</div>`;
   }).join('');
@@ -3010,7 +3039,7 @@ function renderBoxes() {
       UP.sel = it.id;
       renderUpLeft(); renderUpRight(); renderUpFoot();
       updatePreview(it);
-      if (!it.fromAi && !it.ai) queueAnalyze(it);
+
     } else updatePreview(UP.staging.find(s => s.id === d.id));
   };
   document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
@@ -3159,12 +3188,10 @@ function renderUpEditor() {
         <input class="input text-center font-bold" value="${esc(it.questionType)}" oninput="setField('questionType',this.value,true)">
         <button class="btn btn-sm btn-line btn-icon" aria-label="下一題" onclick="stepItem(1)" ${idx < 0 || idx >= list.length - 1 ? 'disabled' : ''}>${icon('right', 'w-[18px] h-[18px]')}</button>
       </div>
-      ${it.ai === 'pending' || it.ai === 'running' ? `<div class="rounded-xl bg-[#eef3f8] text-[#3e5b78] px-3 py-2 text-sm font-semibold mb-3 flex items-center gap-2"><span class="spin"></span>AI 分析中…（可以先框下一題）</div>` : ''}
-      ${it.ai === 'error' ? `<div class="rounded-xl bg-[#fbeceb] text-[#a03f35] px-3 py-2 text-sm mb-3 flex items-center justify-between gap-2"><span>AI 分析失敗：${esc(it.aiErr || '')}</span><button class="btn btn-sm btn-line" onclick="queueAnalyze(selItem())">重試</button></div>` : ''}
+      ${!it.fromAi && localStorage.getItem('GEMINI_API_KEY') ? `<div class="rounded-xl bg-[#eef3f8] text-[#3e5b78] px-3 py-2 text-sm mb-3">存入後，AI 會在背景自動填好答案、考點和解析，這裡可以先不填。</div>` : ''}
       ${!it.include ? `<div class="rounded-xl bg-[#f4ede5] px-3 py-2 text-sm mb-3 flex items-center justify-between">這題目前沒有勾選<button class="btn btn-sm btn-primary" onclick="toggleQ('${esc(it.sec)}','${esc(it.num)}')">勾選為錯題</button></div>` : ''}
       ${it.box ? `<div class="qimg mx-auto">${it.preview ? `<img id="ed-prev" src="${it.preview}" style="width:100%">` : '<div id="ed-prev-ph" class="p-6 text-center muted text-sm">產生預覽中…</div>'}</div>
         <div class="flex flex-wrap justify-end gap-1 mt-1.5">
-          ${localStorage.getItem('GEMINI_API_KEY') && it.ai !== 'running' && it.ai !== 'pending' ? `<button class="btn btn-sm btn-ghost" onclick="queueAnalyze(selItem(),true)">${icon('refresh', 'w-4 h-4')}重新分析</button>` : ''}
           <button class="btn btn-sm btn-ghost" onclick="restageSel()">${icon('maximize', 'w-4 h-4')}全螢幕調整框選</button>
           <button class="btn btn-sm btn-ghost text-[#b0463b]!" onclick="deleteItem(UP.sel)">${icon('trash', 'w-4 h-4')}刪除這題</button></div>`
         : `<div class="rounded-2xl border-2 border-dashed border-[#a9645a] p-5 text-center text-sm font-semibold text-[#8a4c43]">這題還沒框選：請在照片上拖曳，框出這一題（含圖表）</div>`}
@@ -3213,90 +3240,20 @@ async function regenSolution() {
   renderUpEditor();
   const d = $('#up-editor details'); if (d) d.open = true;
 }
-// ---- 框選後自動分析（背景，最多同時 3 題）----
-const AQ = { queue: [], running: 0 };
-function queueAnalyze(it, force) {
-  if (!it || !it.box || !localStorage.getItem('GEMINI_API_KEY')) return;
-  if (force) it.touched = [];
-  it.ai = 'pending'; it.aiErr = '';
-  if (!AQ.queue.includes(it.id)) AQ.queue.push(it.id);
-  refreshItem(it); pumpAnalyze();
-}
-function pumpAnalyze() {
-  while (AQ.running < 3 && AQ.queue.length) {
-    const qid = AQ.queue.shift();
-    const it = UP.staging.find(s => s.id === qid);
-    if (!it || !it.box) continue;
-    AQ.running++;
-    analyzeOne(it).finally(() => { AQ.running--; pumpAnalyze(); });
-  }
-}
-function analyzePrompt(it) {
-  return `你是台灣國中各科的資深老師，正在幫學生整理「錯題本」。這張截圖是考卷上「一題學生答錯的題目」（照片拍的，已批改過）。
-
-【批改記號的意義】
-- 學生用黑色或藍色筆作答：選擇題把選項字母寫在題號前的括號附近；非選題寫在作答區。
-- 老師用紅筆批改：會在旁邊用紅筆寫上「正確答案」（例如紅色的 A）、或畫圈、打叉。
-- 紅色的長斜線或大勾是批改記號。
-
-【請回答】
-1. 題型與題號（例如「單選 第 8 題」「題組 第 3 題」「填充 第 2 題」）。
-2. 學生的答案、正確答案（以紅筆訂正為準；老師沒寫的話，請自行解題）。
-3. 完整題目文字（含選項）。
-4. 核心考點（10 字內）。
-5. 國中生看得懂的解析：最多 4 行，每行一句話或一個算式；最後一行用「★」開頭，寫關鍵觀念或口訣。數學式用 LaTeX 並以 $...$ 包住。
-6. 科目代碼與單元代碼。
-7. 沒有把握的欄位（例如字跡模糊、看不清楚紅筆字母）放進 unsure 陣列，可用：studentAnswer、correctAnswer、solution、content、tag。
-
-科目代碼只能是：math、physics、chinese、english、social。
-單元請從下列清單選最接近的代碼（都不符合就填空字串）：
-${chapterListForPrompt()}
-${UP.subject !== 'auto' ? `\n這份考卷的科目是：${UP.subject}（${SUBJECTS[UP.subject].name}）。` : ''}
-
-只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
-}
-async function analyzeOne(it) {
-  it.ai = 'running'; refreshItem(it);
-  try {
-    const p = UP.photos.find(x => x.id === it.photoId); if (!p) throw new Error('找不到照片');
-    const crop = await cropImage(p.src, it.box, 1200, false);
-    const j = parseJsonLoose(await gemini([{ text: analyzePrompt(it) }, { inline_data: { mime_type: 'image/jpeg', data: crop.orig.split(',')[1] } }]));
-    const t = it.touched || [];
-    for (const k of ['questionType', 'content', 'studentAnswer', 'correctAnswer', 'tag', 'solution']) if (!t.includes(k) && j[k]) it[k] = String(j[k]);
-    if (!t.includes('subject') && UP.subject === 'auto' && SUBJECTS[j.subject]) { it.subject = j.subject; it.chapter = ''; }
-    if (!t.includes('chapter') && chaptersOf(it.subject).find(c => c.id === j.chapter)) it.chapter = j.chapter;
-    it.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !t.includes(k));
-    it.ai = 'done';
-  } catch (e) { it.ai = 'error'; it.aiErr = e.message; }
-  refreshItem(it);
-}
-function refreshItem(it) {
-  if (currentTab !== 'upload') return;
-  renderBoxes(); renderUpChips(); renderUpFoot();
-  if (UP.sel === it.id) {
-    const ed = $('#up-editor');
-    // 正在打字時不要重畫，避免打斷輸入
-    if (ed && ed.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { if (it.ai === 'done') toast('這題的 AI 分析完成了，離開欄位後會更新'); it.pendingRender = true; }
-    else renderUpEditor();
-  }
-}
-document.addEventListener('focusout', () => setTimeout(() => { const it = selItem(); if (it && it.pendingRender && !$('#up-editor')?.contains(document.activeElement)) { it.pendingRender = false; renderUpEditor(); } }, 50));
 function deleteItem(id) {
   const it = UP.staging.find(s => s.id === id); if (!it) return;
   const p = UP.photos.find(x => x.id === it.photoId);
   if (it.sec === MANUAL_SEC && p) { const sec = (p.sections || []).find(s => s.id === MANUAL_SEC); if (sec) sec.nums = sec.nums.filter(n => n !== it.num); UP.staging = UP.staging.filter(s => s.id !== id); }
   else { it.include = false; it.box = it.box; }
-  AQ.queue = AQ.queue.filter(x => x !== id);
   if (UP.sel === id) UP.sel = null;
   renderUpLeft(); renderUpChips(); renderUpEditor(); renderUpFoot();
 }
 function renderUpFoot() {
   const box = $('#up-foot'); if (!box) return;
   const list = includedItems(), nobox = list.filter(s => !s.box).length;
-  const busy = list.filter(s => s.ai === 'pending' || s.ai === 'running').length;
   box.innerHTML = `
-    <div class="text-sm"><b class="text-lg num">${list.length}</b> 題要存入${nobox ? `<span class="text-[#a03f35] font-semibold">（${nobox} 題還沒框選）</span>` : ''}${busy ? `<span class="text-[#3e5b78] font-semibold">（AI 分析中 ${busy} 題）</span>` : ''}</div>
-    <button class="btn btn-sage btn-lg" onclick="commitStaging()" ${UP.busy || busy || !list.length ? 'disabled' : ''}>${icon('check')}${busy ? '等待 AI 分析…' : '存入錯題庫'}</button>`;
+    <div class="text-sm"><b class="text-lg num">${list.length}</b> 題要存入${nobox ? `<span class="text-[#a03f35] font-semibold">（${nobox} 題還沒框選）</span>` : ''}</div>
+    <button class="btn btn-sage btn-lg" onclick="commitStaging()" ${UP.busy || !list.length ? 'disabled' : ''}>${icon('check')}存入錯題庫</button>`;
 }
 
 async function addPhotos(ev) {
@@ -3321,7 +3278,7 @@ async function removePhoto(id) {
 }
 async function clearPhotos() {
   if (UP.staging.some(s => s.include) && !(await confirmBox('全部清除會清掉尚未存入的錯題，確定嗎？'))) return;
-  Object.assign(UP, { photos: [], staging: [], scores: [], cur: null, sel: null, drawFor: null, drawMode: true, zoom: 1 }); AQ.queue = [];
+  Object.assign(UP, { photos: [], staging: [], scores: [], cur: null, sel: null, drawFor: null, drawMode: true, zoom: 1 });
   renderUpload();
 }
 function newStaging(photo, box, f = {}) {
@@ -3436,45 +3393,137 @@ async function commitStaging() {
       await setImg(id, await cropImage(p.src, it.box));
       const e = normErr({ ...it, id, hasImage: true, source, createdAt: todayKey() });
       e.chapterName = e.chapter ? chapterName(e) : '';
+      if (!it.fromAi && localStorage.getItem('GEMINI_API_KEY')) {
+        e.ai = 'pending'; e.aiKeep = it.touched || [];
+        if (UP.subject !== 'auto') e.aiKeep = [...new Set([...e.aiKeep, 'subject'])];
+        if (!e.questionType || /AI 分析後更新/.test(e.questionType)) e.questionType = '';
+      }
       S.errors.unshift(e);
     }
     UP.scores.filter(s => s.include && s.score !== '' && s.score != null).forEach(s => S.scores.push({ id: uid('sc'), date: s.date || todayKey(), subject: s.subject, title: s.title || source, score: +s.score }));
     await persist('errors', 'scores');
-    toast(`已存入 ${items.length} 題！`, 'success');
+    const pend = S.errors.filter(e => e.ai === 'pending').length;
+    toast(pend ? `已存入 ${items.length} 題！AI 正在背景分析，完成的題目會自動補上答案與解析` : `已存入 ${items.length} 題！`, 'success');
+    bgAnalyze();
     Object.assign(UP, { photos: [], staging: [], scores: [], title: '', busy: false, cur: null, sel: null, drawFor: null, drawMode: true, zoom: 1 });
     switchTab('library');
   } catch (e) { UP.busy = false; toast('存入失敗：' + e.message, 'error'); renderUpFoot(); }
 }
 
+// ---- 存入後的背景分析（最多同時 2 題，關掉網頁下次開啟會繼續）----
+const BG = { running: 0, active: new Set(), timer: null };
+function analyzePrompt(e) {
+  return `你是台灣國中各科的資深老師，正在幫學生整理「錯題本」。這張截圖是考卷上「一題學生答錯的題目」（照片拍的，已批改過）。
+
+【批改記號的意義】
+- 學生用黑色或藍色筆作答：選擇題把選項字母寫在題號前的括號附近；非選題寫在作答區。
+- 老師用紅筆批改：會在旁邊用紅筆寫上「正確答案」（例如紅色的 A）、或畫圈、打叉。
+- 紅色的長斜線或大勾是批改記號。
+
+【請回答】
+1. 題型與題號（例如「單選 第 8 題」「題組 第 3 題」「填充 第 2 題」）。
+2. 學生的答案、正確答案（以紅筆訂正為準；老師沒寫的話，請自行解題）。
+3. 完整題目文字（含選項）。
+4. 核心考點（10 字內）。
+5. 國中生看得懂的解析：最多 4 行，每行一句話或一個算式；最後一行用「★」開頭，寫關鍵觀念或口訣。數學式用 LaTeX 並以 $...$ 包住。
+6. 科目代碼與單元代碼。
+7. 沒有把握的欄位（例如字跡模糊、看不清楚紅筆字母）放進 unsure 陣列，可用：studentAnswer、correctAnswer、solution、content、tag。
+
+科目代碼只能是：math、physics、chinese、english、social。
+單元請從下列清單選最接近的代碼（都不符合就填空字串）：
+${chapterListForPrompt()}
+${(e.aiKeep || []).includes('subject') ? `\n這題的科目是：${e.subject}（${SUBJECTS[e.subject].name}）。` : ''}
+
+只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
+}
+const aiBusy = e => e.ai === 'pending' || e.ai === 'running';
+function bgAnalyze() {
+  if (!localStorage.getItem('GEMINI_API_KEY')) return;
+  while (BG.running < 2) {
+    const e = S.errors.find(x => x.ai === 'pending' && !BG.active.has(x.id));
+    if (!e) break;
+    BG.running++; BG.active.add(e.id);
+    bgOne(e).finally(() => { BG.running--; BG.active.delete(e.id); setTimeout(bgAnalyze, 600); });
+  }
+}
+async function bgOne(e) {
+  e.ai = 'running'; bgRefresh();
+  try {
+    const v = await getImg(e.id); if (!v) throw new Error('找不到截圖');
+    const j = parseJsonLoose(await gemini([{ text: analyzePrompt(e) }, { inline_data: { mime_type: 'image/jpeg', data: v.orig.split(',')[1] } }]));
+    const cur = S.errors.find(x => x.id === e.id); if (!cur) return;
+    const keep = cur.aiKeep || [];
+    for (const k of ['questionType', 'content', 'studentAnswer', 'correctAnswer', 'tag', 'solution']) if (!keep.includes(k) && j[k]) cur[k] = String(j[k]);
+    if (!keep.includes('subject') && SUBJECTS[j.subject] && j.subject !== cur.subject) { cur.subject = j.subject; if (!keep.includes('chapter')) cur.chapter = ''; }
+    if (!keep.includes('chapter') && chaptersOf(cur.subject).find(c => c.id === j.chapter)) { cur.chapter = j.chapter; cur.chapterName = chapterName(cur); }
+    cur.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !keep.includes(k));
+    cur.ai = 'done'; cur.aiErr = '';
+  } catch (err) {
+    const cur = S.errors.find(x => x.id === e.id);
+    if (cur) { cur.ai = 'error'; cur.aiErr = err.message; }
+  }
+  await persist('errors');
+  bgRefresh();
+}
+function bgRefresh() {
+  clearTimeout(BG.timer);
+  BG.timer = setTimeout(() => {
+    renderNav();
+    if (currentTab === 'library' && $('#modal-edit').classList.contains('hidden')) renderLibrary();
+    if (currentTab === 'home' && !RV.active) renderHome();
+  }, 300);
+}
+function retryAi(id) {
+  const list = id ? S.errors.filter(e => e.id === id) : S.errors.filter(e => e.ai === 'error');
+  list.forEach(e => { e.ai = 'pending'; e.aiErr = ''; });
+  persist('errors'); bgAnalyze(); bgRefresh();
+}
+function reanalyze(id) {
+  const e = S.errors.find(x => x.id === id); if (!e) return;
+  e.ai = 'pending'; e.aiKeep = []; e.aiErr = '';
+  persist('errors'); bgAnalyze(); renderLibList();
+}
+
 // ---- Gemini ----
 let workingModel = null;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function gemini(parts, json = true) {
   const key = localStorage.getItem('GEMINI_API_KEY');
-  if (!key) { openSettings(); throw new Error('請先設定 Gemini API Key'); }
+  if (!key) { throw new Error('請先設定 Gemini API Key'); }
   const custom = (localStorage.getItem('GEMINI_MODEL') || '').trim();
   const models = [...new Set([workingModel, custom, ...DEFAULT_MODELS].filter(Boolean))];
-  let lastErr = '';
+  const errs = [];
   for (const m of models) {
-    let res;
-    try {
-      res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({ contents: [{ parts }], generationConfig: json ? { responseMimeType: 'application/json', temperature: 0.2 } : { temperature: 0.4 } })
-      });
-    } catch (e) { lastErr = '網路連線失敗'; continue; }
-    if (res.ok) {
-      const data = await res.json();
-      workingModel = m;
-      const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
-      if (!text) throw new Error('AI 沒有回應內容（可能被安全機制擋下）');
-      return text;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let res;
+      try {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({ contents: [{ parts }], generationConfig: json ? { responseMimeType: 'application/json', temperature: 0.2 } : { temperature: 0.4 } })
+        });
+      } catch (e) { errs.push({ m, status: 0, msg: '網路連線失敗' }); await sleep(2000 * (attempt + 1)); continue; }
+      if (res.ok) {
+        const data = await res.json();
+        workingModel = m;
+        const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+        if (!text) throw new Error('AI 沒有回應內容（可能被安全機制擋下）');
+        return text;
+      }
+      const err = await res.json().catch(() => ({}));
+      const msg = err.error?.message || `HTTP ${res.status}`;
+      if (res.status === 400 && /api key/i.test(msg)) throw new Error('API Key 無效，請到設定重新輸入');
+      if (res.status === 403) throw new Error('API Key 沒有使用權限，請到 Google AI Studio 確認');
+      errs.push({ m, status: res.status, msg });
+      // 忙碌或請求太多：等一下再試同一個模型
+      if ([429, 500, 503].includes(res.status) && attempt < 2) { await sleep(4000 * (attempt + 1)); continue; }
+      break;
     }
-    const err = await res.json().catch(() => ({}));
-    lastErr = err.error?.message || `HTTP ${res.status}`;
-    if (res.status === 400 && /api key/i.test(lastErr)) throw new Error('API Key 無效，請到設定重新輸入');
-    if (res.status === 403) throw new Error('API Key 沒有權限：' + lastErr);
+    if (workingModel === m) workingModel = null;
   }
-  throw new Error(/quota|exhausted|429/i.test(lastErr) ? '今天的免費額度用完了，請稍後再試' : lastErr);
+  if (errs.some(e => e.status === 429)) throw new Error('請求太多或今天的免費額度用完了，請稍等一兩分鐘再重試');
+  if (errs.some(e => e.status === 503 || e.status === 500)) throw new Error('Google AI 伺服器忙碌中，請稍後再重試');
+  if (errs.length && errs.every(e => e.status === 0)) throw new Error('網路連線失敗，請確認網路後再重試');
+  throw new Error('目前無法使用 AI 模型，請到設定按「測試連線」檢查（' + (errs[0]?.msg || '未知錯誤').slice(0, 80) + '）');
 }
 function sanitizeSvg(str) {
   if (!str || !/<svg[\s>]/i.test(str)) return '';
@@ -3765,7 +3814,7 @@ function fitA4() {
 }
 window.addEventListener('resize', () => { if (currentTab === 'print') fitA4(); });
 function printList() {
-  return S.errors.filter(e => (PR.subject === 'all' || e.subject === PR.subject) && (PR.scope === 'all' || (PR.scope === 'due' ? isDue(e) : !e.mastered)));
+  return S.errors.filter(e => !aiBusy(e) && (PR.subject === 'all' || e.subject === PR.subject) && (PR.scope === 'all' || (PR.scope === 'due' ? isDue(e) : !e.mastered)));
 }
 function paperHtml() {
   const list = printList(), stu = PR.mode === 'student';
@@ -3999,6 +4048,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderHeader();
   switchTab((location.hash || '#home').slice(1));
   ensureEnhanced().then(n => { if (n) toast(`已把 ${n} 張截圖調整得更清楚`, 'success'); });
+  S.errors.forEach(e => { if (e.ai === 'running') e.ai = 'pending'; });
+  bgAnalyze();
   // KaTeX 載入較晚時補算數學式
   window.addEventListener('load', () => renderMath($('main')));
   // 跨日自動更新
