@@ -226,11 +226,17 @@ position: sticky;
 .inset-0 {
 inset: 0px;
 }
+.-top-2 {
+top: calc(var(--spacing) * -2);
+}
 .top-0 {
 top: 0px;
 }
 .top-1\/2 {
 top: calc(1 / 2 * 100%);
+}
+.-right-2 {
+right: calc(var(--spacing) * -2);
 }
 .bottom-1 {
 bottom: var(--spacing);
@@ -306,6 +312,9 @@ margin-top: calc(var(--spacing) * 7);
 }
 .mt-auto {
 margin-top: auto;
+}
+.mb-0\! {
+margin-bottom: 0px !important;
 }
 .mb-1 {
 margin-bottom: var(--spacing);
@@ -387,6 +396,9 @@ height: calc(var(--spacing) * 14);
 }
 .h-16 {
 height: calc(var(--spacing) * 16);
+}
+.h-24 {
+height: calc(var(--spacing) * 24);
 }
 .h-64 {
 height: calc(var(--spacing) * 64);
@@ -786,6 +798,9 @@ background-color: #fff1c9 !important;
 .bg-transparent {
 background-color: transparent;
 }
+.bg-white {
+background-color: var(--color-white);
+}
 .bg-white\/10\! {
 background-color: color-mix(in srgb, #fff 10%, transparent) !important;
 @supports (color: color-mix(in lab, red, red)) {
@@ -797,6 +812,9 @@ background-color: color-mix(in srgb, #fff 90%, transparent) !important;
 @supports (color: color-mix(in lab, red, red)) {
 background-color: color-mix(in oklab, var(--color-white) 90%, transparent) !important;
 }
+}
+.p-1 {
+padding: var(--spacing);
 }
 .p-2 {
 padding: calc(var(--spacing) * 2);
@@ -1228,8 +1246,8 @@ position: sticky;
 .lg\:top-\[76px\] {
 top: 76px;
 }
-.lg\:col-span-4 {
-grid-column: span 4 / span 4;
+.lg\:col-span-3 {
+grid-column: span 3 / span 3;
 }
 .lg\:grid-cols-4 {
 grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1637,7 +1655,13 @@ inherits: false;
     .paper .qh { font-size:8.5pt; font-weight:700; color:#444; margin-bottom:1mm; display:flex; justify-content:space-between; gap:2mm; }
     .paper .qh .ans { background:#fde8e6; color:#a03f35; padding:0 2mm; border-radius:1mm; white-space:nowrap; }
     .paper .pq img { display:block; height:auto; }
-    .paper .qtext { font-size:10.5pt; line-height:1.6; }
+.paper .qtext { font-size:10.5pt; line-height:1.65; }
+    .paper .qstem { margin-bottom:1mm; }
+    .paper .qopts { display:grid; grid-template-columns: 1fr; gap:.5mm 4mm; }
+    .paper .qopts.short { grid-template-columns: 1fr 1fr; }
+    .paper .qfig { display:block; margin:1.5mm 0; height:auto; max-width:100%; }
+    .paper .ai-mark { display:inline-block; margin-top:1mm; font-size:8pt; font-weight:700; color:#8a5a00; background:#fff3cd; border:.5pt solid #f0d58a; border-radius:1.5mm; padding:.5mm 2mm; cursor:pointer; }
+    @media print { .paper .ai-mark { display:none !important; } }
     .paper .answer-space { border:.6pt dashed #bbb; border-radius:1.5mm; margin-top:1.5mm; color:#bbb; font-size:7.5pt; padding:1mm 2mm; }
     .paper .sol-row { display:flex; flex-wrap:wrap; gap:4mm; align-items:flex-start; }
     .paper .sol-row > .sol { flex:1 1 62mm; min-width:62mm; background:#fbf6ee; border:.5pt solid #efe1c8; border-radius:1.5mm; padding:2mm 3mm; font-size:8.8pt; line-height:1.55; }
@@ -1885,6 +1909,21 @@ function formatSteps(sol) {
     : `<div class="step"><span class="dot">▸</span><span>${esc(l)}</span></div>`).join('') + '</div>';
 }
 
+// 題目文字排版：題幹＋選項（短選項排兩欄）
+function formatQuestionText(t) {
+  const OPT = /[（(]\s*([A-E])\s*[)）]/;
+  const raw = String(t || '').replace(/\r/g, '');
+  const lines = [];
+  for (const ln of raw.split('\n')) {
+    // 同一行有好幾個選項時拆開
+    const parts = ln.split(/(?=[（(]\s*[A-E]\s*[)）])/).map(x => x.trim()).filter(Boolean);
+    if (parts.length > 1 && parts.slice(1).every(p => OPT.test(p.slice(0, 4)))) lines.push(...parts); else if (ln.trim()) lines.push(ln.trim());
+  }
+  const stem = [], opts = [];
+  for (const l of lines) { const m = l.match(/^[（(]\s*([A-E])\s*[)）]\s*(.*)$/); if (m && (opts.length || stem.length)) opts.push([m[1], m[2]]); else if (opts.length) opts[opts.length - 1][1] += ' ' + l; else stem.push(l); }
+  const short = opts.length && opts.every(o => o[1].replace(/\$[^$]*\$/g, 'xx').length <= 9);
+  return `<div class="qstem">${stem.map(esc).join('<br>')}</div>` + (opts.length ? `<div class="qopts ${short ? 'short' : ''}">${opts.map(o => `<div><b>(${o[0]})</b> ${esc(o[1])}</div>`).join('')}</div>` : '');
+}
 function toast(msg, type = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + (type === 'success' ? 'ok' : type === 'error' ? 'err' : '');
@@ -1968,6 +2007,16 @@ function sizeImage(el, v) {
 }
 // 將容器內 <img data-img="id" data-v="orig|clean"> 填入圖片
 async function hydrateImages(root) {
+  for (const el of $$('img[data-fig]', root)) {
+    if (el.dataset.loaded) continue;
+    const v = await getImg(el.dataset.fig), f = v && v.figs && v.figs[+el.dataset.i];
+    if (!f) { el.remove(); continue; }
+    el.src = f.url; el.dataset.loaded = 1;
+    const ch = charHeightOf(v);
+    let mm = ch > 3 ? f.w * PRINT_CH_MM / ch : 60;
+    mm = Math.min(mm, el.closest('.two-col') ? COL_MM : 118);
+    el.style.width = mm.toFixed(1) + 'mm';
+  }
   for (const el of $$('img[data-img]', root)) {
     if (el.dataset.loaded) continue;
     const v = await getImg(el.dataset.img);
@@ -2003,7 +2052,8 @@ function normErr(e) {
     createdAt: e.createdAt || todayKey(),
     review: Object.assign({ due: todayKey(), streak: 0, count: 0, last: '' }, e.review || {}),
     mastered: !!e.mastered,
-    ai: e.ai || '', aiErr: e.aiErr || '', aiKeep: e.aiKeep || [], unsure: Array.isArray(e.unsure) ? e.unsure : []
+    ai: e.ai || '', aiErr: e.aiErr || '', aiKeep: e.aiKeep || [], unsure: Array.isArray(e.unsure) ? e.unsure : [],
+    figChecked: !!e.figChecked, textChecked: !!e.textChecked
   };
 }
 function lsJson(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -2436,13 +2486,31 @@ function openEdit(id) {
         <input type="file" id="ed-file" accept="image/*" class="hidden" onchange="editPickImage(event)">
       </div>
     </div>
-    <div><label class="label">題目文字（搜尋用；沒有截圖時會顯示這段）</label><textarea id="ed-content" rows="3" class="textarea">${esc(e.content)}</textarea></div>
+    <div><label class="label">題目文字（印「文字＋圖表」版時使用；選項請各自一行）</label><textarea id="ed-content" rows="5" class="textarea">${esc(e.content)}</textarea></div>
+    ${e.hasImage ? `<div><div class="flex items-center justify-between mb-1"><label class="label mb-0!">剪下來的圖表（印文字版時放在題目下方）</label>
+      <button class="btn btn-sm btn-line" onclick="editAddFig()">${icon('crop', 'w-4 h-4')}框選圖表</button></div>
+      <div id="ed-figs" class="flex flex-wrap gap-2"></div></div>` : ''}
     <div><label class="label">解析（一行一步驟；用「★」開頭的那行會特別標示）</label><textarea id="ed-sol" rows="5" class="textarea">${esc(e.solution)}</textarea></div>
     <details><summary class="text-sm font-semibold muted cursor-pointer">進階：手繪圖解 SVG 原始碼</summary>
       <textarea id="ed-svg" rows="4" class="textarea mt-2 font-mono text-xs!">${esc(e.svgDiagram)}</textarea></details>`;
   openModal('modal-edit');
   hydrateImages($('#edit-body'));
-  if (e.hasImage) getImg(e.id).then(v => { EDIT.base = v; setSkewSliders(v && v.skew); showEditClean(); });
+  if (e.hasImage) getImg(e.id).then(v => { EDIT.base = v; EDIT.figs = (v && v.figs) ? v.figs.slice() : []; setSkewSliders(v && v.skew); showEditClean(); renderEditFigs(); });
+}
+function renderEditFigs() {
+  const box = $('#ed-figs'); if (!box) return;
+  const figs = EDIT.figs || [];
+  box.innerHTML = figs.length ? figs.map((f, i) => `<div class="relative border border-[#e9e1d8] rounded-xl bg-white p-1"><img src="${f.url}" class="h-24 w-auto block">
+    <button class="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#3b3532] text-white font-bold" aria-label="移除圖表" onclick="EDIT.figs.splice(${i},1);EDIT.figsChanged=true;renderEditFigs()">×</button></div>`).join('')
+    : '<div class="text-sm muted">沒有圖表（純文字題）。如果這題其實有圖，按「框選圖表」把圖框出來。</div>';
+}
+async function editAddFig() {
+  const v = editCur(); if (!v) return;
+  const img = await loadImage(v.orig);
+  const box = await openCropper(v.orig, null); if (!box) return;
+  const b1000 = [box[1] / img.naturalHeight * 1000, box[0] / img.naturalWidth * 1000, box[3] / img.naturalHeight * 1000, box[2] / img.naturalWidth * 1000];
+  const [f] = await cropFigures(v.clean || v.orig, [b1000]);
+  if (f) { EDIT.figs = [...(EDIT.figs || []), f]; EDIT.figsChanged = true; renderEditFigs(); }
 }
 function editCur() { return EDIT.newImg || EDIT.base; }
 function showEditClean() { const v = editCur(), el = $('#ed-clean'); if (v && el) { el.src = v.clean || v.orig; if (v.w) el.style.width = Math.min(v.w, 640) + 'px'; } }
@@ -2503,7 +2571,10 @@ async function saveEdit() {
   e.solution = $('#ed-sol').value.trim();
   e.svgDiagram = sanitizeSvg($('#ed-svg').value.trim());
   e.unsure = [];
-  if (EDIT.newImg) { await setImg(e.id, EDIT.newImg); e.hasImage = true; $$(`img[data-img="${e.id}"]`).forEach(el => delete el.dataset.loaded); }
+  e.textChecked = true;
+  if (EDIT.newImg) { await setImg(e.id, Object.assign({}, EDIT.newImg, { figs: EDIT.figs || EDIT.newImg.figs || [] })); e.hasImage = true; $$(`img[data-img="${e.id}"]`).forEach(el => delete el.dataset.loaded); }
+  else if (EDIT.figsChanged) { const v = await getImg(e.id); if (v) await setImg(e.id, Object.assign({}, v, { figs: EDIT.figs })); }
+  if (EDIT.figsChanged) { e.figChecked = true; $$(`img[data-fig="${e.id}"]`).forEach(el => delete el.dataset.loaded); }
   else if (EDIT.removeImg) { await delImg(e.id); e.hasImage = false; }
   await persist('errors');
   closeModal('modal-edit'); renderLibList(); toast('已儲存修改', 'success');
@@ -3436,6 +3507,7 @@ function analyzePrompt(e) {
 1. 題型與題號（例如「單選 第 8 題」「題組 第 3 題」「填充 第 2 題」）。
 2. 學生的答案、正確答案（以紅筆訂正為準；老師沒寫的話，請自行解題）。
 3. 完整題目文字（含選項）。
+${FIG_TEXT_RULE}
 4. 核心考點（10 字內）。
 5. 國中生看得懂的解析：最多 4 行，每行一句話或一個算式；最後一行用「★」開頭，寫關鍵觀念或口訣。數學式用 LaTeX 並以 $...$ 包住。
 6. 科目代碼與單元代碼。
@@ -3445,7 +3517,7 @@ function analyzePrompt(e) {
 單元請從下列清單選最接近的代碼（都不符合就填空字串）：
 ${(e.aiKeep || []).includes('subject') ? `${e.subject}（${SUBJECTS[e.subject].name}）：` + chaptersOf(e.subject).map(c => `${c.id}=${c.name}`).join('；') + `\n這題的科目是：${e.subject}（${SUBJECTS[e.subject].name}）。` : chapterListForPrompt()}
 
-只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
+只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","figures":[],"studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
 }
 const aiBusy = e => e.ai === 'pending' || e.ai === 'running';
 async function smallImage(url, maxW = 1000) {
@@ -3454,6 +3526,53 @@ async function smallImage(url, maxW = 1000) {
   const c = document.createElement('canvas'); c.width = maxW; c.height = Math.round(img.naturalHeight * maxW / img.naturalWidth);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
   return c.toDataURL('image/jpeg', 0.82);
+}
+// 從截圖剪出圖表（box 為 0～1000 相對座標）
+async function cropFigures(url, boxes) {
+  const img = await loadImage(url), W = img.naturalWidth, H = img.naturalHeight, out = [];
+  for (const b of boxes || []) {
+    let [y0, x0, y1, x1] = (b || []).map(Number);
+    if ([y0, x0, y1, x1].some(isNaN) || y1 - y0 < 20 || x1 - x0 < 20) continue;
+    const pd = 8; y0 = Math.max(0, y0 - pd); x0 = Math.max(0, x0 - pd); y1 = Math.min(1000, y1 + pd); x1 = Math.min(1000, x1 + pd);
+    const sx = x0 / 1000 * W, sy = y0 / 1000 * H, sw = (x1 - x0) / 1000 * W, sh = (y1 - y0) / 1000 * H;
+    const c = document.createElement('canvas'); c.width = Math.round(sw); c.height = Math.round(sh);
+    c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    out.push({ box: [y0, x0, y1, x1], w: c.width, h: c.height, url: c.toDataURL('image/jpeg', 0.88) });
+  }
+  return out;
+}
+async function saveFigures(id, boxes) {
+  const v = await getImg(id); if (!v) return;
+  const figs = await cropFigures(v.clean || v.orig, boxes);
+  await setImg(id, Object.assign({}, v, { figs }));
+  $$(`img[data-fig="${id}"]`).forEach(el => delete el.dataset.loaded);
+}
+const FIG_TEXT_RULE = `題目文字的格式：先寫題幹，每個選項各自一行，例如「(A) …」「(B) …」。數學式用 LaTeX 並以 $...$ 包住。不要包含學生或老師的手寫內容。
+圖表：如果題目有圖、表、地圖、照片、示意圖、函數圖、統計圖等「非文字」內容，用 figures 給出每一個圖表的 box_2d：[ymin, xmin, ymax, xmax]（0～1000 的相對座標），只框圖表本身與圖上的標示文字、圖號，不要框到題幹與選項文字；沒有圖表就給空陣列。如果選項本身是圖（例如四個小圖分別是 (A)(B)(C)(D)），把整組選項圖一起框成一個。`;
+function figPrompt(e) {
+  return `這張截圖是一題考卷題目（照片拍的，可能有手寫筆跡）。
+${FIG_TEXT_RULE}
+${e.content ? '' : '\n另外請把這題的題目文字（含選項）打出來放在 content。'}
+只回傳 JSON：{"figures":[[ymin,xmin,ymax,xmax]]${e.content ? '' : ',"content":""'}}`;
+}
+async function bgFig(e) {
+  try {
+    const v = await getImg(e.id); if (!v) throw new Error('找不到截圖');
+    const img = await smallImage(v.orig);
+    const j = parseJsonLoose(await gemini([{ text: figPrompt(e) }, { inline_data: { mime_type: 'image/jpeg', data: img.split(',')[1] } }]));
+    await saveFigures(e.id, Array.isArray(j.figures) ? j.figures : []);
+    const cur = S.errors.find(x => x.id === e.id);
+    if (cur) { cur.figChecked = true; if (!cur.content && j.content) cur.content = String(j.content); }
+  } catch (err) {
+    const cur = S.errors.find(x => x.id === e.id);
+    if (err instanceof QuotaError) {
+      S.meta.aiPausedUntil = Date.now() + err.retryMs;
+      BG.status = err.kind === 'day' ? `今天的免費額度用完了，台灣時間 ${fmtClock(S.meta.aiPausedUntil)} 後會自動繼續` : `每分鐘的次數已滿，休息一下後自動繼續（約 ${Math.ceil(err.retryMs / 1000)} 秒）`;
+      persist('meta');
+    } else if (cur) { cur.figChecked = true; cur.figErr = err.message; }
+  }
+  await persist('errors');
+  bgRefresh();
 }
 function aiPausedUntil() { return +(S.meta.aiPausedUntil || 0); }
 function bgAnalyze() {
@@ -3466,7 +3585,13 @@ function bgAnalyze() {
     bgRefresh(); return;
   }
   const e = S.errors.find(x => x.ai === 'pending');
-  if (!e) { BG.status = ''; bgRefresh(); return; }
+  if (!e) {
+    const f = S.errors.find(x => x.hasImage && !aiBusy(x) && !x.figChecked);
+    if (!f) { BG.status = ''; bgRefresh(); return; }
+    BG.running = 1; BG.active.add(f.id);
+    bgFig(f).finally(() => { BG.running = 0; BG.active.delete(f.id); setTimeout(bgAnalyze, BG.gapMs); });
+    return;
+  }
   BG.running = 1; BG.active.add(e.id);
   bgOne(e).finally(() => { BG.running = 0; BG.active.delete(e.id); setTimeout(bgAnalyze, BG.gapMs); });
 }
@@ -3482,6 +3607,7 @@ async function bgOne(e) {
     if (!keep.includes('subject') && SUBJECTS[j.subject] && j.subject !== cur.subject) { cur.subject = j.subject; if (!keep.includes('chapter')) cur.chapter = ''; }
     if (!keep.includes('chapter') && chaptersOf(cur.subject).find(c => c.id === j.chapter)) { cur.chapter = j.chapter; cur.chapterName = chapterName(cur); }
     cur.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !keep.includes(k));
+    if (Array.isArray(j.figures)) { await saveFigures(cur.id, j.figures); cur.figChecked = true; }
     cur.ai = 'done'; cur.aiErr = '';
     S.meta.aiCount = S.meta.aiCount || {}; const t = todayKey(); S.meta.aiCount[t] = (S.meta.aiCount[t] || 0) + 1;
     Object.keys(S.meta.aiCount).forEach(d => { if (diffDays(d, t) > 14) delete S.meta.aiCount[d]; });
@@ -3517,6 +3643,7 @@ function bgRefresh() {
     renderNav();
     if (currentTab === 'library' && $('#modal-edit').classList.contains('hidden')) renderLibrary();
     if (currentTab === 'home' && !RV.active) renderHome();
+    if (currentTab === 'print') renderPrintPreview();
   }, 300);
 }
 function retryAi(id) {
@@ -3861,7 +3988,7 @@ function renderScores() {
 // =====================================================================
 // A4 派卷
 // =====================================================================
-const PR = { mode: 'student', subject: 'all', scope: 'learning', space: 'M', title: '敦化國中 考前錯題專項複習卷' };
+const PR = { mode: 'student', subject: 'all', scope: 'learning', space: 'M', layout: 'text', title: '敦化國中 考前錯題專項複習卷' };
 const SPACE_MM = { L: 55, M: 32, S: 16, none: 0 };
 function renderPrintTab() {
   const el = $('#tab-print');
@@ -3879,7 +4006,10 @@ function renderPrintTab() {
         ${[['learning', '尚未精熟的題目'], ['due', '今天待複習'], ['all', '全部錯題']].map(([v, l]) => `<option value="${v}" ${PR.scope === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="${PR.mode === 'student' ? '' : 'opacity-40 pointer-events-none'}"><label class="label">作答區</label><div class="flex gap-1.5">
         ${[['L', '大'], ['M', '中'], ['S', '小'], ['none', '不留']].map(([v, l]) => `<button class="pill flex-1 justify-center px-2! ${PR.space === v ? 'on' : ''}" onclick="PR.space='${v}';renderPrintTab()">${l}</button>`).join('')}</div></div>
-      <div class="sm:col-span-2 lg:col-span-4"><label class="label">試卷標題</label><input class="input" value="${esc(PR.title)}" oninput="PR.title=this.value;$('#a4 .ph h1').textContent=this.value"></div>
+      <div><label class="label">題目呈現</label><div class="flex gap-2">
+        <button class="pill flex-1 justify-center ${PR.layout === 'text' ? 'on' : ''}" onclick="PR.layout='text';renderPrintTab()">文字＋圖表</button>
+        <button class="pill flex-1 justify-center ${PR.layout === 'image' ? 'on' : ''}" onclick="PR.layout='image';renderPrintTab()">原題截圖</button></div></div>
+      <div class="sm:col-span-2 lg:col-span-3"><label class="label">試卷標題</label><input class="input" value="${esc(PR.title)}" oninput="PR.title=this.value;$('#a4 .ph h1').textContent=this.value"></div>
     </div>
     <div id="a4-wrap" class="mt-4 rounded-[22px] bg-[#ebe4dc] p-3 sm:p-5 overflow-hidden">
       <div id="a4" class="paper mx-auto shadow-lg" style="width:210mm;min-height:297mm;padding:12mm;box-sizing:border-box;transform-origin:top left"></div>
@@ -3902,7 +4032,15 @@ function paperHtml() {
       <span>科目：${PR.subject === 'all' ? '綜合' : SUBJECTS[PR.subject].name}　共 ${list.length} 題　${stu ? '練習卷' : '詳解卷'}</span><span>姓名：__________　得分：______</span></div></div>`;
   if (!list.length) return head + '<div style="text-align:center;color:#999;padding:30mm 0">這個範圍沒有題目</div>';
   const qh = (e, i) => `<div class="qh"><span>${i + 1}.　${SUBJECTS[e.subject].name}・${esc(chapterName(e))}${e.questionType ? '・' + esc(e.questionType) : ''}</span>${stu ? '' : `<span class="ans">正解：${esc(e.correctAnswer || '見解析')}</span>`}</div>`;
-  const body = e => e.hasImage ? `<img data-img="${e.id}" data-v="${stu ? 'clean' : 'orig'}" data-fit="print" ${stu ? '' : 'data-max="118"'} alt="">` : `<div class="qtext">${esc(e.content)}</div>`;
+  const imgBody = e => `<img data-img="${e.id}" data-v="${stu ? 'clean' : 'orig'}" data-fit="print" ${stu ? '' : 'data-max="118"'} alt="">`;
+  const textBody = e => `<div class="qtext">${formatQuestionText(e.content)}</div>
+    ${(e.figN || 0) ? '' : ''}${e.hasImage ? [0, 1, 2, 3].map(i => `<img class="qfig" data-fig="${e.id}" data-i="${i}" alt="">`).join('') : ''}
+    ${!e.textChecked ? `<button class="ai-mark" onclick="openEdit('${e.id}')">AI 打字・點此檢查</button>` : ''}`;
+  const body = e => {
+    if (PR.layout === 'text' && e.content && (!e.hasImage || e.figChecked)) return textBody(e);
+    if (!e.hasImage) return `<div class="qtext">${formatQuestionText(e.content)}</div>`;
+    return imgBody(e) + (PR.layout === 'text' ? `<div class="ai-mark ai-wait">${e.content ? 'AI 正在找圖表，這題先用截圖' : '尚無題目文字，這題用截圖'}</div>` : '');
+  };
   if (stu) {
     const sp = SPACE_MM[PR.space];
     return head + `<div class="cols">${list.map((e, i) => `
