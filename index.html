@@ -211,6 +211,9 @@ display: none !important;
 }
 }
 @layer utilities {
+.pointer-events-none {
+pointer-events: none;
+}
 .absolute {
 position: absolute;
 }
@@ -384,9 +387,6 @@ min-height: 32px !important;
 }
 .min-h-\[34px\]\! {
 min-height: 34px !important;
-}
-.min-h-\[46px\] {
-min-height: 46px;
 }
 .w-3 {
 width: calc(var(--spacing) * 3);
@@ -771,6 +771,9 @@ padding-inline: calc(var(--spacing) * 1.5);
 .px-2 {
 padding-inline: calc(var(--spacing) * 2);
 }
+.px-2\! {
+padding-inline: calc(var(--spacing) * 2) !important;
+}
 .px-3 {
 padding-inline: calc(var(--spacing) * 3);
 }
@@ -986,6 +989,9 @@ font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeri
 }
 .accent-\[\#a9645a\] {
 accent-color: #a9645a;
+}
+.opacity-40 {
+opacity: 40%;
 }
 .opacity-55 {
 opacity: 55%;
@@ -1468,7 +1474,7 @@ inherits: false;
     .muted { color: var(--muted); }
     .divider { border-top:1px solid var(--line-soft); }
 
-    .qimg { background:#fff; border:1px solid var(--line-soft); border-radius:14px; overflow:hidden; }
+    .qimg { background:#fff; border:1px solid var(--line-soft); border-radius:14px; overflow:hidden; width:fit-content; max-width:100%; }
     .qimg img { display:block; width:100%; height:auto; min-height:40px; background: linear-gradient(90deg,#f6f1ea,#fbf8f4,#f6f1ea); }
     .svgbox svg { width:100%; height:auto; max-width:560px; margin:0 auto; display:block; }
     .steps .step { display:flex; gap:.55rem; padding:.28rem 0; line-height:1.75; }
@@ -1533,10 +1539,24 @@ inherits: false;
 
     /* Print */
     #print-area { display:none; }
-    .paper { background:#fff; color:#222; font-size:13px; }
-    .paper .pq { break-inside: avoid; page-break-inside: avoid; padding: 10px 0 14px; border-bottom: 1px solid #e5e5e5; }
-    .paper .pq img { max-width:100%; max-height: 520px; display:block; }
-    .paper .answer-space { height: 120px; border:1px dashed #c9c9c9; border-radius:8px; margin-top:8px; color:#bbb; font-size:11px; padding:6px 8px; }
+    .paper { background:#fff; color:#222; font-size:10pt; line-height:1.45; }
+    .paper .ph { text-align:center; border-bottom:1.5pt solid #333; padding-bottom:2mm; margin-bottom:3mm; }
+    .paper .ph h1 { font-size:15pt; font-weight:700; letter-spacing:.05em; }
+    .paper .ph .meta { display:flex; justify-content:space-between; gap:4mm; flex-wrap:wrap; font-size:9pt; color:#555; margin-top:1.5mm; }
+    .paper .cols { display:grid; grid-template-columns: 1fr 1fr; column-gap:7mm; align-items:start; }
+    .paper .cols > .pq { min-width:0; }
+    .paper .pq { break-inside: avoid; page-break-inside: avoid; padding: 1.5mm 0 3mm; margin-bottom:2mm; border-bottom: .5pt solid #e3e3e3; }
+    .paper .pq.wide { grid-column: 1 / -1; }
+    .paper .qh { font-size:8.5pt; font-weight:700; color:#444; margin-bottom:1mm; display:flex; justify-content:space-between; gap:2mm; }
+    .paper .qh .ans { background:#fde8e6; color:#a03f35; padding:0 2mm; border-radius:1mm; white-space:nowrap; }
+    .paper .pq img { display:block; height:auto; }
+    .paper .qtext { font-size:10.5pt; line-height:1.6; }
+    .paper .answer-space { border:.6pt dashed #bbb; border-radius:1.5mm; margin-top:1.5mm; color:#bbb; font-size:7.5pt; padding:1mm 2mm; }
+    .paper .sol-row { display:flex; flex-wrap:wrap; gap:4mm; align-items:flex-start; }
+    .paper .sol-row > .sol { flex:1 1 62mm; min-width:62mm; background:#fbf6ee; border:.5pt solid #efe1c8; border-radius:1.5mm; padding:2mm 3mm; font-size:8.8pt; line-height:1.55; }
+    .paper .sol .steps .step { padding:.3mm 0; line-height:1.55; gap:1.5mm; }
+    .paper .sol .steps .step.star { padding:1mm 2mm; margin-top:1mm; }
+    .paper .sol .svgbox svg { max-width:100%; }
     @media print {
       @page { size: A4; margin: 12mm; }
       body { background:#fff !important; padding:0 !important; }
@@ -1814,12 +1834,30 @@ async function getImg(id) {
 }
 async function setImg(id, v) { imgCache.set(id, v); await DB.set('img:' + id, v); }
 async function delImg(id) { imgCache.delete(id); await DB.del('img:' + id).catch(() => {}); }
+// 統一字級：依截圖中的字高縮放。螢幕上字高約 19px；列印時與原考卷差不多（字高約 2.6mm）
+const SCREEN_CH = 19, PRINT_CH_MM = 2.6, COL_MM = 89, FULL_MM = 186;
+function charHeightOf(v) { return v.chSrc === 'photo' ? v.ch : (v.chGroup || v.ch || 0); }
+function sizeImage(el, v) {
+  const ch = charHeightOf(v), w = v.w || el.naturalWidth || 0;
+  if (el.dataset.fit === 'print') {
+    let mm = ch > 3 && w ? w * PRINT_CH_MM / ch : 0;
+    const pq = el.closest('.pq');
+    if (!mm) mm = COL_MM;
+    if (pq && pq.classList.contains('two-col')) {
+      if (mm > COL_MM * 1.2) { pq.classList.add('wide'); mm = Math.min(mm, FULL_MM); }
+      else mm = Math.min(mm, COL_MM);
+    } else mm = Math.min(mm, el.dataset.max ? +el.dataset.max : FULL_MM);
+    el.style.width = mm.toFixed(1) + 'mm'; el.style.maxWidth = 'none';
+  } else if (ch > 3 && w) {
+    el.style.width = Math.round(w * SCREEN_CH / ch) + 'px'; el.style.maxWidth = '100%';
+  }
+}
 // 將容器內 <img data-img="id" data-v="orig|clean"> 填入圖片
 async function hydrateImages(root) {
   for (const el of $$('img[data-img]', root)) {
     if (el.dataset.loaded) continue;
     const v = await getImg(el.dataset.img);
-    if (v) { el.src = (el.dataset.v === 'clean' ? (v.clean || v.orig) : v.orig); el.dataset.loaded = 1; }
+    if (v) { el.src = (el.dataset.v === 'clean' ? (v.clean || v.orig) : v.orig); el.dataset.loaded = 1; sizeImage(el, v); }
     else { el.closest('.qimg')?.classList.add('hidden'); }
   }
 }
@@ -2371,11 +2409,50 @@ async function cropImage(src, box, maxW = 1400) {
     ctx.drawImage(img, 0, 0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
-  return Object.assign(processCanvas(c, raw), { skew: sk });
+  const res = Object.assign(processCanvas(c, raw), { skew: sk });
+  try { const pch = await photoCharH(src); if (pch > 3) { res.ch = Math.round(pch * s * 10) / 10; res.chSrc = 'photo'; } } catch (e) {}
+  return res;
 }
 function processCanvas(c, raw) {
   const ff = flatField(c);
-  return { orig: enhanceFF(ff), clean: cleanFF(ff), raw, v: IMG_VERSION };
+  return { orig: enhanceFF(ff), clean: cleanFF(ff), raw, v: IMG_VERSION, w: c.width, h: c.height, ch: measureCharH(ff), chSrc: 'crop' };
+}
+// 量字的高度（像素）：把圖切成數個直條，找出一行一行文字的高度取中位數
+function measureCharH({ w, h, n }) {
+  const k = Math.max(1, Math.round(w / 180)), sw = Math.floor(w / k), runs = [];
+  for (let i = 0; i < k; i++) {
+    const thr = Math.max(2, sw * 0.06);
+    let run = 0;
+    for (let y = 0; y <= h; y++) {
+      let cnt = 0;
+      if (y < h) for (let x = i * sw; x < (i + 1) * sw; x++) {
+        const p = (y * w + x) * 3, r = n[p], g = n[p + 1], b = n[p + 2];
+        if ((r + g + b) / 3 < 168 && Math.max(r, g, b) - Math.min(r, g, b) < 45) cnt++;
+      }
+      if (cnt > thr) run++;
+      else { if (run >= 5 && run <= Math.min(120, h * 0.5)) runs.push(run); run = 0; }
+    }
+  }
+  if (!runs.length) return 0;
+  runs.sort((a, b) => a - b);
+  return runs[runs.length >> 1];
+}
+const photoCH = new Map();
+async function photoCharH(src) {
+  if (photoCH.has(src)) return photoCH.get(src);
+  const img = await loadImage(src);
+  const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const ch = measureCharH(flatField(c)) / k;
+  photoCH.set(src, ch);
+  return ch;
+}
+async function measureFromUrl(url) {
+  const img = await loadImage(url);
+  const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0);
+  return { w: c.width, h: c.height, ch: measureCharH(flatField(c)), chSrc: 'crop' };
 }
 // 自動偵測傾斜：rot＝文字列的傾斜角（水平），shear＝直行／左右邊界的傾斜角（垂直），單位：度
 function estimateSkew(canvas) {
@@ -2431,15 +2508,33 @@ async function upgradeImage(v, manual) {
     ctx.drawImage(img, -W / 2, -H / 2);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
-  return Object.assign(processCanvas(c, raw), { skew: sk });
+  const res = Object.assign(processCanvas(c, raw), { skew: sk });
+  if (v.chSrc === 'photo') { res.ch = v.ch; res.chSrc = 'photo'; }
+  if (v.chGroup) res.chGroup = v.chGroup;
+  return res;
 }
 async function ensureEnhanced() {
   let n = 0;
   for (const e of S.errors) {
     if (!e.hasImage) continue;
     const v = await getImg(e.id);
-    if (!v || v.v === IMG_VERSION) continue;
-    try { await setImg(e.id, await upgradeImage(v)); n++; } catch (err) {}
+    if (!v) continue;
+    try {
+      if (v.v !== IMG_VERSION) { await setImg(e.id, await upgradeImage(v)); n++; }
+      else if (!('ch' in v)) { await setImg(e.id, Object.assign({}, v, await measureFromUrl(v.orig))); n++; }
+    } catch (err) {}
+  }
+  // 沒有原照片的截圖：同一份考卷的題目取字高中位數，讓同卷題目的字一樣大
+  const groups = {};
+  for (const e of S.errors) {
+    if (!e.hasImage) continue;
+    const v = await getImg(e.id);
+    if (v && v.chSrc !== 'photo' && v.ch > 3) (groups[e.source || '?'] = groups[e.source || '?'] || []).push([e.id, v]);
+  }
+  for (const list of Object.values(groups)) {
+    if (list.length < 3) continue;
+    const arr = list.map(x => x[1].ch).sort((a, b) => a - b), med = arr[arr.length >> 1];
+    for (const [id, v] of list) if (v.chGroup !== med) await setImg(id, Object.assign({}, v, { chGroup: med }));
   }
   if (n) { $$('img[data-img]').forEach(el => delete el.dataset.loaded); hydrateImages(document); }
   return n;
@@ -3104,12 +3199,13 @@ function renderScores() {
 // =====================================================================
 // A4 派卷
 // =====================================================================
-const PR = { mode: 'student', subject: 'all', scope: 'learning', space: true, title: '敦化國中 考前錯題專項複習卷' };
+const PR = { mode: 'student', subject: 'all', scope: 'learning', space: 'M', title: '敦化國中 考前錯題專項複習卷' };
+const SPACE_MM = { L: 55, M: 32, S: 16, none: 0 };
 function renderPrintTab() {
   const el = $('#tab-print');
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
-      <div><h2 class="section-title serif">A4 派卷</h2><p class="text-sm muted mt-1">把錯題印成練習卷；練習卷會自動隱藏紅筆訂正</p></div>
+      <div><h2 class="section-title serif">A4 派卷</h2><p class="text-sm muted mt-1">練習卷為雙欄、自動隱藏紅筆訂正；詳解卷為「題目在左、解析在右」</p></div>
       <button class="btn btn-primary btn-lg" onclick="doPrint()">${icon('printer')}列印／存成 PDF</button>
     </div>
     <div class="card p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -3119,42 +3215,51 @@ function renderPrintTab() {
       <div><label class="label">科目</label><select class="select" onchange="PR.subject=this.value;renderPrintPreview()"><option value="all">全部科目</option>${SUBJ_ORDER.map(s => `<option value="${s}" ${PR.subject === s ? 'selected' : ''}>${SUBJECTS[s].name}</option>`).join('')}</select></div>
       <div><label class="label">範圍</label><select class="select" onchange="PR.scope=this.value;renderPrintPreview()">
         ${[['learning', '尚未精熟的題目'], ['due', '今天待複習'], ['all', '全部錯題']].map(([v, l]) => `<option value="${v}" ${PR.scope === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <div><label class="label">作答空間</label><label class="flex items-center gap-2 min-h-[46px] cursor-pointer"><input type="checkbox" class="cb" ${PR.space ? 'checked' : ''} onchange="PR.space=this.checked;renderPrintPreview()">每題下方留空白</label></div>
-      <div class="sm:col-span-2 lg:col-span-4"><label class="label">試卷標題</label><input class="input" value="${esc(PR.title)}" oninput="PR.title=this.value;renderPrintPreview()"></div>
+      <div class="${PR.mode === 'student' ? '' : 'opacity-40 pointer-events-none'}"><label class="label">作答區</label><div class="flex gap-1.5">
+        ${[['L', '大'], ['M', '中'], ['S', '小'], ['none', '不留']].map(([v, l]) => `<button class="pill flex-1 justify-center px-2! ${PR.space === v ? 'on' : ''}" onclick="PR.space='${v}';renderPrintTab()">${l}</button>`).join('')}</div></div>
+      <div class="sm:col-span-2 lg:col-span-4"><label class="label">試卷標題</label><input class="input" value="${esc(PR.title)}" oninput="PR.title=this.value;$('#a4 .ph h1').textContent=this.value"></div>
     </div>
-    <div class="mt-4 rounded-[22px] bg-[#ebe4dc] p-3 sm:p-6 overflow-x-auto">
-      <div id="a4" class="paper mx-auto shadow-lg" style="width:100%;max-width:794px;min-height:600px;padding:40px 44px"></div>
+    <div id="a4-wrap" class="mt-4 rounded-[22px] bg-[#ebe4dc] p-3 sm:p-5 overflow-hidden">
+      <div id="a4" class="paper mx-auto shadow-lg" style="width:210mm;min-height:297mm;padding:12mm;box-sizing:border-box;transform-origin:top left"></div>
     </div>`;
   renderPrintPreview();
 }
+function fitA4() {
+  const wrap = $('#a4-wrap'), a4 = $('#a4'); if (!wrap || !a4) return;
+  const avail = wrap.clientWidth - 24, w = a4.offsetWidth;
+  const z = Math.min(1, avail / w);
+  a4.style.zoom = z;
+}
+window.addEventListener('resize', () => { if (currentTab === 'print') fitA4(); });
 function printList() {
   return S.errors.filter(e => (PR.subject === 'all' || e.subject === PR.subject) && (PR.scope === 'all' || (PR.scope === 'due' ? isDue(e) : !e.mastered)));
 }
-function renderPrintPreview() {
-  const a4 = $('#a4'); if (!a4) return;
+function paperHtml() {
   const list = printList(), stu = PR.mode === 'student';
-  a4.innerHTML = `
-    <div style="text-align:center;border-bottom:2px solid #333;padding-bottom:8px">
-      <div style="font-size:20px;font-weight:700;letter-spacing:.05em">${esc(PR.title)}</div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-top:8px;flex-wrap:wrap;gap:6px">
-        <span>科目：${PR.subject === 'all' ? '綜合' : SUBJECTS[PR.subject].name}　共 ${list.length} 題</span><span>${stu ? '練習卷' : '詳解卷'}</span><span>姓名：__________　得分：______</span></div>
-    </div>
-    ${list.length ? list.map((e, i) => `
-      <div class="pq">
-        <div style="display:flex;justify-content:space-between;gap:8px;font-weight:700;margin-bottom:6px;font-size:13px">
-          <span>${i + 1}.　${SUBJECTS[e.subject].name}・${esc(chapterName(e))}${e.questionType ? '・' + esc(e.questionType) : ''}</span>
-          ${stu ? '' : `<span style="background:#fde8e6;color:#a03f35;padding:1px 8px;border-radius:6px;white-space:nowrap">正解：${esc(e.correctAnswer)}</span>`}
-        </div>
-        ${e.hasImage ? `<img data-img="${e.id}" data-v="${stu ? 'clean' : 'orig'}" alt="">` : `<div style="font-size:14px;line-height:1.7">${esc(e.content)}</div>`}
-        ${stu ? (PR.space ? '<div class="answer-space">計算與作答區</div>' : '') : `
-          ${e.svgDiagram ? `<div class="svgbox" style="margin-top:8px">${e.svgDiagram}</div>` : ''}
-          <div style="background:#fbf6ee;border:1px solid #efe1c8;border-radius:8px;padding:8px 12px;margin-top:8px;font-size:12.5px"><b style="color:#7a5320">【解析】</b>${formatSteps(e.solution)}</div>`}
-      </div>`).join('') : '<div style="text-align:center;color:#999;padding:60px 0">這個範圍沒有題目</div>'}`;
-  hydrateImages(a4); renderMath(a4);
+  const head = `<div class="ph"><h1>${esc(PR.title)}</h1><div class="meta">
+      <span>科目：${PR.subject === 'all' ? '綜合' : SUBJECTS[PR.subject].name}　共 ${list.length} 題　${stu ? '練習卷' : '詳解卷'}</span><span>姓名：__________　得分：______</span></div></div>`;
+  if (!list.length) return head + '<div style="text-align:center;color:#999;padding:30mm 0">這個範圍沒有題目</div>';
+  const qh = (e, i) => `<div class="qh"><span>${i + 1}.　${SUBJECTS[e.subject].name}・${esc(chapterName(e))}${e.questionType ? '・' + esc(e.questionType) : ''}</span>${stu ? '' : `<span class="ans">正解：${esc(e.correctAnswer || '見解析')}</span>`}</div>`;
+  const body = e => e.hasImage ? `<img data-img="${e.id}" data-v="${stu ? 'clean' : 'orig'}" data-fit="print" ${stu ? '' : 'data-max="118"'} alt="">` : `<div class="qtext">${esc(e.content)}</div>`;
+  if (stu) {
+    const sp = SPACE_MM[PR.space];
+    return head + `<div class="cols">${list.map((e, i) => `
+      <div class="pq two-col">${qh(e, i)}${body(e)}${sp ? `<div class="answer-space" style="height:${sp}mm">作答區</div>` : ''}</div>`).join('')}</div>`;
+  }
+  return head + list.map((e, i) => `
+    <div class="pq">${qh(e, i)}<div class="sol-row"><div>${body(e)}</div>
+      <div class="sol">${e.svgDiagram ? `<div class="svgbox" style="margin-bottom:2mm">${e.svgDiagram}</div>` : ''}<b style="color:#7a5320">【解析】</b>${formatSteps(e.solution)}</div></div></div>`).join('');
+}
+async function renderPrintPreview() {
+  const a4 = $('#a4'); if (!a4) return;
+  a4.innerHTML = paperHtml();
+  await hydrateImages(a4); renderMath(a4);
+  fitA4();
 }
 async function doPrint() {
-  const a4 = $('#a4'); await hydrateImages(a4);
-  $('#print-area').innerHTML = `<div class="paper">${a4.innerHTML}</div>`;
+  const pa = $('#print-area');
+  pa.innerHTML = `<div class="paper">${paperHtml()}</div>`;
+  await hydrateImages(pa); renderMath(pa);
   const imgs = $$('#print-area img');
   await Promise.all(imgs.map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
   window.print();
