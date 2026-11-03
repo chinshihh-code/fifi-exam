@@ -3907,9 +3907,13 @@ function parseQuota(err) {
 async function gemini(parts, json = true, opts = {}) {
   const key = localStorage.getItem('GEMINI_API_KEY');
   if (!key) throw new Error('請先設定 Gemini API Key');
-  const custom = (localStorage.getItem('GEMINI_MODEL') || '').trim();
-  const set = MODEL_SETS[opts.mode || aiMode()];
-  const models = custom ? [custom] : [...new Set([set.includes(workingModel) ? workingModel : null, ...set].filter(Boolean))];
+  let custom = (localStorage.getItem('GEMINI_MODEL') || '').trim().toLowerCase().replace(/^models\//, '').replace(/\s+/g, '');
+  if (custom && !/^[a-z0-9][a-z0-9.\-]*$/.test(custom)) custom = '';
+  const mode = opts.mode || aiMode();
+  const set = MODEL_SETS[mode];
+  // 精準模式的模型都不能用時，退回速度模式的模型
+  const fallback = mode === 'accurate' ? MODEL_SETS.fast : [];
+  const models = [...new Set([custom, set.includes(workingModel) ? workingModel : null, ...set, ...fallback].filter(Boolean))];
   let lastMsg = '';
   for (const m of models) {
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -3945,7 +3949,7 @@ async function gemini(parts, json = true, opts = {}) {
       if ([500, 503].includes(res.status)) { lastMsg = 'Google AI 伺服器忙碌中，請稍後再重試'; break; }
       // 模型不存在或已停用：換下一個模型
       lastMsg = msg;
-      if (res.status === 404 || /not found|no longer available|not supported|deprecated/i.test(msg)) break;
+      if (res.status === 404 || /not found|no longer available|not supported|deprecated|model name|unknown model|invalid model|model/i.test(msg)) break;
       throw new Error('AI 回應錯誤：' + msg.slice(0, 100));
     }
     if (workingModel === m) workingModel = null;
