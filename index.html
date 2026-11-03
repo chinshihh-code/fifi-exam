@@ -379,9 +379,6 @@ height: calc(var(--spacing) * 4);
 .h-5 {
 height: calc(var(--spacing) * 5);
 }
-.h-5\! {
-height: calc(var(--spacing) * 5) !important;
-}
 .h-7 {
 height: calc(var(--spacing) * 7);
 }
@@ -445,9 +442,6 @@ width: calc(var(--spacing) * 4);
 .w-5 {
 width: calc(var(--spacing) * 5);
 }
-.w-5\! {
-width: calc(var(--spacing) * 5) !important;
-}
 .w-7 {
 width: calc(var(--spacing) * 7);
 }
@@ -507,9 +501,6 @@ max-width: var(--container-xl);
 }
 .min-w-0 {
 min-width: 0px;
-}
-.min-w-0\! {
-min-width: 0px !important;
 }
 .min-w-\[6rem\] {
 min-width: 6rem;
@@ -676,9 +667,6 @@ border-radius: var(--radius-lg);
 }
 .rounded-md {
 border-radius: var(--radius-md);
-}
-.rounded-md\! {
-border-radius: var(--radius-md) !important;
 }
 .rounded-none\! {
 border-radius: 0 !important;
@@ -1065,6 +1053,9 @@ white-space: nowrap;
 }
 .whitespace-pre-line {
 white-space: pre-line;
+}
+.text-\[\#2e7d62\] {
+color: #2e7d62;
 }
 .text-\[\#3b3532\]\! {
 color: #3b3532 !important;
@@ -1617,6 +1608,9 @@ inherits: false;
     /* Upload review */
     .pbox { position:absolute; border:2px solid #d0473a; background: rgba(208,71,58,.07); border-radius:4px; touch-action:none; cursor:pointer; }
     .pbox.sel { border:3px solid #b8322a; background: rgba(208,71,58,.12); box-shadow: 0 0 0 2px #fff; cursor:move; }
+    .cbox { position:absolute; border:1.5px dashed rgba(59,53,50,.45); background: rgba(255,255,255,.08); border-radius:4px; pointer-events:none; }
+    .cbox .ctag { position:absolute; left:-1px; top:-1px; background:rgba(59,53,50,.7); color:#fff; font-size:11px; font-weight:800; padding:0 6px; border-radius:4px 0 4px 0; }
+    .cbox .cadd { pointer-events:auto; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:38px; height:38px; border-radius:50%; background:#2e9e7a; color:#fff; font-size:24px; font-weight:700; line-height:36px; box-shadow:0 2px 8px rgba(0,0,0,.3); touch-action:manipulation; }
     .pbox .pdel { position:absolute; right:22px; top:-25px; width:26px; height:22px; border-radius:6px; background:#3b3532; color:#fff; font-weight:800; line-height:20px; touch-action:none; }
     .pbox .ptag { position:absolute; left:-2px; top:-22px; background:#d0473a; color:#fff; font-size:12px; font-weight:800; padding:1px 7px; border-radius:6px 6px 6px 0; white-space:nowrap; }
     .pbox .ph { position:absolute; width:30px; height:30px; touch-action:none; }
@@ -3154,10 +3148,10 @@ function renderUpload() {
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
       <div><h2 class="section-title serif">審驗錯題</h2>
-        <p class="text-sm muted mt-1">在照片上拖曳框出所有錯題（含圖表），框完直接按「存入錯題庫」；AI 會在背景慢慢分析，結果可到錯題庫檢查。</p></div>
+        <p class="text-sm muted mt-1">AI 會先框出每一題，點灰框中的「＋」選取錯題；漏掉的題目用「畫框」補上。選好按「存入錯題庫」，AI 會在背景分析答案與解析。</p></div>
       <div class="flex flex-wrap gap-2">
         <button class="btn btn-line" onclick="$('#up-file').click()">${icon('imageplus', 'w-4 h-4')}加入照片</button>
-        ${hasKey ? `<button class="btn btn-line" onclick="aiScan()" ${UP.busy ? 'disabled' : ''}>${icon('sparkles', 'w-4 h-4')}${UP.busy ? esc(UP.progress || 'AI 辨識中…') : unscanned ? 'AI 自動找錯題（較慢）' : '讓 AI 重新找這張'}</button>` : `<button class="btn btn-line" onclick="openSettings()">設定 API Key 以使用 AI</button>`}
+        ${hasKey ? '' : `<button class="btn btn-line" onclick="openSettings()">設定 API Key 以使用 AI</button>`}
         <button class="btn btn-ghost" onclick="clearPhotos()">全部清除</button>
       </div>
     </div>
@@ -3201,6 +3195,7 @@ function renderUpLeft() {
       <button class="btn btn-sm btn-ghost btn-icon" title="旋轉照片" aria-label="旋轉照片" onclick="rotatePhoto('${p.id}')">${icon('rotate', 'w-[18px] h-[18px]')}</button>
       <button class="btn btn-sm btn-ghost btn-icon text-[#b0463b]!" title="移除這張照片" aria-label="移除這張照片" onclick="removePhoto('${p.id}')">${icon('trash', 'w-[18px] h-[18px]')}</button>
     </div>
+    ${detectLine(p)}
     ${target ? `<div class="mb-2 rounded-xl bg-[#3b3532] text-white text-sm font-semibold px-3 py-2 flex items-center justify-between gap-2">
       <span>請在照片上拖曳，框出「${esc(target.questionType)}」</span>
       <button class="underline shrink-0" onclick="UP.drawFor=null;renderUpLeft()">取消</button></div>`
@@ -3218,7 +3213,12 @@ function renderUpLeft() {
 function renderBoxes() {
   const host = $('#pv-boxes'); if (!host) return;
   const p = curPhoto();
-  host.innerHTML = UP.staging.filter(s => s.photoId === p.id && s.include && s.box).map(s => {
+  const taken = new Set(UP.staging.filter(s => s.photoId === p.id && s.include && s.cand != null).map(s => s.cand));
+  host.innerHTML = (p.cands || []).map((c, i) => taken.has(i) ? '' : (() => {
+    const [x0, y0, x1, y1] = c.box;
+    return `<div class="cbox" style="left:${x0 / p.w * 100}%;top:${y0 / p.h * 100}%;width:${(x1 - x0) / p.w * 100}%;height:${(y1 - y0) / p.h * 100}%">
+      <span class="ctag">${esc(c.num || '')}</span><button class="cadd" data-cand="${i}" aria-label="選取第 ${esc(c.num || '')} 題">＋</button></div>`;
+  })()).join('') + UP.staging.filter(s => s.photoId === p.id && s.include && s.box).map(s => {
     const [x0, y0, x1, y1] = s.box, sel = s.id === UP.sel;
     return `<div class="pbox ${sel ? 'sel' : ''}" data-id="${s.id}" style="left:${x0 / p.w * 100}%;top:${y0 / p.h * 100}%;width:${(x1 - x0) / p.w * 100}%;height:${(y1 - y0) / p.h * 100}%">
       <span class="ptag">${esc(s.num || '')}</span>
@@ -3235,6 +3235,7 @@ function renderBoxes() {
     const h = ev.target.dataset && ev.target.dataset.h;
     const pb = ev.target.closest('.pbox');
     if (ev.target.dataset && ev.target.dataset.del) { ev.preventDefault(); deleteItem(ev.target.dataset.del); return; }
+    if (ev.target.dataset && ev.target.dataset.cand != null) { ev.preventDefault(); pickCand(+ev.target.dataset.cand); return; }
     if (pb && !UP.drawFor) {
       const it = UP.staging.find(s => s.id === pb.dataset.id); if (!it) return;
       if (UP.sel !== it.id) { selectItem(it.id, false); return; }
@@ -3335,26 +3336,77 @@ function renderUpRight() {
     <div id="up-editor"></div>`;
   renderUpChips(); renderUpEditor();
 }
+function numKey(n) { const m = String(n || '').match(/\d+/); return m ? +m[0] : 9999; }
 function renderUpChips() {
   const box = $('#up-chips'); if (!box) return;
   const p = curPhoto();
-  const secs = p.sections || [];
+  const list = UP.staging.filter(s => s.photoId === p.id && s.include).sort((a, b) => (a.cand == null) - (b.cand == null) || numKey(a.num) - numKey(b.num));
   box.innerHTML = `
     <div class="flex items-center justify-between gap-2 mb-2">
-      <div class="font-bold">題目清單${UP.photos.length > 1 ? `<span class="text-sm muted font-semibold">（第 ${UP.photos.indexOf(p) + 1} 張）</span>` : ''}</div>
-      <div class="flex items-center gap-3 text-xs muted"><span class="flex items-center gap-1"><span class="qn on w-5! h-5! min-w-0! rounded-md!"></span>錯題</span><span class="flex items-center gap-1"><span class="qn nobox w-5! h-5! min-w-0! rounded-md!"></span>待框選</span></div>
+      <div class="font-bold">已選的錯題${UP.photos.length > 1 ? `<span class="text-sm muted font-semibold">（第 ${UP.photos.indexOf(p) + 1} 張）</span>` : ''}</div>
+      <span class="text-sm muted num">${list.length} 題</span>
     </div>
-    ${secs.length ? secs.map(sec => `
-      <div class="mt-3">
-        <div class="flex items-center justify-between"><span class="text-sm font-bold text-[#5e5651]">${esc(sec.name)}</span>
-          <button class="text-xs muted underline" onclick="editSection('${esc(sec.id)}')">修改</button></div>
-        <div class="flex flex-wrap gap-1.5 mt-1.5">${sec.nums.map(n => {
-          const it = UP.staging.find(s => s.photoId === p.id && s.sec === sec.id && s.num === n);
-          const on = it && it.include, cls = on ? (it.box ? 'on' : 'nobox') : '';
-          return `<button class="qn ${cls} ${it && it.id === UP.sel ? 'sel' : ''}" onclick="toggleQ('${esc(sec.id)}','${esc(n)}')">${esc(n)}</button>`;
-        }).join('')}</div>
-      </div>`).join('') : `<div class="text-sm muted">直接在照片上拖曳框出錯題，框好的題目會列在這裡。也可以按「AI 自動找錯題」讓 AI 先找一遍。</div>`}
-    <button class="btn btn-sm btn-ghost mt-3" onclick="addSection()">${icon('plus', 'w-4 h-4')}新增大題</button>`;
+    ${list.length ? `<div class="flex flex-wrap gap-1.5">${list.map(it => `<button class="qn on ${it.id === UP.sel ? 'sel' : ''}" onclick="selectItem('${it.id}')">${esc(it.cand != null ? it.num : '＋' + it.num)}</button>`).join('')}</div>
+      <div class="text-xs muted mt-2">點題號可檢查那一題；「＋」開頭的是手動畫框的題目。</div>`
+      : `<div class="text-sm muted">還沒有選取錯題。點照片上灰框中的綠色「＋」，或用「畫框」自己框。</div>`}`;
+}
+function pickCand(i) {
+  const p = curPhoto(), c = (p.cands || [])[i]; if (!c) return;
+  let it = UP.staging.find(s => s.photoId === p.id && s.cand === i);
+  if (!it) { it = newStaging(p, c.box.slice(), { sec: '題目', num: c.num, questionType: `第 ${c.num} 題` }); it.cand = i; UP.staging.push(it); }
+  it.include = true; UP.sel = it.id; UP.drawFor = null;
+  renderUpLeft(); renderUpChips(); renderUpEditor(); renderUpFoot();
+  updatePreview(it);
+}
+function detectLine(p) {
+  if (!localStorage.getItem('GEMINI_API_KEY')) return '';
+  if (p.detect === 'running' || p.detect === 'queued') return `<div class="mb-2 rounded-xl bg-[#eef3f8] text-[#3e5b78] text-sm font-semibold px-3 py-2 flex items-center gap-2"><span class="spin"></span>AI 正在框選每一題（約 10～30 秒），這段時間可以先手動畫框</div>`;
+  if (p.detect === 'error') return `<div class="mb-2 rounded-xl bg-[#fbeceb] text-[#a03f35] text-sm px-3 py-2 flex items-center justify-between gap-2"><span>AI 框題失敗：${esc(p.detectErr || '')}（仍可手動畫框）</span><button class="btn btn-sm btn-line" onclick="detectQuestions(curPhoto())">重試</button></div>`;
+  if (p.detect === 'done') return `<div class="mb-2 text-sm text-[#2e7d62] font-semibold flex items-center justify-between gap-2"><span>AI 已框出 ${(p.cands || []).length} 題，點綠色「＋」選取錯題</span><button class="text-xs muted underline" onclick="detectQuestions(curPhoto())">重新框選</button></div>`;
+  return '';
+}
+const DQ = { running: false, queue: [] };
+function detectPrompt() {
+  return `這是一張考卷的照片（可能是對折攤開的兩頁、可能有點歪、上面有學生與老師的筆跡）。
+請找出照片中「每一道題目」的位置，回傳每一題的題號與框。
+- 每個框要完整包含：題號、題幹、全部選項，以及這題用到的圖表；寧可框大一點，不要切到字。
+- 題組的共同敘述與圖表，單獨框成一個，題號寫「題組」或卷面上的名稱（例如「題組(二)」）。
+- 不要框到頁首標題、姓名欄、大題標題（例如「一、單題」）與頁碼。
+- 題號照卷面寫（例如 "12"、"3"、"填充 2"）。不同大題的題號重複時，在前面加大題名稱，例如 "非選 1"。
+box_2d 為 [ymin, xmin, ymax, xmax]，0～1000 的相對座標。
+只回傳 JSON：{"questions":[{"number":"1","box_2d":[ymin,xmin,ymax,xmax]}]}`;
+}
+function detectQuestions(p) {
+  if (!p || !localStorage.getItem('GEMINI_API_KEY')) return;
+  p.detect = 'queued'; p.detectErr = '';
+  if (!DQ.queue.includes(p.id)) DQ.queue.push(p.id);
+  if (UP.cur === p.id) renderUpLeft();
+  pumpDetect();
+}
+async function pumpDetect() {
+  if (DQ.running) return;
+  const id = DQ.queue.shift(); if (!id) return;
+  const p = UP.photos.find(x => x.id === id); if (!p) return pumpDetect();
+  DQ.running = true; p.detect = 'running';
+  if (UP.cur === p.id) renderUpLeft();
+  try {
+    const img = await smallImage(p.src, 1600);
+    const j = parseJsonLoose(await gemini([{ text: detectPrompt() }, { inline_data: { mime_type: 'image/jpeg', data: img.split(',')[1] } }], true, { wait: true, mode: 'accurate' }));
+    const qs = Array.isArray(j) ? j : (j.questions || []);
+    p.cands = qs.map(q => {
+      const [y0, x0, y1, x1] = (q.box_2d || []).map(Number);
+      if ([y0, x0, y1, x1].some(isNaN) || y1 - y0 < 8 || x1 - x0 < 8) return null;
+      const pd = 6;
+      return { num: String(q.number || '').trim(), box: [Math.max(0, (x0 - pd) / 1000 * p.w), Math.max(0, (y0 - pd) / 1000 * p.h), Math.min(p.w, (x1 + pd) / 1000 * p.w), Math.min(p.h, (y1 + pd) / 1000 * p.h)].map(Math.round) };
+    }).filter(Boolean);
+    // 重新框選時，已選的題目保留
+    UP.staging = UP.staging.filter(s => s.photoId !== p.id || s.cand == null || s.include);
+    UP.staging.forEach(s => { if (s.photoId === p.id && s.cand != null) s.cand = -1 - Math.random(); });
+    p.detect = 'done';
+  } catch (e) { p.detect = 'error'; p.detectErr = e.message; }
+  DQ.running = false;
+  if (currentTab === 'upload' && UP.cur === p.id) { renderUpLeft(); renderUpChips(); }
+  pumpDetect();
 }
 function selectItem(id, scroll = true) {
   UP.sel = id;
@@ -3490,7 +3542,8 @@ async function regenSolution() {
 function deleteItem(id) {
   const it = UP.staging.find(s => s.id === id); if (!it) return;
   const p = UP.photos.find(x => x.id === it.photoId);
-  if (it.sec === MANUAL_SEC && p) { const sec = (p.sections || []).find(s => s.id === MANUAL_SEC); if (sec) sec.nums = sec.nums.filter(n => n !== it.num); UP.staging = UP.staging.filter(s => s.id !== id); }
+  if (it.cand != null) { UP.staging = UP.staging.filter(s => s.id !== id); }
+  else if (it.sec === MANUAL_SEC && p) { const sec = (p.sections || []).find(s => s.id === MANUAL_SEC); if (sec) sec.nums = sec.nums.filter(n => n !== it.num); UP.staging = UP.staging.filter(s => s.id !== id); }
   else { it.include = false; it.box = it.box; }
   if (UP.sel === id) UP.sel = null;
   renderUpLeft(); renderUpChips(); renderUpEditor(); renderUpFoot();
@@ -3506,16 +3559,19 @@ function renderUpFoot() {
 async function addPhotos(ev) {
   const files = Array.from(ev.target.files || []); ev.target.value = '';
   let first = null;
-  for (const f of files) { try { const p = await fileToPhoto(f); p.sections = []; UP.photos.push(p); first = first || p.id; } catch (e) { toast('有一張照片讀取失敗', 'error'); } }
+  const added = [];
+  for (const f of files) { try { const p = await fileToPhoto(f); p.sections = []; p.cands = []; UP.photos.push(p); added.push(p); first = first || p.id; } catch (e) { toast('有一張照片讀取失敗', 'error'); } }
   if (first) UP.cur = first;
   renderUpload();
+  added.forEach(detectQuestions);
 }
 async function rotatePhoto(id) {
   const p = UP.photos.find(x => x.id === id); if (!p) return;
   if (UP.staging.some(s => s.photoId === id && s.box) && !(await confirmBox('旋轉照片會清除這張照片上的框選，確定嗎？'))) return;
   Object.assign(p, await rotateSrc(p.src));
+  UP.staging = UP.staging.filter(s => s.photoId !== id || s.cand == null);
   UP.staging.forEach(s => { if (s.photoId === id) { s.box = null; s.preview = ''; } });
-  renderUpload();
+  p.cands = []; renderUpload(); detectQuestions(p);
 }
 async function removePhoto(id) {
   if (UP.staging.some(s => s.photoId === id && s.include) && !(await confirmBox('移除這張照片，也會移除它上面勾選的錯題，確定嗎？'))) return;
