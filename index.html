@@ -1087,6 +1087,9 @@ color: #7d5d1f;
 .text-\[\#8a4c43\] {
 color: #8a4c43;
 }
+.text-\[\#8a5a00\] {
+color: #8a5a00;
+}
 .text-\[\#73574a\] {
 color: #73574a;
 }
@@ -2061,6 +2064,7 @@ const S = { errors: [], exams: [], scores: [], notes: {}, checklistItems: [], ch
 async function persist(...keys) {
   try { for (const k of keys) await DB.set(k, S[k]); }
   catch (e) { toast('儲存失敗：' + e.message, 'error'); }
+  if (keys.some(k => k !== 'meta') && typeof cloudSchedule === 'function') cloudSchedule();
 }
 function oldChapterToNew(subject, ch) {
   if (!ch) return '';
@@ -2177,7 +2181,7 @@ function renderHome() {
   const mastered = S.errors.filter(e => e.mastered).length;
   const ex = upcomingExams();
   const weekCount = Object.entries(S.meta.reviewDays || {}).filter(([d]) => diffDays(d, t) < 7 && diffDays(d, t) >= 0).reduce((a, [, n]) => a + n, 0);
-  const needBackup = total > 0 && (!S.meta.lastBackupAt || diffDays(S.meta.lastBackupAt, t) >= 7);
+  const needBackup = total > 0 && !cloudOn() && (!S.meta.lastBackupAt || diffDays(S.meta.lastBackupAt, t) >= 7);
 
   const subjPills = ['all', ...SUBJ_ORDER].map(s => {
     const n = s === 'all' ? dueAll.length : dueAll.filter(e => e.subject === s).length;
@@ -2187,6 +2191,7 @@ function renderHome() {
 
   el.innerHTML = `
     ${aiStatusLine()}
+    ${cloudBanner()}
     ${needBackup ? `
     <div class="card-flat border-[#ecd9b0]! bg-[#fbf5e8]! p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3 text-[#7d5d1f]">${icon('alert')}<div><b>記得備份錯題庫</b><div class="text-sm opacity-80">${S.meta.lastBackupAt ? `上次備份是 ${diffDays(S.meta.lastBackupAt, t)} 天前` : '還沒有備份過'}。iPad 長時間沒開啟時，瀏覽器可能會清掉資料。</div></div></div>
@@ -4459,8 +4464,9 @@ async function openSettings() {
         <button class="btn btn-sm btn-primary" onclick="saveKey()">儲存</button>
       </div>
     </div>
+    <div class="divider pt-4" id="cloud-box">${cloudSettingsHtml()}</div>
     <div class="divider pt-4">
-      <div class="font-bold mb-1">資料備份</div>
+      <div class="font-bold mb-1">手動備份（檔案）</div>
       <p class="text-sm muted mb-3 leading-relaxed">備份檔包含所有錯題、截圖、複習紀錄、成績與檢核表。換裝置或怕資料不見時，用「匯入」還原。${S.meta.lastBackupAt ? `<br>上次備份：${S.meta.lastBackupAt.replace(/-/g, '/')}` : ''}${usage ? `<br>目前使用空間：約 ${usage}` : ''}</p>
       <div class="grid grid-cols-2 gap-2">
         <button class="btn btn-soft" onclick="exportBackup()">${icon('download', 'w-4 h-4')}匯出備份</button>
@@ -4500,11 +4506,14 @@ async function testKey() {
     prevM ? localStorage.setItem('GEMINI_MODEL', prevM) : localStorage.removeItem('GEMINI_MODEL');
   }
 }
-async function exportBackup() {
-  toast('正在打包備份…');
+async function buildBackup() {
   const images = {};
   for (const e of S.errors) if (e.hasImage) { const v = await getImg(e.id); if (v) images[e.id] = v; }
-  const data = { app: 'dunhua-exam', version: '4.0', exportedAt: new Date().toISOString(), errors: S.errors, images, exams: S.exams, scores: S.scores, notes: S.notes, checklistItems: S.checklistItems, checklistState: S.checklistState, reviewDays: S.meta.reviewDays || {}, links: linkList() };
+  return { app: 'dunhua-exam', version: '4.0', exportedAt: new Date().toISOString(), errors: S.errors, images, exams: S.exams, scores: S.scores, notes: S.notes, checklistItems: S.checklistItems, checklistState: S.checklistState, reviewDays: S.meta.reviewDays || {}, links: linkList() };
+}
+async function exportBackup() {
+  toast('正在打包備份…');
+  const data = await buildBackup();
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = `錯題庫備份_${todayKey()}.json`;
@@ -4518,10 +4527,13 @@ async function importBackup(ev) {
   if (!f) return;
   let data;
   try { data = JSON.parse(await f.text()); } catch (e) { return toast('無法讀取這個檔案，請確認是錯題庫備份檔', 'error'); }
-  if (!Array.isArray(data.errors)) return toast('檔案格式不符', 'error');
+  return applyImport(data);
+}
+async function applyImport(data, title = '匯入備份') {
+  if (!data || !Array.isArray(data.errors)) return toast('檔案格式不符', 'error');
   const v4 = String(data.version || '').startsWith('4');
   const incoming = data.errors.map(e => normErr(v4 ? e : { ...e, chapter: oldChapterToNew(e.subject, e.chapter) }));
-  const mode = await ask('匯入備份', `檔案中有 ${incoming.length} 道錯題${data.scores?.length ? `、${data.scores.length} 筆成績` : ''}。\n\n「合併」會保留目前的資料，只加入新的內容（建議）。\n「全部取代」會清掉目前的資料，改成檔案裡的內容。`,
+  const mode = await ask(title, `檔案中有 ${incoming.length} 道錯題${data.scores?.length ? `、${data.scores.length} 筆成績` : ''}。\n\n「合併」會保留目前的資料，只加入新的內容（建議）。\n「全部取代」會清掉目前的資料，改成檔案裡的內容。`,
     [{ label: '取消', value: null }, { label: '全部取代', value: 'replace', style: 'btn-danger' }, { label: '合併', value: 'merge', style: 'btn-primary' }]);
   if (!mode) return;
   closeModal('modal-settings');
@@ -4557,6 +4569,154 @@ async function importBackup(ev) {
 }
 
 // =====================================================================
+// Google 雲端硬碟自動備份（應用程式資料夾）
+// =====================================================================
+const CL = { tokenClient: null, scriptLoading: null, timer: null, busy: false, pendingAfterAuth: null, err: '' };
+const CLOUD_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const cloudClientId = () => (localStorage.getItem('GDRIVE_CLIENT_ID') || '').trim();
+const cloudOn = () => !!cloudClientId() && localStorage.getItem('GDRIVE_LINKED') === '1';
+function cloudToken() {
+  try { const t = JSON.parse(localStorage.getItem('GDRIVE_TOKEN') || 'null'); return t && t.exp > Date.now() + 60000 ? t.token : ''; } catch (e) { return ''; }
+}
+function loadGis() {
+  if (window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+  if (CL.scriptLoading) return CL.scriptLoading;
+  CL.scriptLoading = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true;
+    sc.onload = () => res(); sc.onerror = () => { CL.scriptLoading = null; rej(new Error('無法載入 Google 登入元件，請確認網路')); };
+    document.head.appendChild(sc);
+  });
+  return CL.scriptLoading;
+}
+// 必須在使用者點擊時呼叫（iPad 會擋下非點擊開啟的登入視窗）
+function cloudAuth(prompt = '') {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await loadGis();
+      CL.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: cloudClientId(), scope: CLOUD_SCOPE,
+        callback: r => {
+          if (r.error) return reject(new Error(r.error_description || r.error));
+          localStorage.setItem('GDRIVE_TOKEN', JSON.stringify({ token: r.access_token, exp: Date.now() + (r.expires_in || 3600) * 1000 }));
+          localStorage.setItem('GDRIVE_LINKED', '1');
+          resolve(r.access_token);
+        },
+        error_callback: e => reject(new Error(e && e.type === 'popup_closed' ? '登入視窗被關閉了' : e && e.type === 'popup_failed_to_open' ? '登入視窗被瀏覽器擋下，請允許彈出式視窗' : '登入失敗'))
+      });
+      CL.tokenClient.requestAccessToken({ prompt });
+    } catch (e) { reject(e); }
+  });
+}
+async function driveFetch(url, opts = {}) {
+  const token = cloudToken(); if (!token) throw Object.assign(new Error('需要重新連線 Google'), { needAuth: true });
+  const res = await fetch(url, Object.assign({}, opts, { headers: Object.assign({ Authorization: 'Bearer ' + token }, opts.headers || {}) }));
+  if (res.status === 401) { localStorage.removeItem('GDRIVE_TOKEN'); throw Object.assign(new Error('需要重新連線 Google'), { needAuth: true }); }
+  if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error((j.error && j.error.message) || `Google 雲端硬碟錯誤（${res.status}）`); }
+  return res;
+}
+async function cloudList() {
+  const q = encodeURIComponent("name contains '錯題庫備份_' and trashed = false");
+  const r = await driveFetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&orderBy=name desc&pageSize=50&fields=files(id,name,size,modifiedTime)`);
+  return (await r.json()).files || [];
+}
+async function cloudUpload(name, body, fileId) {
+  const meta = fileId ? {} : { name, parents: ['appDataFolder'], mimeType: 'application/json' };
+  const init = await driveFetch(fileId ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=resumable` : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+    method: fileId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/json' }, body: JSON.stringify(meta)
+  });
+  const loc = init.headers.get('Location'); if (!loc) throw new Error('無法開始上傳');
+  await driveFetch(loc, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+}
+async function cloudBackupNow(manual) {
+  if (!cloudOn() || CL.busy) return;
+  if (!cloudToken()) { CL.err = 'needAuth'; cloudRefreshUi(); if (manual) toast('請先點「重新連線」', 'error'); return; }
+  CL.busy = true; cloudRefreshUi();
+  try {
+    const body = JSON.stringify(await buildBackup());
+    const name = `錯題庫備份_${todayKey()}.json`;
+    const files = await cloudList();
+    const same = files.find(f => f.name === name);
+    await cloudUpload(name, body, same && same.id);
+    // 只保留最近 7 天的備份
+    for (const f of files.filter(f => f.name !== name).slice(6)) await driveFetch(`https://www.googleapis.com/drive/v3/files/${f.id}`, { method: 'DELETE' }).catch(() => {});
+    S.meta.lastBackupAt = todayKey(); S.meta.cloudBackupAt = Date.now(); S.meta.cloudDirty = false; CL.err = '';
+    await DB.set('meta', S.meta);
+    if (manual) toast('已備份到 Google 雲端硬碟', 'success');
+  } catch (e) {
+    CL.err = e.needAuth ? 'needAuth' : e.message;
+    if (manual && !e.needAuth) toast('雲端備份失敗：' + e.message, 'error');
+  }
+  CL.busy = false; cloudRefreshUi();
+}
+function cloudSchedule() {
+  if (!cloudOn()) return;
+  S.meta.cloudDirty = true; DB.set('meta', S.meta).catch(() => {});
+  clearTimeout(CL.timer);
+  CL.timer = setTimeout(() => cloudBackupNow(false), 20000);
+}
+async function cloudConnect() {
+  const id = ($('#cl-id')?.value || '').trim();
+  if (!/\.apps\.googleusercontent\.com$/.test(id)) return toast('用戶端 ID 格式不對，應該以 .apps.googleusercontent.com 結尾', 'error');
+  localStorage.setItem('GDRIVE_CLIENT_ID', id);
+  try { await cloudAuth('consent'); toast('已連結 Google 帳號，開始第一次備份…', 'success'); CL.err = ''; await cloudBackupNow(true); }
+  catch (e) { toast('連結失敗：' + e.message, 'error'); }
+  cloudRefreshUi();
+}
+async function cloudReconnect() {
+  try { await cloudAuth(''); CL.err = ''; cloudRefreshUi(); if (S.meta.cloudDirty || !S.meta.cloudBackupAt) await cloudBackupNow(true); else toast('已重新連線', 'success'); }
+  catch (e) { toast('連線失敗：' + e.message, 'error'); }
+}
+async function cloudDisconnect() {
+  if (!(await confirmBox('要停止自動備份到 Google 雲端硬碟嗎？（雲端上已有的備份會保留）', '停止'))) return;
+  const t = cloudToken(); if (t && window.google && google.accounts) try { google.accounts.oauth2.revoke(t, () => {}); } catch (e) {}
+  ['GDRIVE_TOKEN', 'GDRIVE_LINKED'].forEach(k => localStorage.removeItem(k));
+  cloudRefreshUi();
+}
+async function cloudRestore() {
+  try {
+    if (!cloudToken()) await cloudAuth('');
+    const files = await cloudList();
+    if (!files.length) return toast('雲端上還沒有備份');
+    const pick = await ask('從雲端還原', '選擇要還原的備份（日期越新越上面）', [{ label: '取消', value: null }, ...files.slice(0, 7).map(f => ({ label: f.name.replace('錯題庫備份_', '').replace('.json', '') + `（${Math.round((+f.size || 0) / 1048576 * 10) / 10} MB）`, value: f.id, style: 'btn-line' }))]);
+    if (!pick) return;
+    toast('下載中…');
+    const r = await driveFetch(`https://www.googleapis.com/drive/v3/files/${pick}?alt=media`);
+    await applyImport(await r.json(), '從雲端還原');
+  } catch (e) { toast('還原失敗：' + e.message, 'error'); }
+}
+function cloudSettingsHtml() {
+  const id = cloudClientId(), on = cloudOn(), tok = !!cloudToken();
+  const last = S.meta.cloudBackupAt ? new Date(S.meta.cloudBackupAt) : null;
+  return `
+    <div class="font-bold mb-1">Google 雲端硬碟自動備份</div>
+    ${on ? `
+      <p class="text-sm leading-relaxed mb-3">
+        <span class="${tok && CL.err !== 'needAuth' ? 'text-[#3f6150]' : 'text-[#8a5a00]'} font-semibold">${CL.busy ? '備份中…' : tok && CL.err !== 'needAuth' ? '✅ 已連線，資料變動後會自動備份' : '⚠️ 連線已過期，點「重新連線」後就會繼續自動備份'}</span><br>
+        <span class="muted">${last ? `上次雲端備份：${last.getMonth() + 1}/${last.getDate()} ${pad(last.getHours())}:${pad(last.getMinutes())}` : '還沒有雲端備份'}${CL.err && CL.err !== 'needAuth' ? `<br><span class="text-[#a03f35]">上次錯誤：${esc(CL.err)}</span>` : ''}</span></p>
+      <div class="grid grid-cols-2 gap-2">
+        ${tok && CL.err !== 'needAuth' ? `<button class="btn btn-soft" onclick="cloudBackupNow(true)" ${CL.busy ? 'disabled' : ''}>${icon('upload', 'w-4 h-4')}立即備份</button>` : `<button class="btn btn-primary" onclick="cloudReconnect()">${icon('refresh', 'w-4 h-4')}重新連線</button>`}
+        <button class="btn btn-soft" onclick="cloudRestore()">${icon('download', 'w-4 h-4')}從雲端還原</button>
+      </div>
+      <button class="btn btn-sm btn-ghost mt-2" onclick="cloudDisconnect()">停止自動備份</button>`
+    : `
+      <p class="text-sm muted leading-relaxed mb-2">連結後，新增錯題、複習完都會自動備份到你的 Google 雲端硬碟（隱藏的應用程式資料夾，保留最近 7 天）。換裝置時登入同一個帳號就能還原。</p>
+      <label class="label">OAuth 用戶端 ID</label>
+      <input id="cl-id" class="input" placeholder="xxxxxxxx.apps.googleusercontent.com" value="${esc(id)}" autocomplete="off" autocapitalize="off">
+      <div class="flex justify-end mt-2"><button class="btn btn-primary" onclick="cloudConnect()">${icon('check', 'w-4 h-4')}連結 Google 帳號</button></div>`}`;
+}
+function cloudRefreshUi() {
+  const b = $('#cloud-box'); if (b) { b.innerHTML = cloudSettingsHtml(); }
+  if (currentTab === 'home' && !RV.active && !QZ.stage) { const h = $('#cloud-banner'); if (h) h.outerHTML = cloudBanner(); }
+}
+function cloudBanner() {
+  if (!cloudOn() || !(CL.err === 'needAuth' || (!cloudToken() && S.meta.cloudDirty))) return '<div id="cloud-banner"></div>';
+  return `<div id="cloud-banner" class="card-flat border-[#ecd9b0]! bg-[#fbf5e8]! p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3 text-[#7d5d1f]">${icon('alert')}<div><b>有新的資料還沒備份到雲端</b><div class="text-sm opacity-80">Google 連線過期了，點一下就會完成備份。</div></div></div>
+    <button class="btn btn-sm btn-primary" onclick="cloudReconnect()">${icon('refresh', 'w-4 h-4')}重新連線並備份</button></div>`;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && cloudOn() && S.meta.cloudDirty && cloudToken()) { clearTimeout(CL.timer); cloudBackupNow(false); } });
+
+// =====================================================================
 // 啟動
 // =====================================================================
 window.addEventListener('DOMContentLoaded', async () => {
@@ -4572,6 +4732,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   ensureEnhanced().then(n => { if (n) toast(`已把 ${n} 張截圖調整得更清楚`, 'success'); });
   S.errors.forEach(e => { if (e.ai === 'running') e.ai = 'pending'; });
   bgAnalyze();
+  if (cloudOn()) { if (!cloudToken()) CL.err = 'needAuth'; else if (S.meta.cloudDirty) cloudSchedule(); }
   // KaTeX 載入較晚時補算數學式
   window.addEventListener('load', () => renderMath($('main')));
   // 跨日自動更新
