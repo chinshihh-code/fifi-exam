@@ -418,6 +418,9 @@ height: 100%;
 .max-h-\[calc\(100vh-290px\)\] {
 max-height: calc(100vh - 290px);
 }
+.min-h-\[30px\]\! {
+min-height: 30px !important;
+}
 .min-h-\[32px\]\! {
 min-height: 32px !important;
 }
@@ -1211,6 +1214,9 @@ grid-template-columns: 1.4fr .8fr 1.1fr 110px auto;
 }
 .sm\:grid-cols-\[1fr_\.8fr_1\.6fr_\.7fr_auto\] {
 grid-template-columns: 1fr .8fr 1.6fr .7fr auto;
+}
+.sm\:grid-cols-\[1fr_140px\] {
+grid-template-columns: 1fr 140px;
 }
 .sm\:gap-3 {
 gap: calc(var(--spacing) * 3);
@@ -2228,7 +2234,71 @@ function renderHome() {
     <div class="card-flat p-4 mt-4 text-sm leading-relaxed muted">
       <b class="text-[#5e5651]">複習規則：</b>每題翻開答案後選「不會／有點會／會了」，會分別在 <b>明天／3 天後／7 天後</b> 再出現；連續 3 次「會了」就變成<b>已精熟</b>，之後不會再排進每日複習。
     </div>`}
+    <div id="links-card">${linksCard()}</div>
   `;
+}
+
+// ---- 常用連結 ----
+const LK = { editing: false, form: null };
+function linkList() { return Array.isArray(S.meta.links) ? S.meta.links : []; }
+function linksCard() {
+  const list = linkList();
+  if (LK.form) {
+    const f = LK.form;
+    return `<div class="card p-5 mt-4">
+      <div class="font-bold mb-3">${f.id ? '修改連結' : '新增連結'}</div>
+      <div class="grid sm:grid-cols-[1fr_140px] gap-2">
+        <div><label class="label">名稱</label><input id="lk-name" class="input" value="${esc(f.name)}" placeholder="例如：社會科線上題庫"></div>
+        <div><label class="label">科目</label><select id="lk-sub" class="select"><option value="">不分科</option>${SUBJ_ORDER.map(s => `<option value="${s}" ${f.subject === s ? 'selected' : ''}>${SUBJECTS[s].name}</option>`).join('')}</select></div>
+        <div class="sm:col-span-2"><label class="label">網址</label><input id="lk-url" class="input" type="url" inputmode="url" autocapitalize="off" value="${esc(f.url)}" placeholder="https://"></div>
+      </div>
+      <div class="flex justify-end gap-2 mt-4"><button class="btn btn-line" onclick="LK.form=null;refreshLinks()">取消</button><button class="btn btn-primary" onclick="saveLink()">儲存</button></div>
+    </div>`;
+  }
+  return `<div class="card p-5 mt-4">
+    <div class="flex items-center justify-between gap-2 mb-3">
+      <div class="font-bold flex items-center gap-2">${icon('book', 'w-5 h-5')}常用連結</div>
+      <div class="flex gap-1">
+        ${list.length ? `<button class="btn btn-sm ${LK.editing ? 'btn-dark' : 'btn-ghost'}" onclick="LK.editing=!LK.editing;refreshLinks()">${LK.editing ? '完成' : '編輯'}</button>` : ''}
+        <button class="btn btn-sm btn-soft" onclick="LK.form={name:'',url:'',subject:''};refreshLinks();setTimeout(()=>$('#lk-name')?.focus(),50)">${icon('plus', 'w-4 h-4')}新增</button>
+      </div>
+    </div>
+    ${list.length ? `<div class="grid ${LK.editing ? "" : "sm:grid-cols-2"} gap-2">${list.map((l, i) => `
+      <div class="flex items-center gap-2">
+        <a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" class="flex-1 min-w-0 flex items-center gap-3 px-4 py-3 rounded-2xl border border-[#e9e1d8] bg-white hover:bg-[#faf6f1] transition">
+          ${l.subject && SUBJECTS[l.subject] ? subjChip(l.subject) : ''}
+          <span class="min-w-0"><span class="block font-semibold truncate">${esc(l.name)}</span><span class="block text-xs muted truncate">${esc(l.url.replace(/^https?:\/\//, ''))}</span></span>
+        </a>
+        ${LK.editing ? `<div class="flex flex-col">
+          <button class="btn btn-ghost btn-icon min-h-[30px]!" aria-label="上移" onclick="moveLink(${i},-1)" ${i ? '' : 'disabled'}>↑</button>
+          <button class="btn btn-ghost btn-icon min-h-[30px]!" aria-label="下移" onclick="moveLink(${i},1)" ${i < list.length - 1 ? '' : 'disabled'}>↓</button></div>
+          <button class="btn btn-ghost btn-icon" aria-label="修改" onclick="LK.form=Object.assign({},linkList()[${i}]);refreshLinks()">${icon('pencil', 'w-[18px] h-[18px]')}</button>
+          <button class="btn btn-ghost btn-icon text-[#b0463b]!" aria-label="刪除" onclick="delLink(${i})">${icon('trash', 'w-[18px] h-[18px]')}</button>` : ''}
+      </div>`).join('')}</div>`
+      : `<div class="text-sm muted">把常用的線上題庫、學習網站加在這裡，點一下就能打開。</div>`}
+  </div>`;
+}
+function refreshLinks() { const el = $('#links-card'); if (el) el.innerHTML = linksCard(); }
+async function saveLink() {
+  const name = $('#lk-name').value.trim(); let url = $('#lk-url').value.trim();
+  if (!url) return toast('請輸入網址', 'error');
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch (e) { return toast('網址格式不正確', 'error'); }
+  const list = linkList().slice(), f = LK.form;
+  const item = { id: f.id || uid('lk'), name: name || url.replace(/^https?:\/\//, '').split('/')[0], url, subject: $('#lk-sub').value };
+  const i = list.findIndex(x => x.id === item.id);
+  if (i >= 0) list[i] = item; else list.push(item);
+  S.meta.links = list; LK.form = null;
+  await persist('meta'); refreshLinks(); toast('已儲存連結', 'success');
+}
+async function delLink(i) {
+  const l = linkList()[i]; if (!l) return;
+  if (!(await confirmBox(`刪除「${l.name}」這個連結？`, '刪除'))) return;
+  S.meta.links = linkList().filter((_, j) => j !== i); await persist('meta'); refreshLinks();
+}
+async function moveLink(i, d) {
+  const list = linkList().slice(), j = i + d; if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]]; S.meta.links = list; await persist('meta'); refreshLinks();
 }
 
 // =====================================================================
@@ -4434,7 +4504,7 @@ async function exportBackup() {
   toast('正在打包備份…');
   const images = {};
   for (const e of S.errors) if (e.hasImage) { const v = await getImg(e.id); if (v) images[e.id] = v; }
-  const data = { app: 'dunhua-exam', version: '4.0', exportedAt: new Date().toISOString(), errors: S.errors, images, exams: S.exams, scores: S.scores, notes: S.notes, checklistItems: S.checklistItems, checklistState: S.checklistState, reviewDays: S.meta.reviewDays || {} };
+  const data = { app: 'dunhua-exam', version: '4.0', exportedAt: new Date().toISOString(), errors: S.errors, images, exams: S.exams, scores: S.scores, notes: S.notes, checklistItems: S.checklistItems, checklistState: S.checklistState, reviewDays: S.meta.reviewDays || {}, links: linkList() };
   const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = `錯題庫備份_${todayKey()}.json`;
@@ -4476,6 +4546,7 @@ async function importBackup(ev) {
     if (!S.checklistItems.length) S.checklistItems = JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
     if (!S.exams.length) S.exams = JSON.parse(JSON.stringify(DEFAULT_EXAMS));
     S.notes = Object.assign({}, data.calendarNotes || data.notes || {}, S.notes);
+    if (Array.isArray(data.links)) { const have = new Set(linkList().map(l => l.url)); S.meta.links = [...linkList(), ...data.links.filter(l => l && l.url && !have.has(l.url))]; }
     S.checklistState = Object.assign({}, data.checklist || data.checklistState || {}, S.checklistState);
     if (data.reviewDays) { S.meta.reviewDays = S.meta.reviewDays || {}; for (const [d, n] of Object.entries(data.reviewDays)) S.meta.reviewDays[d] = Math.max(S.meta.reviewDays[d] || 0, n); }
     await persist('errors', 'scores', 'exams', 'checklistItems', 'notes', 'checklistState', 'meta');
