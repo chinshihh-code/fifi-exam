@@ -554,6 +554,9 @@ resize: both;
 .scroll-mt-24 {
 scroll-margin-top: calc(var(--spacing) * 24);
 }
+.list-disc {
+list-style-type: disc;
+}
 .grid-cols-2 {
 grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -605,18 +608,36 @@ gap: calc(var(--spacing) * 3);
 .gap-4 {
 gap: calc(var(--spacing) * 4);
 }
+.gap-5 {
+gap: calc(var(--spacing) * 5);
+}
 .gap-\[2px\] {
 gap: 2px;
+}
+:where(.space-y-0\.5 > :not(:last-child)) {
+--tw-space-y-reverse: 0;
+margin-block-start: calc(calc(var(--spacing) * 0.5) * var(--tw-space-y-reverse));
+margin-block-end: calc(calc(var(--spacing) * 0.5) * calc(1 - var(--tw-space-y-reverse)));
 }
 :where(.space-y-1 > :not(:last-child)) {
 --tw-space-y-reverse: 0;
 margin-block-start: calc(var(--spacing) * var(--tw-space-y-reverse));
 margin-block-end: calc(var(--spacing) * calc(1 - var(--tw-space-y-reverse)));
 }
+:where(.space-y-1\.5 > :not(:last-child)) {
+--tw-space-y-reverse: 0;
+margin-block-start: calc(calc(var(--spacing) * 1.5) * var(--tw-space-y-reverse));
+margin-block-end: calc(calc(var(--spacing) * 1.5) * calc(1 - var(--tw-space-y-reverse)));
+}
 :where(.space-y-2 > :not(:last-child)) {
 --tw-space-y-reverse: 0;
 margin-block-start: calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse));
 margin-block-end: calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)));
+}
+:where(.space-y-2\.5 > :not(:last-child)) {
+--tw-space-y-reverse: 0;
+margin-block-start: calc(calc(var(--spacing) * 2.5) * var(--tw-space-y-reverse));
+margin-block-end: calc(calc(var(--spacing) * 2.5) * calc(1 - var(--tw-space-y-reverse)));
 }
 :where(.space-y-3 > :not(:last-child)) {
 --tw-space-y-reverse: 0;
@@ -936,11 +957,17 @@ padding-bottom: calc(var(--spacing) * 2);
 .pb-3 {
 padding-bottom: calc(var(--spacing) * 3);
 }
+.pb-4 {
+padding-bottom: calc(var(--spacing) * 4);
+}
 .pb-8 {
 padding-bottom: calc(var(--spacing) * 8);
 }
 .pb-\[max\(14px\,env\(safe-area-inset-bottom\)\)\] {
 padding-bottom: max(14px, env(safe-area-inset-bottom));
+}
+.pl-5 {
+padding-left: calc(var(--spacing) * 5);
 }
 .pl-9\! {
 padding-left: calc(var(--spacing) * 9) !important;
@@ -1059,6 +1086,9 @@ white-space: pre-line;
 }
 .text-\[\#2e7d62\] {
 color: #2e7d62;
+}
+.text-\[\#3b3532\] {
+color: #3b3532;
 }
 .text-\[\#3b3532\]\! {
 color: #3b3532 !important;
@@ -1180,6 +1210,9 @@ user-select: text;
 .hover\:border-\[\#e9e1d8\]:hover {
 border-color: #e9e1d8;
 }
+.hover\:bg-\[\#f4ede5\]:hover {
+background-color: #f4ede5;
+}
 .hover\:bg-\[\#faf6f1\]:hover {
 background-color: #faf6f1;
 }
@@ -1260,6 +1293,9 @@ grid-column: span 3 / span 3;
 }
 .lg\:grid-cols-4 {
 grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.lg\:grid-cols-5 {
+grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 .lg\:grid-cols-\[minmax\(0\,1\.15fr\)_minmax\(0\,\.85fr\)\] {
 grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr);
@@ -1853,6 +1889,15 @@ const SUBJECTS = {
   social:  { name: '社會', cls: 's-social',  color: '#e87ba4' }
 };
 const SUBJ_ORDER = ['math', 'physics', 'chinese', 'english', 'social'];
+const ERR_TYPES = {
+  concept: { name: '觀念不懂', color: '#c0573f', bg: '#fbeceb', fg: '#a03f35' },
+  reading: { name: '審題不清', color: '#c79a2a', bg: '#f8efd9', fg: '#7d5d1f' },
+  calc:    { name: '計算錯誤', color: '#4f7fb0', bg: '#e3ebf3', fg: '#3e5b78' },
+  chart:   { name: '圖表判讀', color: '#5f9a7e', bg: '#e4efe8', fg: '#3f6150' },
+  memory:  { name: '記憶不熟', color: '#8d6aa8', bg: '#efe8f2', fg: '#65517a' }
+};
+const ERR_ORDER = ['concept', 'reading', 'calc', 'chart', 'memory'];
+function errChip(t) { const x = ERR_TYPES[t]; return x ? `<span class="chip" style="background:${x.bg};color:${x.fg}">${x.name}</span>` : ''; }
 const GROUPS = [
   { key: '數學', subject: 'math', label: '📐 數學' },
   { key: '理化', subject: 'physics', label: '🔬 理化' },
@@ -2060,7 +2105,7 @@ async function hydrateImages(root) {
 // =====================================================================
 // 狀態與舊版資料搬移
 // =====================================================================
-const S = { errors: [], exams: [], scores: [], notes: {}, checklistItems: [], checklistState: {}, meta: {} };
+const S = { errors: [], exams: [], scores: [], notes: {}, checklistItems: [], checklistState: {}, meta: {}, analyses: [] };
 async function persist(...keys) {
   try { for (const k of keys) await DB.set(k, S[k]); }
   catch (e) { toast('儲存失敗：' + e.message, 'error'); }
@@ -2086,7 +2131,8 @@ function normErr(e) {
     review: Object.assign({ due: todayKey(), streak: 0, count: 0, last: '' }, e.review || {}),
     mastered: !!e.mastered,
     ai: e.ai || '', aiErr: e.aiErr || '', aiKeep: e.aiKeep || [], unsure: Array.isArray(e.unsure) ? e.unsure : [],
-    figChecked: !!e.figChecked, textChecked: !!e.textChecked
+    figChecked: !!e.figChecked, textChecked: !!e.textChecked,
+    errType: ERR_TYPES[e.errType] ? e.errType : ''
   };
 }
 function lsJson(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -2114,6 +2160,7 @@ async function loadState() {
     S.notes = (await DB.get('notes')) || {};
     S.checklistItems = (await DB.get('checklistItems')) || JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
     S.checklistState = (await DB.get('checklistState')) || {};
+    S.analyses = (await DB.get('analyses')) || [];
     S.meta = (await DB.get('meta')) || {};
   }
 }
@@ -2541,12 +2588,13 @@ document.addEventListener('keydown', ev => {
 // =====================================================================
 // 錯題庫
 // =====================================================================
-const LIB = { subject: 'all', chapter: 'all', status: 'all', q: '', open: new Set(), view: localStorage.getItem('LIB_VIEW') || 'text' };
+const LIB = { subject: 'all', chapter: 'all', status: 'all', etype: 'all', q: '', open: new Set(), view: localStorage.getItem('LIB_VIEW') || 'text' };
 function libFiltered() {
   const q = LIB.q.trim().toLowerCase();
   return S.errors.filter(e =>
     (LIB.subject === 'all' || e.subject === LIB.subject) &&
     (LIB.chapter === 'all' || e.chapter === LIB.chapter) &&
+    (LIB.etype === 'all' || e.errType === LIB.etype) &&
     (LIB.status === 'all' || (LIB.status === 'due' && isDue(e)) || (LIB.status === 'learning' && !e.mastered) || (LIB.status === 'mastered' && e.mastered) || (LIB.status === 'noimg' && !e.hasImage) || (LIB.status === 'check' && ((e.unsure || []).length || e.ai === 'error'))) &&
     (!q || [e.content, e.tag, e.questionType, e.source, chapterName(e), e.correctAnswer].join(' ').toLowerCase().includes(q))
   );
@@ -2567,13 +2615,15 @@ function renderLibrary() {
     <div class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
       ${['all', ...SUBJ_ORDER].map(s => `<button class="pill ${LIB.subject === s ? 'on' : ''}" onclick="LIB.subject='${s}';LIB.chapter='all';renderLibrary()">${s === 'all' ? '全部科目' : SUBJECTS[s].name}<span class="cnt num">${s === 'all' ? S.errors.length : S.errors.filter(e => e.subject === s).length}</span></button>`).join('')}
     </div>
-    <div class="card-flat p-3 mt-2 grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+    <div class="card-flat p-3 mt-2 grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
       <select class="select" onchange="LIB.chapter=this.value;renderLibList()" ${LIB.subject === 'all' ? 'disabled' : ''}>
         <option value="all">${LIB.subject === 'all' ? '先選科目再篩選單元' : '全部單元'}</option>
         ${chs.map(c => `<option value="${esc(c.id)}" ${LIB.chapter === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
       </select>
       <select class="select" onchange="LIB.view=this.value;localStorage.setItem('LIB_VIEW',this.value);renderLibList()">
         <option value="text" ${LIB.view === 'text' ? 'selected' : ''}>顯示：文字＋圖表</option><option value="image" ${LIB.view === 'image' ? 'selected' : ''}>顯示：原題截圖</option></select>
+      <select class="select" onchange="LIB.etype=this.value;renderLibList()">
+        <option value="all">全部錯誤類型</option>${ERR_ORDER.map(k => `<option value="${k}" ${LIB.etype === k ? 'selected' : ''}>${ERR_TYPES[k].name}</option>`).join('')}</select>
       <select class="select" onchange="LIB.status=this.value;renderLibList()">
         ${[['all', '全部狀態'], ['due', '今天待複習'], ['learning', '學習中（未精熟）'], ['mastered', '已精熟'], ['check', 'AI 待確認'], ['noimg', '缺少截圖']].map(([v, l]) => `<option value="${v}" ${LIB.status === v ? 'selected' : ''}>${l}</option>`).join('')}
       </select>
@@ -2605,7 +2655,7 @@ function renderLibList() {
       <div class="flex items-start justify-between gap-2 mb-3">
         <div class="flex flex-wrap items-center gap-1.5">
           ${subjChip(e.subject)}<span class="chip chip-muted">${esc(chapterName(e))}</span>
-          ${e.questionType ? `<span class="chip chip-line">${esc(e.questionType)}</span>` : ''}${aiBusy(e) ? '' : status}${aiChip}
+          ${e.questionType ? `<span class="chip chip-line">${esc(e.questionType)}</span>` : ''}${errChip(e.errType)}${aiBusy(e) ? '' : status}${aiChip}
         </div>
         <div class="flex shrink-0">
           <button class="btn btn-ghost btn-icon" onclick="openEdit('${e.id}')" aria-label="編輯">${icon('pencil', 'w-[18px] h-[18px]')}</button>
@@ -2689,6 +2739,7 @@ function openEdit(id) {
       <div><label class="label">單元</label><select id="ed-chapter" class="select">${chapterOptions(e.subject, e.chapter)}</select></div>
       <div><label class="label">題型／題號</label><input id="ed-qtype" class="input" value="${esc(e.questionType)}"></div>
       <div><label class="label">考點標籤</label><input id="ed-tag" class="input" value="${esc(e.tag)}"></div>
+      <div class="col-span-2"><label class="label">錯誤類型</label><select id="ed-etype" class="select"><option value="">（未分類）</option>${ERR_ORDER.map(k => `<option value="${k}" ${e.errType === k ? 'selected' : ''}>${ERR_TYPES[k].name}</option>`).join('')}</select></div>
       <div><label class="label">我的答案</label><input id="ed-stu" class="input" value="${esc(e.studentAnswer)}"></div>
       <div><label class="label">正確答案</label><input id="ed-ans" class="input" value="${esc(e.correctAnswer)}"></div>
     </div>
@@ -2797,6 +2848,7 @@ async function saveEdit() {
   e.chapter = $('#ed-chapter').value;
   e.chapterName = e.chapter ? chapterName(e) : '';
   e.questionType = $('#ed-qtype').value.trim();
+  e.errType = $('#ed-etype').value;
   e.tag = $('#ed-tag').value.trim();
   e.studentAnswer = $('#ed-stu').value.trim();
   e.correctAnswer = $('#ed-ans').value.trim();
@@ -3807,12 +3859,13 @@ ${FIG_TEXT_RULE}
 5. 國中生看得懂的解析：最多 4 行，每行一句話或一個算式；最後一行用「★」開頭，寫關鍵觀念或口訣。數學式用 LaTeX 並以 $...$ 包住。
 6. 科目代碼與單元代碼。
 7. 沒有把握的欄位（例如字跡模糊、看不清楚紅筆字母）放進 unsure 陣列，可用：studentAnswer、correctAnswer、solution、content、tag。
+8. 判斷學生答錯的主要原因 errType，只能是：concept（觀念不懂）、reading（審題不清，例如漏看「不」「錯誤」、題意理解錯）、calc（計算錯誤、正負號、單位換算）、chart（圖表判讀）、memory（記憶不熟、名詞或數據記錯）。
 
 科目代碼只能是：math、physics、chinese、english、social。
 單元請從下列清單選最接近的代碼（都不符合就填空字串）：
 ${(e.aiKeep || []).includes('subject') ? `${e.subject}（${SUBJECTS[e.subject].name}）：` + chaptersOf(e.subject).map(c => `${c.id}=${c.name}`).join('；') + `\n這題的科目是：${e.subject}（${SUBJECTS[e.subject].name}）。` : chapterListForPrompt()}
 
-只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","figures":[],"studentAnswer":"","correctAnswer":"","tag":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
+只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","figures":[],"studentAnswer":"","correctAnswer":"","tag":"","errType":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
 }
 const aiBusy = e => e.ai === 'pending' || e.ai === 'running';
 async function smallImage(url, maxW = 1000) {
@@ -3903,6 +3956,7 @@ async function bgOne(e) {
     if (!keep.includes('chapter') && chaptersOf(cur.subject).find(c => c.id === j.chapter)) { cur.chapter = j.chapter; cur.chapterName = chapterName(cur); }
     cur.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !keep.includes(k));
     if (Array.isArray(j.figures)) { await saveFigures(cur.id, j.figures); cur.figChecked = true; }
+    if (!keep.includes('errType') && ERR_TYPES[j.errType]) cur.errType = j.errType;
     cur.ai = 'done'; cur.aiErr = '';
     S.meta.aiCount = S.meta.aiCount || {}; const t = todayKey(); S.meta.aiCount[t] = (S.meta.aiCount[t] || 0) + 1;
     Object.keys(S.meta.aiCount).forEach(d => { if (diffDays(d, t) > 14) delete S.meta.aiCount[d]; });
@@ -4187,6 +4241,63 @@ function printPlan() {
 // =====================================================================
 // 統計與成績
 // =====================================================================
+const WK = { subject: 'all', open: null };
+function weaknessHtml() {
+  const E = S.errors.filter(e => WK.subject === 'all' || e.subject === WK.subject);
+  const typed = E.filter(e => e.errType);
+  const cnt = ERR_ORDER.map(k => ({ k, n: typed.filter(e => e.errType === k).length, open: typed.filter(e => e.errType === k && !e.mastered).length }));
+  const maxT = Math.max(1, ...cnt.map(c => c.n));
+  // 弱點單元：未精熟題數
+  const units = {}; E.filter(e => !e.mastered).forEach(e => { const k = e.subject + '|' + chapterName(e); units[k] = units[k] || { n: 0, types: {} }; units[k].n++; if (e.errType) units[k].types[e.errType] = (units[k].types[e.errType] || 0) + 1; });
+  const topUnits = Object.entries(units).sort((a, b) => b[1].n - a[1].n).slice(0, 6);
+  // 重複出現：同一考點出現在 2 份以上考卷
+  const rep = {}; E.filter(e => e.tag).forEach(e => { rep[e.tag] = rep[e.tag] || { s: e.subject, src: new Set(), n: 0 }; rep[e.tag].src.add(e.source || e.createdAt); rep[e.tag].n++; });
+  const repeated = Object.entries(rep).filter(([, v]) => v.src.size >= 2).sort((a, b) => b[1].src.size - a[1].src.size).slice(0, 6);
+  const ans = S.analyses.filter(a => WK.subject === 'all' || a.subject === WK.subject).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const subs = SUBJ_ORDER.filter(s => S.errors.some(e => e.subject === s) || S.analyses.some(a => a.subject === s));
+  const topType = cnt.slice().sort((a, b) => b.n - a.n)[0];
+  return `
+  <div class="card p-5 mt-4">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <div class="font-bold text-lg">弱點分析</div>
+      <div class="flex flex-wrap gap-1.5">${['all', ...subs].map(s => `<button class="pill ${WK.subject === s ? 'on' : ''}" onclick="WK.subject='${s}';renderStats()">${s === 'all' ? '全部' : SUBJECTS[s].name}</button>`).join('')}</div>
+    </div>
+    ${typed.length && topType.n ? `<p class="text-sm muted mb-4">最主要的失分原因是<b class="text-[#3b3532]">「${ERR_TYPES[topType.k].name}」</b>，共 ${topType.n} 題（${Math.round(topType.n / typed.length * 100)}%）。</p>` : '<p class="text-sm muted mb-4">錯題標上錯誤類型後，這裡會分析失分原因。</p>'}
+    <div class="grid md:grid-cols-2 gap-5">
+      <div>
+        <div class="text-sm font-bold text-[#5e5651] mb-2">錯誤類型</div>
+        <div class="space-y-2.5">${cnt.map(c => `
+          <button class="w-full text-left" onclick="LIB.subject='${WK.subject}';LIB.chapter='all';LIB.status='all';LIB.etype='${c.k}';LIB.q='';switchTab('library')" title="${ERR_TYPES[c.k].name}：${c.n} 題，${c.open} 題未精熟">
+            <div class="flex justify-between text-sm mb-1"><span class="font-semibold">${ERR_TYPES[c.k].name}</span><span class="muted num">${c.n} 題${c.open ? `・${c.open} 未熟` : ''}</span></div>
+            <div class="h-3 rounded-md bg-[#f4ede5] overflow-hidden"><div class="h-full rounded-md" style="width:${c.n ? Math.max(3, c.n / maxT * 100) : 0}%;background:${ERR_TYPES[c.k].color}"></div></div>
+          </button>`).join('')}</div>
+        ${E.length - typed.length ? `<div class="text-xs muted mt-2">還有 ${E.length - typed.length} 題未分類（可在編輯錯題裡設定）</div>` : ''}
+      </div>
+      <div>
+        <div class="text-sm font-bold text-[#5e5651] mb-2">優先複習的單元（未精熟題數）</div>
+        ${topUnits.length ? `<div class="space-y-1.5">${topUnits.map(([k, v]) => { const [s, name] = k.split('|'); const main = Object.entries(v.types).sort((a, b) => b[1] - a[1])[0];
+          return `<button class="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-[#faf6f1] hover:bg-[#f4ede5] text-left" onclick="LIB.subject='${s}';LIB.chapter='all';LIB.status='learning';LIB.etype='all';LIB.q=${esc(JSON.stringify(name))};switchTab('library')">
+            ${subjChip(s)}<span class="flex-1 font-semibold text-sm truncate">${esc(name)}</span>${main ? `<span class="text-xs muted">多為${ERR_TYPES[main[0]].name}</span>` : ''}<b class="num text-[#a03f35]">${v.n}</b></button>`; }).join('')}</div>` : '<div class="text-sm muted">目前沒有未精熟的題目 🎉</div>'}
+        ${repeated.length ? `<div class="text-sm font-bold text-[#5e5651] mt-4 mb-2">重複出現的弱點（2 份以上考卷都錯）</div>
+          <div class="flex flex-wrap gap-1.5">${repeated.map(([t, v]) => `<span class="chip ${SUBJECTS[v.s].cls}">${esc(t)}・${v.src.size} 份</span>`).join('')}</div>` : ''}
+      </div>
+    </div>
+    ${ans.length ? `<div class="divider mt-5 pt-4">
+      <div class="text-sm font-bold text-[#5e5651] mb-2">各份考卷分析</div>
+      <div class="space-y-2">${ans.map(a => { const open = WK.open === a.id; return `
+        <div class="rounded-2xl border border-[#e9e1d8] bg-white">
+          <button class="w-full flex flex-wrap items-center gap-2 px-4 py-3 text-left" onclick="WK.open=${open ? 'null' : `'${a.id}'`};renderStats()">
+            ${subjChip(a.subject)}<span class="flex-1 font-semibold">${esc(a.title)}</span>
+            <span class="text-sm muted num">${(a.date || '').replace(/-/g, '/')}</span>${a.score != null ? `<b class="num">${a.score} 分</b>` : ''}${icon('down', 'w-4 h-4 transition ' + (open ? 'rotate-180' : ''))}</button>
+          ${open ? `<div class="px-4 pb-4 text-[.95rem] leading-relaxed space-y-3">
+            <p>${esc(a.summary)}</p>
+            ${(a.weakPoints || []).length ? `<div><div class="text-sm font-bold text-[#a03f35] mb-1">弱點</div><ul class="list-disc pl-5 space-y-0.5">${a.weakPoints.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
+            ${a.trend ? `<div><div class="text-sm font-bold text-[#3e5b78] mb-1">和之前比較</div><p>${esc(a.trend)}</p></div>` : ''}
+            ${(a.suggestions || []).length ? `<div><div class="text-sm font-bold text-[#3f6150] mb-1">複習建議</div><ul class="list-disc pl-5 space-y-0.5">${a.suggestions.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
+          </div>` : ''}
+        </div>`; }).join('')}</div></div>` : ''}
+  </div>`;
+}
 function renderStats() {
   const el = $('#tab-stats');
   const E = S.errors, total = E.length, mastered = E.filter(e => e.mastered).length;
@@ -4232,6 +4343,8 @@ function renderStats() {
           <div class="flex flex-wrap gap-2">${topCh.map(([k, n]) => { const [s, name] = k.split('|'); return `<span class="chip ${SUBJECTS[s].cls}">${esc(name)}・${n}</span>`; }).join('')}</div></div>` : ''}
       </div>
     </div>
+
+    ${weaknessHtml()}
 
     <div class="card p-5 mt-4">
       <div class="flex flex-wrap items-center justify-between gap-2 mb-3"><div class="font-bold">考卷成績紀錄</div></div>
@@ -4509,7 +4622,7 @@ async function testKey() {
 async function buildBackup() {
   const images = {};
   for (const e of S.errors) if (e.hasImage) { const v = await getImg(e.id); if (v) images[e.id] = v; }
-  return { app: 'dunhua-exam', version: '4.0', exportedAt: new Date().toISOString(), errors: S.errors, images, exams: S.exams, scores: S.scores, notes: S.notes, checklistItems: S.checklistItems, checklistState: S.checklistState, reviewDays: S.meta.reviewDays || {}, links: linkList() };
+  return { app: 'dunhua-exam', version: '4.0', exportedAt: new Date().toISOString(), errors: S.errors, images, exams: S.exams, scores: S.scores, notes: S.notes, checklistItems: S.checklistItems, checklistState: S.checklistState, reviewDays: S.meta.reviewDays || {}, links: linkList(), analyses: S.analyses };
 }
 async function exportBackup() {
   toast('正在打包備份…');
@@ -4533,7 +4646,7 @@ async function applyImport(data, title = '匯入備份') {
   if (!data || !Array.isArray(data.errors)) return toast('檔案格式不符', 'error');
   const v4 = String(data.version || '').startsWith('4');
   const incoming = data.errors.map(e => normErr(v4 ? e : { ...e, chapter: oldChapterToNew(e.subject, e.chapter) }));
-  const mode = await ask(title, `檔案中有 ${incoming.length} 道錯題${data.scores?.length ? `、${data.scores.length} 筆成績` : ''}。\n\n「合併」會保留目前的資料，只加入新的內容（建議）。\n「全部取代」會清掉目前的資料，改成檔案裡的內容。`,
+  const mode = await ask(title, `檔案中有 ${incoming.length} 道錯題${data.scores?.length ? `、${data.scores.length} 筆成績` : ''}${data.analyses?.length ? `、${data.analyses.length} 份考卷分析` : ''}。\n\n「合併」會保留目前的資料，只加入新的內容（建議）。\n「全部取代」會清掉目前的資料，改成檔案裡的內容。`,
     [{ label: '取消', value: null }, { label: '全部取代', value: 'replace', style: 'btn-danger' }, { label: '合併', value: 'merge', style: 'btn-primary' }]);
   if (!mode) return;
   closeModal('modal-settings');
@@ -4541,18 +4654,28 @@ async function applyImport(data, title = '匯入備份') {
     const images = data.images || {};
     if (mode === 'replace') {
       for (const e of S.errors) await delImg(e.id);
-      S.errors = []; S.scores = []; S.notes = {}; S.checklistState = {};
+      S.errors = []; S.scores = []; S.notes = {}; S.checklistState = {}; S.analyses = [];
       if (data.checklistItems?.length) S.checklistItems = [];
       if (data.exams?.length) S.exams = [];
     }
     const have = new Set(S.errors.map(e => e.id)); let added = 0;
+    let updated = 0;
     for (const e of incoming) {
-      if (have.has(e.id)) continue;
+      if (have.has(e.id)) {
+        // 已存在的錯題：只補上分析資料（錯誤類型、題型、考點），不覆蓋複習紀錄與自己改過的內容
+        const cur = S.errors.find(x => x.id === e.id);
+        const src = data.errors.find(x => x.id === e.id) || {};
+        let ch = false;
+        if (src.errType && ERR_TYPES[src.errType] && cur.errType !== src.errType) { cur.errType = src.errType; ch = true; }
+        if (ch) updated++;
+        continue;
+      }
       if (images[e.id]) { await setImg(e.id, images[e.id]); e.hasImage = true; } else if (e.hasImage && !(await getImg(e.id))) e.hasImage = false;
       S.errors.push(e); added++;
     }
     const mergeById = (cur, inc) => { const ids = new Set(cur.map(x => x.id)); return cur.concat((inc || []).filter(x => x && !ids.has(x.id))); };
     S.scores = mergeById(S.scores, data.scores);
+    if (Array.isArray(data.analyses)) for (const a of data.analyses) { if (!a || !a.id) continue; const i = S.analyses.findIndex(x => x.id === a.id); if (i >= 0) S.analyses[i] = a; else S.analyses.push(a); }
     S.exams = mergeById(S.exams, data.exams);
     S.checklistItems = mergeById(S.checklistItems, data.checklistItems || data.checklistItemsV1);
     if (!S.checklistItems.length) S.checklistItems = JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
@@ -4561,8 +4684,8 @@ async function applyImport(data, title = '匯入備份') {
     if (Array.isArray(data.links)) { const have = new Set(linkList().map(l => l.url)); S.meta.links = [...linkList(), ...data.links.filter(l => l && l.url && !have.has(l.url))]; }
     S.checklistState = Object.assign({}, data.checklist || data.checklistState || {}, S.checklistState);
     if (data.reviewDays) { S.meta.reviewDays = S.meta.reviewDays || {}; for (const [d, n] of Object.entries(data.reviewDays)) S.meta.reviewDays[d] = Math.max(S.meta.reviewDays[d] || 0, n); }
-    await persist('errors', 'scores', 'exams', 'checklistItems', 'notes', 'checklistState', 'meta');
-    toast(`匯入完成：新增 ${added} 題`, 'success');
+    await persist('errors', 'scores', 'exams', 'checklistItems', 'notes', 'checklistState', 'meta', 'analyses');
+    toast(`匯入完成：新增 ${added} 題${updated ? `、更新 ${updated} 題的分析` : ''}${data.analyses?.length ? `、${data.analyses.length} 份考卷分析` : ''}`, 'success');
     refreshAll();
     ensureEnhanced();
   } catch (e) { toast('匯入失敗：' + e.message, 'error'); }
