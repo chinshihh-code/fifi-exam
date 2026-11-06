@@ -1993,9 +1993,10 @@ function formatQuestionText(t) {
   return `<div class="qstem">${stem.map(esc).join('<br>')}</div>` + (opts.length ? `<div class="qopts ${short ? 'short' : ''}">${opts.map(o => `<div><b>(${o[0]})</b> ${esc(o[1])}</div>`).join('')}</div>` : '');
 }
 // 螢幕上的題目呈現：文字＋圖表 或 截圖（v: 'orig' 原圖／'clean' 擦掉答案版）
-const canText = e => !!e.content && (!e.hasImage || e.figChecked);
-function screenQuestion(e, mode, v = 'orig') {
-  if (mode === 'text' && canText(e)) return `<div class="sq">${formatQuestionText(e.content)}${e.hasImage ? [0, 1, 2, 3].map(i => `<img class="qfig" data-fig="${e.id}" data-i="${i}" alt="">`).join('') : ''}</div>`;
+const canText = e => !!e.content;
+function screenQuestion(e, mode, v = 'clean') {
+  if (mode === 'text' && canText(e)) return `<div class="sq">${formatQuestionText(e.content)}${e.hasImage ? [0, 1, 2, 3].map(i => `<img class="qfig" data-fig="${e.id}" data-i="${i}" alt="">`).join('') : ''}</div>`
+    + (e.hasImage && !e.figChecked ? `<details class="mt-2"><summary class="text-sm font-semibold muted cursor-pointer">圖表整理中，點此看題目原圖</summary><div class="qimg mt-2"><img data-img="${e.id}" data-v="clean" alt="題目原圖"></div></details>` : '');
   if (e.hasImage) return `<div class="qimg"><img data-img="${e.id}" data-v="${v}" alt="原題截圖" loading="lazy"></div>`;
   return `<div class="sq">${formatQuestionText(e.content)}</div>`;
 }
@@ -2513,8 +2514,8 @@ function renderReview() {
   }
   const e = S.errors.find(x => x.id === RV.queue[RV.idx]);
   if (!e) { RV.idx++; return renderReview(); }
-  const front = e.hasImage
-    ? `<div class="qimg"><img data-img="${e.id}" data-v="clean" alt="題目"></div>`
+  const front = (e.hasImage || canText(e))
+    ? screenQuestion(e, 'text', 'clean')
     : `<div class="text-[1.05rem] leading-relaxed">${esc(e.content)}</div>
        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#fbf5e8] px-4 py-2.5 text-sm text-[#7d5d1f]"><span>這題沒有原題截圖</span><button class="btn btn-sm btn-line" onclick="addImageQuick('${e.id}')">${icon('imageplus', 'w-4 h-4')}加入截圖</button></div>`;
   el.innerHTML = `
@@ -2532,7 +2533,7 @@ function renderReview() {
         </div>
         ${!RV.flipped ? `
           ${front}
-          <p class="text-sm muted mt-3 flex items-center gap-1.5">${icon('info', 'w-4 h-4')}已隱藏紅筆訂正（自己寫的答案可在編輯裡擦除）。先在紙上算一算，想好答案再翻開。</p>
+          <p class="text-sm muted mt-3 flex items-center gap-1.5">${icon('info', 'w-4 h-4')}先在紙上算一算，想好答案再翻開。</p>
           <button class="btn btn-dark btn-lg w-full mt-5" onclick="RV.flipped=true;renderReview()">${icon('eye')}翻開答案</button>
         ` : `
           <div class="flip-in">
@@ -2605,7 +2606,7 @@ function renderLibrary() {
   if (LIB.chapter !== 'all' && !chs.find(c => c.id === LIB.chapter)) LIB.chapter = 'all';
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
-      <div><h2 class="section-title serif">錯題庫</h2><p class="text-sm muted mt-1">共 <b class="num" id="lib-count">0</b> 題・點「看解析」展開詳解
+      <div><h2 class="section-title serif">錯題庫</h2><p class="text-sm muted mt-1">共 <b class="num" id="lib-count">0</b> 題・點「看答案與解析」展開詳解
         ${S.errors.some(e => e.ai === 'error') ? `・<button class="underline text-[#a03f35] font-semibold" onclick="retryAi()">重試 ${S.errors.filter(e => e.ai === 'error').length} 題分析失敗的題目</button>` : ''}</p></div>
       <div class="flex gap-2">
         <button class="btn btn-primary" onclick="switchTab('upload')">${icon('plus')}新增錯題</button>
@@ -2662,22 +2663,23 @@ function renderLibList() {
           <button class="btn btn-ghost btn-icon text-[#b0463b]!" onclick="deleteError('${e.id}')" aria-label="刪除">${icon('trash', 'w-[18px] h-[18px]')}</button>
         </div>
       </div>
-      ${e.hasImage ? screenQuestion(e, LIB.view) : `<div class="text-[1rem] leading-relaxed">${esc(e.content)}</div>
+      ${e.hasImage ? screenQuestion(e, LIB.view, 'clean') : `<div class="text-[1rem] leading-relaxed">${esc(e.content)}</div>
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-[#ecd9b0] bg-[#fbf5e8] px-4 py-3">
           <span class="flex items-center gap-2 text-sm font-semibold text-[#7d5d1f]">${icon('alert', 'w-4 h-4')}缺少原題截圖，複習時看不到題目的圖表</span>
           <button class="btn btn-sm btn-line" onclick="addImageQuick('${e.id}')">${icon('imageplus', 'w-4 h-4')}加入截圖</button>
         </div>`}
       <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
-        <div class="flex flex-wrap gap-2 text-sm">
-          <span class="px-3 py-1.5 rounded-xl bg-[#fbeceb] text-[#a03f35] font-semibold">我的答案：${esc(e.studentAnswer || '—')}</span>
-          <span class="px-3 py-1.5 rounded-xl bg-[#e4efe8] text-[#3f6150] font-bold">正解：${esc(e.correctAnswer || '見解析')}</span>
-        </div>
-        <button class="btn btn-soft btn-sm" onclick="toggleOpen('${e.id}')">${open ? '收合' : '看解析'}${icon('down', 'w-4 h-4 transition ' + (open ? 'rotate-180' : ''))}</button>
+        <span class="text-sm muted">${open ? '' : '先想一想答案，再點「看答案與解析」'}</span>
+        <button class="btn btn-soft btn-sm" onclick="toggleOpen('${e.id}')">${open ? '收合' : '看答案與解析'}${icon('down', 'w-4 h-4 transition ' + (open ? 'rotate-180' : ''))}</button>
       </div>
       ${e.tag || e.source ? `<div class="text-sm muted mt-2">${e.tag ? `#${esc(e.tag)}` : ''}${e.tag && e.source ? '・' : ''}${esc(e.source)}</div>` : ''}
       ${open ? `
       <div class="mt-4 pt-4 divider space-y-4">
-        ${e.hasImage && LIB.view === 'text' && canText(e) ? `<details><summary class="text-sm font-semibold muted cursor-pointer">看原題截圖（含當時的作答與訂正）</summary><div class="qimg mt-2"><img data-img="${e.id}" data-v="orig" alt="原題截圖"></div></details>` : ''}
+        <div class="flex flex-wrap gap-2 text-sm">
+          <span class="px-3 py-1.5 rounded-xl bg-[#fbeceb] text-[#a03f35] font-semibold">我的答案：${esc(e.studentAnswer || '—')}</span>
+          <span class="px-3 py-1.5 rounded-xl bg-[#e4efe8] text-[#3f6150] font-bold">正解：${esc(e.correctAnswer || '見解析')}</span>
+        </div>
+        ${e.hasImage ? `<details><summary class="text-sm font-semibold muted cursor-pointer">看原題截圖（含當時的作答與訂正）</summary><div class="qimg mt-2"><img data-img="${e.id}" data-v="orig" alt="原題截圖"></div></details>` : ''}
         <div class="p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43] mb-1">解析</div>${formatSteps(e.solution)}</div>
         ${e.svgDiagram ? `<div class="svgbox p-3 rounded-2xl bg-[#fcfaf7] border border-[#f1ebe4]">${e.svgDiagram}</div>` : ''}
         <div class="flex flex-wrap gap-2">
@@ -3012,6 +3014,7 @@ async function upgradeImage(v, manual) {
   const res = Object.assign(processCanvas(c, raw), { skew: sk });
   if (v.chSrc === 'photo') { res.ch = v.ch; res.chSrc = 'photo'; }
   if (v.chGroup) res.chGroup = v.chGroup;
+  if (v.figs) res.figs = v.figs;
   return res;
 }
 async function ensureEnhanced() {
@@ -4667,6 +4670,12 @@ async function applyImport(data, title = '匯入備份') {
         const src = data.errors.find(x => x.id === e.id) || {};
         let ch = false;
         if (src.errType && ERR_TYPES[src.errType] && cur.errType !== src.errType) { cur.errType = src.errType; ch = true; }
+        const im = images[e.id];
+        if (im && Array.isArray(im.figs) && !cur.figChecked) {
+          const v = await getImg(e.id);
+          if (v) { await setImg(e.id, Object.assign({}, v, { figs: im.figs })); cur.figChecked = true; ch = true; }
+        }
+        if (src.content && !cur.content) { cur.content = src.content; ch = true; }
         if (ch) updated++;
         continue;
       }
