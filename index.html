@@ -867,6 +867,9 @@ padding: calc(var(--spacing) * 32);
 .p-33 {
 padding: calc(var(--spacing) * 33);
 }
+.p-34 {
+padding: calc(var(--spacing) * 34);
+}
 .p-41 {
 padding: calc(var(--spacing) * 41);
 }
@@ -1908,33 +1911,67 @@ const GROUPS = [
   { key: '英文', subject: 'english', label: '🔤 英文' }
 ];
 const DEFAULT_CHECKLIST = [
-  { id: 'm-21', subject: '數學', name: '2-1 二次方根與近似值' },
   { id: 'm-22', subject: '數學', name: '2-2 根式的運算' },
   { id: 'm-23', subject: '數學', name: '2-3 畢氏定理' },
-  { id: 'm-31', subject: '數學', name: '3-1 提公因式因式分解' },
-  { id: 'm-32', subject: '數學', name: '3-2 十字交乘法' },
+  { id: 'm-31', subject: '數學', name: '3-1 提公因式與乘法公式作因式分解' },
+  { id: 'm-32', subject: '數學', name: '3-2 利用十字交乘法因式分解' },
   { id: 'p-31', subject: '理化', name: '3-1 波的傳播與特徵' },
-  { id: 'p-32', subject: '理化', name: '3-2 聲波的產生與傳播' },
+  { id: 'p-32', subject: '理化', name: '3-2 聲音的形成' },
   { id: 'p-33', subject: '理化', name: '3-3 多變的聲音' },
-  { id: 'p-41', subject: '理化', name: '4-1 光的傳播與光速' },
-  { id: 'p-42', subject: '理化', name: '4-2 光的反射與面鏡' },
-  { id: 'p-43', subject: '理化', name: '4-3 光的折射與透鏡' },
-  { id: 'p-44', subject: '理化', name: '4-4 光學儀器' },
-  { id: 'p-45', subject: '理化', name: '4-5 色光與顏色' },
-  { id: 'h-3', subject: '社會 - 歷史', name: '歷史 第 3 章 魏晉南北朝的分與合' },
-  { id: 'h-4', subject: '社會 - 歷史', name: '歷史 第 4 章 隋唐帝國的盛世與文化交流' },
-  { id: 'g-3', subject: '社會 - 地理', name: '地理 第 3 章 中國的地形與水系' },
-  { id: 'g-4', subject: '社會 - 地理', name: '地理 第 4 章 中國的氣候與水文環境' },
-  { id: 'c-3', subject: '社會 - 公民', name: '公民 第 3 章 國家的組成與形式' },
-  { id: 'c-4', subject: '社會 - 公民', name: '公民 第 4 章 民主政府與權力分立' },
-  { id: 'ch-5', subject: '國文', name: '第五課 定伯賣鬼' },
-  { id: 'ch-6', subject: '國文', name: '第六課 詞選（如夢令、破陣子）' },
-  { id: 'ch-7', subject: '國文', name: '第七課 鳥' },
-  { id: 'ch-ext', subject: '國文', name: '語文常識二 應用文（書信、便條、名片）' },
-  { id: 'en-3', subject: '英文', name: 'Unit 3 Bad Habits' },
-  { id: 'en-4', subject: '英文', name: 'Unit 4 Inventions' },
-  { id: 'en-rev', subject: '英文', name: 'Review 2 & 文法（過去進行式、連接詞）' }
+  { id: 'p-34', subject: '理化', name: '3-4 聲波的傳播與應用' },
+  { id: 'p-41', subject: '理化', name: '4-1 光的傳播' },
+  { id: 'p-42', subject: '理化', name: '4-2 光的反射與面鏡成像' },
+  { id: 'p-43', subject: '理化', name: '4-3 光的折射' },
+  { id: 'p-44', subject: '理化', name: '4-4 透鏡成像' },
+  { id: 'p-45', subject: '理化', name: '4-5 色散與顏色' },
+  { id: 'h-3', subject: '社會 - 歷史', name: '歷史 第 3 章 宋元多民族並立的時期' },
+  { id: 'h-4', subject: '社會 - 歷史', name: '歷史 第 4 章 明清時期東亞世界的變動' },
+  { id: 'g-3', subject: '社會 - 地理', name: '地理 第 3 章 中國的人口' },
+  { id: 'g-4', subject: '社會 - 地理', name: '地理 第 4 章 中國的經濟發展與全球關連' },
+  { id: 'c-3', subject: '社會 - 公民', name: '公民 第 3 章 法治與權力分立' },
+  { id: 'c-4', subject: '社會 - 公民', name: '公民 第 4 章 中央政府' },
+  { id: 'ch-4', subject: '國文', name: '第四課 愛蓮說' },
+  { id: 'ch-6', subject: '國文', name: '第六課 鳥' },
+  { id: 'ch-ext', subject: '國文', name: '語文常識（二）語法（下）句子' },
+  { id: 'en-3', subject: '英文', name: 'Unit 3 Mom Was Doing the Dishes at Half Past Twelve' },
+  { id: 'en-4', subject: '英文', name: 'Unit 4 What Do You Want to Be in the Future?' },
+  { id: 'en-rev', subject: '英文', name: 'Review 2' }
 ];
+// 舊版預設單元名稱（依翰林自修目錄更正）：名稱沒被改過的才會自動換新
+const OLD_CHECKLIST_NAMES = {
+  'm-21': '2-1 二次方根與近似值', 'm-31': '3-1 提公因式因式分解', 'm-32': '3-2 十字交乘法',
+  'p-32': '3-2 聲波的產生與傳播', 'p-41': '4-1 光的傳播與光速', 'p-42': '4-2 光的反射與面鏡',
+  'p-43': '4-3 光的折射與透鏡', 'p-44': '4-4 光學儀器', 'p-45': '4-5 色光與顏色',
+  'h-3': '歷史 第 3 章 魏晉南北朝的分與合', 'h-4': '歷史 第 4 章 隋唐帝國的盛世與文化交流',
+  'g-3': '地理 第 3 章 中國的地形與水系', 'g-4': '地理 第 4 章 中國的氣候與水文環境',
+  'c-3': '公民 第 3 章 國家的組成與形式', 'c-4': '公民 第 4 章 民主政府與權力分立',
+  'ch-5': '第五課 定伯賣鬼', 'ch-6': '第六課 詞選（如夢令、破陣子）', 'ch-7': '第七課 鳥',
+  'ch-ext': '語文常識二 應用文（書信、便條、名片）',
+  'en-3': 'Unit 3 Bad Habits', 'en-4': 'Unit 4 Inventions', 'en-rev': 'Review 2 & 文法（過去進行式、連接詞）'
+};
+function fixChecklistNames() {
+  if (S.meta.ckFix1) return false;
+  const items = S.checklistItems, def = Object.fromEntries(DEFAULT_CHECKLIST.map(d => [d.id, d]));
+  const out = [];
+  for (const it of items) {
+    const untouched = OLD_CHECKLIST_NAMES[it.id] === it.name;
+    if (untouched && def[it.id]) out.push({ ...it, name: def[it.id].name });
+    else if (untouched) continue; // 舊預設、不在這次範圍（例如 2-1、定伯賣鬼）且沒改過名 → 移除
+    else out.push(it);
+  }
+  // 補上新單元（插在同科目最後一個前一單元之後）
+  for (const d of DEFAULT_CHECKLIST) {
+    if (out.some(i => i.id === d.id)) continue;
+    const k = DEFAULT_CHECKLIST.indexOf(d), prev = DEFAULT_CHECKLIST.slice(0, k).reverse().find(p => out.some(i => i.id === p.id));
+    const at = prev ? out.findIndex(i => i.id === prev.id) + 1 : 0;
+    out.splice(at, 0, { ...d });
+  }
+  // 錯題原本對到被移除的單元時，留下單元名稱，免得變「未分類」
+  const gone = new Set(items.filter(i => !out.some(o => o.id === i.id)).map(i => i.id));
+  for (const e of S.errors) if (gone.has(e.chapter) && !e.chapterName) e.chapterName = OLD_CHECKLIST_NAMES[e.chapter];
+  S.checklistItems = out; S.meta.ckFix1 = true;
+  return true;
+}
 const DEFAULT_EXAMS = [
   { id: 'ex-2', name: '第二次段考', short: '二段', date: '2026-12-02', days: 2 },
   { id: 'ex-3', name: '期末考', short: '期末', date: '2027-01-18', days: 2 }
@@ -2164,6 +2201,7 @@ async function loadState() {
     S.analyses = (await DB.get('analyses')) || [];
     S.meta = (await DB.get('meta')) || {};
   }
+  if (fixChecklistNames()) await persist('checklistItems', 'meta', 'errors');
 }
 
 function groupSubject(groupKey) { return (GROUPS.find(g => g.key === groupKey) || {}).subject; }
