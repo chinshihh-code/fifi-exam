@@ -122,6 +122,30 @@ label.ck:first-child{border-top:0}
 .tool.on{border-color:var(--ink);background:var(--ink);color:#fff}
 .tool .dot{width:14px;height:14px;border-radius:50%;display:inline-block}
 .inkhint{font-size:.8rem;color:var(--sage-deep)}
+.qimg{margin:.7rem 0;text-align:center}
+.qimg img{max-width:100%;width:auto;max-height:340px;border-radius:12px;border:1px solid var(--line);background:#fff;cursor:zoom-in}
+.qimg.small img{min-width:min(300px,100%)}
+.cimg{margin:.6rem 0 .8rem;text-align:center}
+.cimg img{max-width:100%;max-height:420px;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:zoom-in}
+.cimg figcaption{font-size:.8rem;color:var(--muted);margin-top:.25rem}
+.expl .cimg img{max-height:300px}
+.chip-chk{background:var(--gold-soft);color:var(--gold)}
+.zoom{position:fixed;inset:0;background:rgba(30,25,22,.88);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem}
+.zoom img{max-width:100%;max-height:100%;background:#fff;border-radius:10px}
+.zoom .x{position:absolute;top:calc(.8rem + env(safe-area-inset-top,0px));right:1rem;color:#fff;font-size:1rem;font-weight:700;background:rgba(255,255,255,.18);border-radius:999px;padding:.4rem 1rem}
+.tline{margin:.8rem 0;overflow-x:auto}
+.tl-row{display:flex;min-width:480px;border:1.5px solid var(--ink-2);border-radius:6px;overflow:hidden;font-weight:700}
+.tl-c{flex:1;display:flex;align-items:center;justify-content:center;padding:.9rem .2rem;background:#f4f1ec;border-right:1px solid #cfc6bc}
+.tl-end{border-right:0}
+.tl-k{color:var(--rose-deep);font-size:1.1rem}
+.tl-song{flex:2.4;display:flex;flex-direction:column;background:#e8e1d8;border-right:1px solid #cfc6bc}
+.tl-song>div{display:flex;justify-content:center;padding:.25rem 0;border-bottom:1px solid #cfc6bc}
+.tl-song>div:last-child{border-bottom:0}
+.tl-mid span,.tl-bot span{flex:1;text-align:center}
+.tl-mid span:first-child,.tl-bot span:first-child{border-right:1px solid #cfc6bc}
+.tl-axis{position:relative;min-width:480px;height:1.7rem;background:var(--ink-2);color:#fff;font-size:.82rem;border-radius:0 0 6px 6px;margin-top:2px}
+.tl-axis span{position:absolute;top:.2rem;transform:translateX(-50%);white-space:nowrap}
+.tl-cap{font-size:.78rem;color:var(--muted);text-align:center;margin-top:.3rem}
 </style>
 </head>
 <body>
@@ -249,6 +273,7 @@ function renderCard(){
     <div class="card">
       <div class="row"><span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題${s.rate !== null ? `・答對率 ${s.rate}%` : ''}</span></div>
       <div class="h1 serif mt2">${esc(c.name)}</div>
+      ${(c.imgs || []).map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)"><figcaption>${esc(u.mapname[m])}</figcaption></figure>`).join('')}
       ${F('說明', '說明')}${F('關鍵名詞', '關鍵名詞')}${F('因果／影響', '因果／影響')}
       ${cd['標示'] ? `<div class="field"><div class="lb">自修／講義標示</div><div class="vl small muted">${cd['標示']}</div></div>` : ''}
     </div>
@@ -341,10 +366,13 @@ function renderQuiz(){
       <div class="row small" style="margin-bottom:.6rem">
         <span class="chip lv-${c.level}">${esc(c.name.replace(/（.*?）/g, ''))}</span>
         ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip chip-src">${esc(q.src)}</span>`}
+        ${q.chk ? `<span class="chip chip-chk">${esc(q.chk)}待核對</span>` : ''}
       </div>
       ${q.ctx ? `<div class="ctx"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
       <div class="qtext">${esc(q.q)}</div>
       ${q.fig ? `<div class="fig"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
+      ${q.img ? `<div class="qimg ${'small'}"><img src="img/${q.img}.jpg" alt="題目附圖" onclick="zoom(this.src)" onload="setupInk()"></div>` : ''}
+      ${q.fh || ''}
       <div>${q.o.map((t, k) => {
         let cls = '';
         if (answered){ if (k === q.a) cls = 'ok'; else if (k === z.picked) cls = 'bad'; else cls = 'dim'; }
@@ -353,6 +381,7 @@ function renderQuiz(){
       ${answered ? `<div class="expl ${ok ? 'ok' : 'bad'}">
         <div class="vd">${ok ? '答對了！' : `答錯了，正確答案是 (${'ABCD'[q.a]})`}</div>
         <div>${esc(q.e)}</div>
+        ${(q.maps || []).map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"><figcaption>課本對照：${esc(unitOf(q.unit).mapname[m])}</figcaption></figure>`).join('')}
         ${z.mode === 'wrong' && ok && WRONG[q.id] ? `<div class="small mt2">再答對 ${NEED_STREAK - WRONG[q.id].s} 次就能移出錯題本</div>` : ''}
         ${z.mode === 'wrong' && ok && !WRONG[q.id] ? `<div class="small mt2">🎉 已移出錯題本</div>` : ''}
       </div>` : ''}
@@ -498,12 +527,19 @@ function renderWrong(){
         ${q.ctx ? `<div class="ctx mt2 small"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
         <div class="mt2" style="font-weight:600">${esc(q.q)}</div>
         ${q.fig ? `<div class="fig small"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
+        ${q.img ? `<div class="qimg"><img src="img/${q.img}.jpg" alt="" onclick="zoom(this.src)"></div>` : ''}${q.fh || ''}
         <details class="mt2"><summary class="muted small" style="cursor:pointer">看答案與解析</summary>
           <div class="small mt2">${q.o.map((t, k) => `<div style="${k === q.a ? 'color:var(--sage-deep);font-weight:700' : ''}">(${'ABCD'[k]}) ${esc(t)}</div>`).join('')}</div>
           <div class="expl ok small">${esc(q.e)}</div></details>
       </div>`).join('')}</div>`;
 }
 
+function zoom(src){
+  if (INK.on) return;
+  const d = document.createElement('div'); d.className = 'zoom';
+  d.innerHTML = `<img src="${src}" alt=""><button class="x">關閉 ✕</button>`;
+  d.onclick = () => d.remove(); document.body.appendChild(d);
+}
 /* ---------------- 路由 ---------------- */
 function render(){
   updateBadge();
