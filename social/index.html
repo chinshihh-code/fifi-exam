@@ -113,6 +113,15 @@ pre.flow{background:var(--cream);border-radius:14px;padding:.8rem;overflow-x:aut
 .cb{width:22px;height:22px;accent-color:var(--rose)}
 label.ck{display:flex;align-items:center;gap:.55rem;padding:.55rem .2rem;border-top:1px solid var(--line-soft)}
 label.ck:first-child{border-top:0}
+.ink{position:absolute;left:0;top:0;pointer-events:none;touch-action:auto;z-index:5;border-radius:22px}
+.ink.on{pointer-events:auto;touch-action:none;cursor:crosshair}
+.qcard{position:relative}
+.qcard.drawing{box-shadow:0 0 0 3px rgba(111,138,118,.45),0 10px 28px -18px rgba(70,50,40,.22)}
+.inkbar{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;margin-bottom:.6rem}
+.tool{min-height:42px;min-width:42px;padding:.3rem .75rem;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:650;font-size:.88rem;display:inline-flex;align-items:center;gap:.35rem}
+.tool.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.tool .dot{width:14px;height:14px;border-radius:50%;display:inline-block}
+.inkhint{font-size:.8rem;color:var(--sage-deep)}
 </style>
 </head>
 <body>
@@ -310,6 +319,7 @@ function pickRep(uid){
 /* ---------------- 作答 ---------------- */
 function startQuiz(list, name, back, mode){
   if (!list.length){ toast('沒有題目'); return; }
+  INK.on = false;
   ST.quiz = { list: list.map(q => q.id), i: 0, picked: null, right: 0, wrongIds: [], name, back: back || 'home', mode: mode || 'normal', done: false };
   go('quiz');
 }
@@ -325,7 +335,9 @@ function renderQuiz(){
   $('#app').innerHTML = `
     <div class="qhead"><b>第 ${z.i + 1} / ${z.list.length} 題</b><span class="muted small">答對 ${z.right}</span></div>
     <div class="prog"><i style="width:${pct}%"></i></div>
-    <div class="card">
+    ${inkBar()}
+    <div class="card qcard ${INK.on ? 'drawing' : ''}" id="qcard">
+      <canvas id="ink" class="ink ${INK.on ? 'on' : ''}"></canvas>
       <div class="row small" style="margin-bottom:.6rem">
         <span class="chip lv-${c.level}">${esc(c.name.replace(/（.*?）/g, ''))}</span>
         ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip chip-src">${esc(q.src)}</span>`}
@@ -346,6 +358,7 @@ function renderQuiz(){
       </div>` : ''}
     </div>
     ${answered ? `<div class="sticky-next"><div class="in"><button class="btn btn-primary" onclick="nextQ()">${z.i + 1 < z.list.length ? '下一題 ›' : '看結果'}</button></div></div>` : ''}`;
+  setupInk();
 }
 function pick(k){
   const z = ST.quiz; if (z.picked !== null) return;
@@ -365,7 +378,7 @@ function pick(k){
   if (z.right && ok && z.right % 5 === 0 && z.right === z.i + 1) toast(`連續答對 ${z.right} 題！`);
 }
 function nextQ(){
-  const z = ST.quiz; z.i++; z.picked = null;
+  const z = ST.quiz; z.i++; z.picked = null; INK.on = false;
   if (z.i >= z.list.length) z.done = true;
   render(); window.scrollTo(0, 0);
 }
@@ -389,6 +402,74 @@ function renderResult(){
       <button class="btn btn-line" style="flex:1" onclick="ST.quiz=null;go('home')">回首頁</button>
     </div>`;
 }
+
+
+/* ---------------- 手寫畫記 ---------------- */
+// 每題的筆跡存在 ST.quiz.ink[qid]；座標以題目卡片左上角為原點
+const PENS = { red: { c: '#c0392b', w: 3, a: 1, lb: '紅筆' }, blue: { c: '#2c5d8f', w: 3, a: 1, lb: '藍筆' }, hl: { c: '#f2c94c', w: 18, a: .38, lb: '螢光筆' } };
+const INK = { on: false, pen: 'red', penSeen: false, cur: null };
+function inkStrokes(){ const z = ST.quiz; if (!z) return []; z.ink = z.ink || {}; const id = z.list[z.i]; return (z.ink[id] = z.ink[id] || []); }
+function inkBar(){
+  const n = inkStrokes().length;
+  if (!INK.on) return `<div class="inkbar"><button class="tool" onclick="inkToggle(true)">✏️ 手寫畫記</button>${n ? `<button class="tool" onclick="inkClear()">清除畫記</button>` : ''}</div>`;
+  return `<div class="inkbar">
+    ${Object.entries(PENS).map(([k, p]) => `<button class="tool ${INK.pen === k ? 'on' : ''}" onclick="INK.pen='${k}';refreshInkBar()"><span class="dot" style="background:${p.c};opacity:${k === 'hl' ? .7 : 1}"></span>${p.lb}</button>`).join('')}
+    <button class="tool" onclick="inkUndo()" ${n ? '' : 'disabled'}>↶ 復原</button>
+    <button class="tool" onclick="inkClear()" ${n ? '' : 'disabled'}>清除</button>
+    <button class="tool on" style="background:var(--sage-deep);border-color:var(--sage-deep)" onclick="inkToggle(false)">完成，去作答</button>
+    <span class="inkhint">畫記模式中不能點選答案</span></div>`;
+}
+function refreshInkBar(){ const el = document.querySelector('.inkbar'); if (el) el.outerHTML = inkBar(); }
+function inkToggle(on){ INK.on = on; renderQuiz(); }
+function inkUndo(){ inkStrokes().pop(); inkRedraw(); refreshInkBar(); }
+function inkClear(){ inkStrokes().length = 0; inkRedraw(); refreshInkBar(); }
+function inkRedraw(){
+  const cv = $('#ink'); if (!cv) return;
+  const ctx = cv.getContext('2d'), dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+  inkStrokes().forEach(st => drawStroke(ctx, st));
+}
+function drawStroke(ctx, st){
+  const p = PENS[st.p], pts = st.pts; if (!pts.length) return;
+  ctx.save(); ctx.globalAlpha = p.a; ctx.strokeStyle = p.c; ctx.fillStyle = p.c; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (pts.length === 1){ ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], p.w / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return; }
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length - 1; i++){ const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2; ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my); }
+  const l = pts[pts.length - 1]; ctx.lineTo(l[0], l[1]);
+  // 筆壓：用平均壓力微調粗細（螢光筆固定）
+  ctx.lineWidth = st.p === 'hl' ? p.w : p.w * (0.6 + (st.pr || 0.5) * 0.9);
+  ctx.stroke(); ctx.restore();
+}
+function setupInk(){
+  const cv = $('#ink'), card = $('#qcard'); if (!cv || !card) return;
+  const dpr = window.devicePixelRatio || 1, w = card.offsetWidth, h = card.offsetHeight;
+  cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  inkRedraw();
+  const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.onpointerdown = e => {
+    if (!INK.on) return;
+    if (e.pointerType === 'pen') INK.penSeen = true;
+    if (INK.penSeen && e.pointerType === 'touch') return;   // 用過觸控筆後忽略手掌、手指
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    INK.cur = { p: INK.pen, pts: [pos(e)], prs: [e.pressure || 0.5], id: e.pointerId };
+  };
+  cv.onpointermove = e => {
+    const st = INK.cur; if (!st || e.pointerId !== st.id) return;
+    e.preventDefault();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    evs.forEach(ev => { st.pts.push(pos(ev)); st.prs.push(ev.pressure || 0.5); });
+    st.pr = st.prs.reduce((a, b) => a + b, 0) / st.prs.length;
+    inkRedraw(); const ctx = cv.getContext('2d'); drawStroke(ctx, st);
+  };
+  const end = e => {
+    const st = INK.cur; if (!st || e.pointerId !== st.id) return;
+    st.pr = st.prs.reduce((a, b) => a + b, 0) / st.prs.length;
+    inkStrokes().push({ p: st.p, pts: st.pts.map(([x, y]) => [Math.round(x * 10) / 10, Math.round(y * 10) / 10]), pr: st.pr });
+    INK.cur = null; inkRedraw(); refreshInkBar();
+  };
+  cv.onpointerup = end; cv.onpointercancel = end;
+}
+let _rz; window.addEventListener('resize', () => { clearTimeout(_rz); _rz = setTimeout(() => { if (ST.view === 'quiz') setupInk(); }, 150); });
 
 /* ---------------- 錯題本 ---------------- */
 let WF = 'all';
