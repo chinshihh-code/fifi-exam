@@ -57,6 +57,9 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(247,243,238,.92);bac
 .h2{font-size:1.15rem;font-weight:700}
 .big{font-size:2.6rem;font-weight:700;line-height:1}
 /* menu tiles */
+.bosscard{border-color:#c98a8a;background:linear-gradient(135deg,var(--surface),#fbeeee)}
+.bossbtn{display:flex;align-items:center;gap:.8rem;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit}
+.bossbtn .ico{font-size:1.8rem}
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:.25rem;text-align:left;padding:1.1rem 1.2rem;border-radius:20px;border:1px solid var(--line);background:var(--surface);min-height:110px}
 .tile b{font-size:1.1rem}
 .tile .ico{font-size:1.5rem}
@@ -194,6 +197,7 @@ label.ck:first-child{border-top:0}
 <script src="data/hist-ch4.js"></script>
 <script src="data/geo-ch3.js"></script>
 <script src="data/geo-ch4.js"></script>
+<script src="data/civ-ch4.js"></script>
 <script>
 'use strict';
 const DATA = window.SOCIAL_DATA || [];
@@ -268,6 +272,7 @@ function renderHome(){
       <div class="bar"><i style="width:${Math.round(done / qs.length * 100)}%"></i></div>
     </div>
     ${resumeCard()}
+    ${bossCard(u)}
     <div class="grid2 tiles mt">
       <button class="tile" onclick="go('cards')"><span class="ico">📇</span><b>重點卡</b><span class="muted small">${u.concepts.length} 個觀念，依出題數標示必考等級</span></button>
       <button class="tile" onclick="startQuiz(pickRep('${u.id}'),'必考精選')"><span class="ico">⭐</span><b>必考精選</b><span class="muted small">${repN} 題代表題，考前衝刺</span></button>
@@ -473,6 +478,16 @@ function startSetup(){
   if (SETUP.n) p = p.slice(0, SETUP.n);
   startQuiz(p, '章節測驗', 'setup');
 }
+function bossCard(u){
+  if (!u.boss) return '';
+  const b = u.boss, qs = b.ids.map(id => u.questions.find(q => q.id === id)).filter(Boolean);
+  const done = qs.filter(q => STAT[q.id]).length;
+  return `<div class="card mt bosscard">
+    <button class="bossbtn" onclick="startQuiz(bossList('${u.id}'),'${esc(b.title)}')"><span class="ico">👹</span><span style="flex:1;text-align:left"><b>${esc(b.title)}</b><br><span class="muted small">老師提供的魔王卷，共 ${qs.length} 題（依原卷順序）・已練習 ${done} 題</span></span><span class="muted">›</span></button>
+    <div class="row mt2">${b.videos.map(v => `<a class="btn btn-soft btn-sm" href="${v.url}" target="_blank" rel="noopener">▶ ${esc(v.t)}</a>`).join('')}</div>
+  </div>`;
+}
+function bossList(uid){ const u = unitOf(uid); return u.boss.ids.map(id => u.questions.find(q => q.id === id)).filter(Boolean); }
 function pickRep(uid){
   const u = unitOf(uid);
   // 依觀念熱度排序，同觀念內打散
