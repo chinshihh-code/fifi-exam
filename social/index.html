@@ -174,6 +174,9 @@ label.ck:first-child{border-top:0}
 .weakcard{display:flex;align-items:center;gap:.9rem;width:100%;text-align:left}
 .weakcard .ico{font-size:1.6rem}
 .sug{border-color:#ecd9b0;background:var(--gold-soft)}
+.flagbtn{font-size:.8rem;font-weight:650;color:var(--muted);background:transparent;border:1px dashed var(--line);border-radius:999px;padding:.25rem .8rem}
+.flagbtn.on{color:var(--rose-deep);border-color:var(--rose);background:var(--rose-soft)}
+.flagtxt{width:100%;min-height:90px;margin-top:.8rem;border:1px solid var(--line);border-radius:12px;padding:.6rem;font-size:.82rem;font-family:inherit;color:var(--ink-2);background:#fcfaf7}
 </style>
 </head>
 <body>
@@ -201,6 +204,10 @@ let WRONG = LS.get('SOCIAL_WRONG', {});
 // 作答紀錄：{qid:{r:答對次, n:作答次}}
 let STAT = LS.get('SOCIAL_STAT', {});
 const NEED_STREAK = 2;
+// 回報「這題怪怪的」：{qid: 時間}
+let FLAG = LS.get('SOCIAL_FLAG', {});
+function toggleFlag(id){ if (FLAG[id]) delete FLAG[id]; else { FLAG[id] = Date.now(); toast('已記下，之後可以把回報清單給 Claude 核對'); } LS.set('SOCIAL_FLAG', FLAG); const y = window.scrollY; render(); window.scrollTo(0, y); }
+const flagBtn = id => `<button class="flagbtn ${FLAG[id] ? 'on' : ''}" onclick="toggleFlag('${id}')">🚩 ${FLAG[id] ? '已回報（再按取消）' : '這題怪怪的'}</button>`;
 
 const Q_BY_ID = {};
 DATA.forEach(u => u.questions.forEach(q => { q.unit = u.id; Q_BY_ID[q.id] = q; }));
@@ -267,7 +274,8 @@ function renderHome(){
           <span class="nm" style="font-size:.92rem">${esc(c.name)} ${mDot(cKey(u, c))}<span class="bar" style="display:block"><i style="width:${Math.round(c.n / max * 100)}%;background:${c.level === '必考' ? 'var(--rose)' : c.level === '常考' ? '#c4a265' : 'var(--clay)'}"></i></span></span>
           <span class="muted small">${c.n} 題</span></button>`;
       }).join('')}</div>
-    </div>`;
+    </div>
+    ${Object.keys(FLAG).length ? `<button class="card mt weakcard" onclick="go('flags')"><span class="ico">🚩</span><span style="flex:1"><b>回報的題目</b><br><span class="muted small">${Object.keys(FLAG).length} 題覺得怪怪的，複製清單給 Claude 核對</span></span><span class="muted">›</span></button>` : ''}`;
 }
 
 /* ---------------- 重點卡 ---------------- */
@@ -502,6 +510,7 @@ function renderQuiz(){
         ${(q.maps || []).map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"><figcaption>課本對照：${esc(unitOf(q.unit).mapname[m])}</figcaption></figure>`).join('')}
         ${z.mode === 'wrong' && ok && WRONG[q.id] ? `<div class="small mt2">再答對 ${NEED_STREAK - WRONG[q.id].s} 次就能移出錯題本</div>` : ''}
         ${z.mode === 'wrong' && ok && !WRONG[q.id] ? `<div class="small mt2">🎉 已移出錯題本</div>` : ''}
+        <div class="mt2">${flagBtn(q.id)}</div>
       </div>` : ''}
       </div></div>
     </div>
@@ -699,7 +708,7 @@ function renderWQ(){
       ${q.img ? `<div class="qimg"><img src="img/${q.img}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()">${q.imgnote ? `<div class="imgnote">${esc(q.imgnote)}</div>` : ''}</div>` : ''}
       ${q.fh || ''}
       <div>${q.o.map((t, k) => `<div class="opt ${show ? (k === q.a ? 'ok' : 'dim') : ''}" style="cursor:default"><span class="k">${'ABCD'[k]}</span><span>${esc(t)}</span></div>`).join('')}</div>
-      ${show ? `<div class="expl ok"><div class="vd">正確答案 (${'ABCD'[q.a]})</div><div>${esc(q.e)}</div>
+      ${show ? `<div class="expl ok"><div class="vd">正確答案 (${'ABCD'[q.a]})</div><div>${esc(q.e)}</div><div class="mt2">${flagBtn(q.id)}</div>
         ${(q.maps || []).map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"><figcaption>課本對照：${esc(u.mapname[m])}</figcaption></figure>`).join('')}</div>` : ''}
     `, 'card')}
     <div class="row mt">
@@ -713,10 +722,30 @@ function renderWQ(){
     </div>`;
   setupInk();
 }
+
+function renderFlags(){
+  setTitle('回報的題目', 'home');
+  const list = Object.keys(FLAG).filter(id => Q_BY_ID[id]).sort((a, b) => FLAG[a] - FLAG[b]).map(id => Q_BY_ID[id]);
+  const text = list.map(q => { const u = unitOf(q.unit); return `${u.subject}${u.chapter} 第${q.no ?? '（仿題）'}題｜${q.src}｜${q.q.slice(0, 30)}…`; }).join('\n');
+  $('#app').innerHTML = `
+    <div class="card"><div class="h2">🚩 回報的題目（${list.length}）</div>
+      <div class="muted small mt2">作答時覺得答案或解析怪怪的題目會記在這裡。按「複製清單」，貼給 Claude，就會到原卷核對修正。</div>
+      <div class="row mt"><button class="btn btn-primary" ${list.length ? '' : 'disabled'} onclick="copyFlags()">複製清單</button>
+      <button class="btn btn-line" ${list.length ? '' : 'disabled'} onclick="if(confirm('清空回報清單？')){FLAG={};LS.set('SOCIAL_FLAG',FLAG);render();}">清空</button></div>
+      <textarea id="flagtxt" class="flagtxt" readonly>${esc(text)}</textarea>
+    </div>
+    <div class="card mt">${list.length ? list.map(q => `<div class="wq"><div class="small muted">${esc(unitOf(q.unit).chapter)}・${esc(q.src)}</div><div class="mt2" style="font-weight:600">${esc(q.q)}</div>
+      <div class="small mt2">${q.o.map((t, k) => `<div style="${k === q.a ? 'color:var(--sage-deep);font-weight:700' : ''}">(${'ABCD'[k]}) ${esc(t)}</div>`).join('')}</div>
+      <div class="mt2">${flagBtn(q.id)}</div></div>`).join('') : '<div class="muted">目前沒有回報的題目</div>'}</div>`;
+}
+function copyFlags(){
+  const t = $('#flagtxt'); t.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast('已複製'), () => { document.execCommand('copy'); toast('已複製'); });
+}
 /* ---------------- 路由 ---------------- */
 function render(){
   updateBadge();
-  ({ home: renderHome, cards: renderCards, card: renderCard, extra: renderExtra, setup: renderSetup, quiz: renderQuiz, wrong: renderWrong, weak: renderWeak, wq: renderWQ }[ST.view] || renderHome)();
+  ({ home: renderHome, cards: renderCards, card: renderCard, extra: renderExtra, setup: renderSetup, quiz: renderQuiz, wrong: renderWrong, weak: renderWeak, wq: renderWQ, flags: renderFlags }[ST.view] || renderHome)();
 }
 render();
 </script>
