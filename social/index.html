@@ -106,6 +106,7 @@ pre.flow{background:var(--cream);border-radius:14px;padding:.8rem;overflow-x:aut
 .sticky-next .in{max-width:860px;margin:0 auto;display:flex;gap:.6rem}
 .sticky-next .btn{flex:1}
 .sticky-next .btn:disabled{opacity:.35}
+.resume{border-left:4px solid var(--accent, #b0675c)}
 .result-num{font-size:3.6rem;font-weight:800;line-height:1;color:var(--rose-deep)}
 .empty{text-align:center;padding:2.2rem 1rem}
 .wq{padding:.9rem 0;border-top:1px solid var(--line-soft)}
@@ -228,12 +229,23 @@ function updateBadge(){
 function setTitle(t, backToHome){
   $('#ttl').textContent = t;
   const bb = $('#backBtn');
-  if (backToHome){ bb.textContent = '‹ 返回'; bb.href = 'javascript:void(0)'; bb.onclick = e => { e.preventDefault(); if (ST.quiz && ST.view === 'quiz' && !ST.quiz.done && ST.quiz.i > 0 && !confirmLeave()) return; ST.quiz = null; go(backToHome); }; }
+  if (backToHome){ bb.textContent = '‹ 返回'; bb.href = 'javascript:void(0)'; bb.onclick = e => { e.preventDefault(); if (ST.quiz && ST.view === 'quiz' && !ST.quiz.done && Object.keys(ST.quiz.ans || {}).length){ if (ST.quiz.list.length >= RESUME_MIN){ saveResume(); toast('進度已保存，下次可以從首頁繼續'); } else if (!confirmLeave()) return; } ST.quiz = null; go(backToHome); }; }
   else { bb.textContent = '‹ 錯題庫'; bb.href = '../'; bb.onclick = null; }
 }
 function confirmLeave(){ return window.confirm('測驗還沒做完，確定要離開嗎？'); }
 
 /* ---------------- 首頁 ---------------- */
+function resumeCard(){
+  const r = getResume(); if (!r) return '';
+  const u = unitOf(r.unit) || {};
+  const n = Object.keys(r.ans || {}).length;
+  return `<div class="card mt resume">
+    <div class="small muted">上次沒做完${u.subject ? `・${esc(u.subject)}${esc(u.chapter)}` : ''}</div>
+    <div class="h2">${esc(r.name)}：第 ${r.i + 1} / ${r.list.length} 題</div>
+    <div class="small muted">已作答 ${n} 題，答對 ${r.right} 題</div>
+    <div class="row mt2"><button class="btn btn-primary" style="flex:1" onclick="resumeQuiz()">繼續作答 ›</button><button class="btn btn-line" onclick="dropResume()">放棄</button></div>
+  </div>`;
+}
 function renderHome(){
   setTitle('社會科段考複習');
   const u = unitOf(ST.unit);
@@ -254,6 +266,7 @@ function renderHome(){
       </div>
       <div class="bar"><i style="width:${Math.round(done / qs.length * 100)}%"></i></div>
     </div>
+    ${resumeCard()}
     <div class="grid2 tiles mt">
       <button class="tile" onclick="go('cards')"><span class="ico">📇</span><b>重點卡</b><span class="muted small">${u.concepts.length} 個觀念，依出題數標示必考等級</span></button>
       <button class="tile" onclick="startQuiz(pickRep('${u.id}'),'必考精選')"><span class="ico">⭐</span><b>必考精選</b><span class="muted small">${repN} 題代表題，考前衝刺</span></button>
@@ -467,11 +480,33 @@ function pickRep(uid){
 }
 
 /* ---------------- 作答 ---------------- */
+// 未完成測驗：存在 iPad（SOCIAL_RESUME），單題重做不存
+const RESUME_MIN = 3;
+function getResume(){ const r = LS.get('SOCIAL_RESUME', null); return r && r.list && r.list.every(id => Q_BY_ID[id]) ? r : null; }
+function saveResume(){
+  const z = ST.quiz; if (!z || z.list.length < RESUME_MIN) return;
+  if (z.done){ LS.set('SOCIAL_RESUME', null); return; }
+  z.t = Date.now();
+  try { localStorage.setItem('SOCIAL_RESUME', JSON.stringify(z)); }
+  catch (e){ try { const { ink, ...rest } = z; localStorage.setItem('SOCIAL_RESUME', JSON.stringify(rest)); } catch (e2){} }
+}
 function startQuiz(list, name, back, mode){
   if (!list.length){ toast('沒有題目'); return; }
+  const r = getResume();
+  if (r && list.length >= RESUME_MIN && !confirm(`還有一份「${r.name}」做到第 ${r.i + 1} / ${r.list.length} 題。要放棄它，開始新的測驗嗎？`)) return;
   INK.on = false;
-  ST.quiz = { list: list.map(q => q.id), i: 0, ans: {}, right: 0, wrongIds: [], name, back: back || 'home', mode: mode || 'normal', done: false };
+  ST.quiz = { list: list.map(q => q.id), i: 0, ans: {}, right: 0, wrongIds: [], name, back: back || 'home', mode: mode || 'normal', done: false, unit: ST.unit };
+  if (list.length >= RESUME_MIN) LS.set('SOCIAL_RESUME', null);
+  saveResume();
   go('quiz');
+}
+function resumeQuiz(){
+  const r = getResume(); if (!r){ toast('找不到上次的測驗'); render(); return; }
+  INK.on = false; ST.quiz = r; if (r.unit) ST.unit = r.unit; go('quiz');
+}
+function dropResume(){
+  if (!confirm('確定放棄上次沒做完的測驗？（已作答的錯題仍會留在錯題本）')) return;
+  LS.set('SOCIAL_RESUME', null); render();
 }
 function renderQuiz(){
   const z = ST.quiz;
@@ -538,6 +573,7 @@ function pick(k){
     const w = WRONG[q.id] || { w: 0, s: 0 }; w.w++; w.s = 0; w.t = Date.now(); WRONG[q.id] = w;
   }
   LS.set('SOCIAL_WRONG', WRONG); updateBadge();
+  saveResume();
   renderQuiz();
   if (z.right && ok && z.right % 5 === 0 && z.right === z.i + 1) toast(`連續答對 ${z.right} 題！`);
 }
@@ -550,15 +586,17 @@ function nextQ(){
     }
     z.done = true;
   } else z.i++;
+  saveResume();
   render(); window.scrollTo(0, 0);
 }
 function prevQ(){
   const z = ST.quiz; if (z.i === 0) return; INK.on = false; z.i--;
+  saveResume();
   render(); window.scrollTo(0, 0);
 }
 function backToUnanswered(){
   const z = ST.quiz; const k = z.list.findIndex((_, j) => z.ans[j] == null); if (k < 0) return;
-  z.done = false; z.i = k; render(); window.scrollTo(0, 0);
+  z.done = false; z.i = k; saveResume(); render(); window.scrollTo(0, 0);
 }
 function renderResult(){
   const z = ST.quiz, n = z.list.length, pct = Math.round(z.right / n * 100), skipped = n - Object.keys(z.ans).length;
@@ -584,7 +622,7 @@ function renderResult(){
 
 
 /* ---------------- 手寫畫記 ---------------- */
-// 作答：筆跡只存在本次測驗（ST.quiz.ink）；重點卡、總整理、錯題檢視：存在 iPad（SOCIAL_INK）
+// 作答：筆跡存在本次測驗（ST.quiz.ink，隨未完成進度一起保存）；重點卡、總整理、錯題檢視：存在 iPad（SOCIAL_INK）
 // 版面直式、橫式不同，所以筆跡分開保存
 const PENS = { red: { c: '#c0392b', w: 3, a: 1, lb: '紅筆' }, blue: { c: '#2c5d8f', w: 3, a: 1, lb: '藍筆' }, hl: { c: '#f2c94c', w: 18, a: .38, lb: '螢光筆' } };
 const INK = { on: false, pen: 'red', penSeen: false, cur: null, scroll: null, ctx: null };
@@ -597,6 +635,7 @@ function inkStrokes(){
   const z = ST.quiz; if (!z) return []; z.ink = z.ink || {}; const id = z.list[z.i]; return (z.ink[id] = z.ink[id] || []);
 }
 function inkSave(){
+  if (INK.ctx && INK.ctx.view === 'quiz'){ saveResume(); return; }
   const k = inkKey(); if (!k) return;
   if (INKSTORE[k] && !INKSTORE[k].length) delete INKSTORE[k];
   try { localStorage.setItem('SOCIAL_INK', JSON.stringify(INKSTORE)); } catch (e) { toast('儲存空間不足，畫記無法保存'); }
