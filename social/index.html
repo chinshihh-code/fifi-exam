@@ -146,6 +146,19 @@ label.ck:first-child{border-top:0}
 .tl-axis{position:relative;min-width:480px;height:1.7rem;background:var(--ink-2);color:#fff;font-size:.82rem;border-radius:0 0 6px 6px;margin-top:2px}
 .tl-axis span{position:absolute;top:.2rem;transform:translateX(-50%);white-space:nowrap}
 .tl-cap{font-size:.78rem;color:var(--muted);text-align:center;margin-top:.3rem}
+/* ---------- iPad 橫式 ---------- */
+@media (min-width:1000px) and (orientation:landscape){
+  .wrap,.top-in,.sticky-next .in{max-width:1180px}
+  .grid2.tiles{grid-template-columns:repeat(4,1fr)}
+  .qgrid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:1.4rem;align-items:start}
+  .qgrid .qright>.opt:first-child{margin-top:0}
+  .qimg img{max-height:46vh}
+  .expl{margin-top:.8rem}
+  .expl .cimg img{max-height:34vh}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.4rem;align-items:start}
+  .split .cimg{position:sticky;top:5rem;margin-top:0}
+  .cpt-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:.8rem}
+}
 </style>
 </head>
 <body>
@@ -216,7 +229,7 @@ function renderHome(){
       </div>
       <div class="bar"><i style="width:${Math.round(done / qs.length * 100)}%"></i></div>
     </div>
-    <div class="grid2 mt">
+    <div class="grid2 tiles mt">
       <button class="tile" onclick="go('cards')"><span class="ico">📇</span><b>重點卡</b><span class="muted small">${u.concepts.length} 個觀念，依出題數標示必考等級</span></button>
       <button class="tile" onclick="startQuiz(pickRep('${u.id}'),'必考精選')"><span class="ico">⭐</span><b>必考精選</b><span class="muted small">${repN} 題代表題，考前衝刺</span></button>
       <button class="tile" onclick="go('setup')"><span class="ico">📝</span><b>章節測驗</b><span class="muted small">自選觀念與題數</span></button>
@@ -229,13 +242,13 @@ function renderHome(){
     <div class="card mt">
       <div class="h2">出題熱度</div>
       <div class="muted small">各觀念在自修、講義、考卷中出現的題數</div>
-      ${u.concepts.map(c => {
+      <div class="cpt-grid">${u.concepts.map(c => {
         const max = u.concepts[0].n;
         return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})" style="padding:.7rem .9rem">
           <span class="chip lv-${c.level}">${c.level}</span>
           <span class="nm" style="font-size:.92rem">${esc(c.name)}<span class="bar" style="display:block"><i style="width:${Math.round(c.n / max * 100)}%;background:${c.level === '必考' ? 'var(--rose)' : c.level === '常考' ? '#c4a265' : 'var(--clay)'}"></i></span></span>
           <span class="muted small">${c.n} 題</span></button>`;
-      }).join('')}
+      }).join('')}</div>
     </div>`;
 }
 
@@ -254,9 +267,9 @@ function renderCards(){
     const cs = u.concepts.filter(c => c.level === g);
     if (!cs.length) return '';
     return `<div class="mt"><span class="chip lv-${g}">${g}</span> <span class="muted small">${g === '必考' ? '17 題以上' : g === '常考' ? '6–16 題' : '5 題以下'}</span>
-      ${cs.map(c => { const s = conceptStat(u, c);
+      <div class="cpt-grid">${cs.map(c => { const s = conceptStat(u, c);
         return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})"><span class="nm">${esc(c.name)}</span>
-        <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }).join('')}</div>`;
+        <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }).join('')}</div></div>`;
   }).join('');
 }
 function renderCard(){
@@ -273,9 +286,11 @@ function renderCard(){
     <div class="card">
       <div class="row"><span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題${s.rate !== null ? `・答對率 ${s.rate}%` : ''}</span></div>
       <div class="h1 serif mt2">${esc(c.name)}</div>
-      ${(c.imgs || []).map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)"><figcaption>${esc(u.mapname[m])}</figcaption></figure>`).join('')}
-      ${F('說明', '說明')}${F('關鍵名詞', '關鍵名詞')}${F('因果／影響', '因果／影響')}
-      ${cd['標示'] ? `<div class="field"><div class="lb">自修／講義標示</div><div class="vl small muted">${cd['標示']}</div></div>` : ''}
+      <div class="${(c.imgs || []).length ? 'split' : ''}">
+      ${(c.imgs || []).length ? `<div>${c.imgs.map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)"><figcaption>${esc(u.mapname[m])}</figcaption></figure>`).join('')}</div>` : ''}
+      <div>${F('說明', '說明')}${F('關鍵名詞', '關鍵名詞')}${F('因果／影響', '因果／影響')}
+      ${cd['標示'] ? `<div class="field"><div class="lb">自修／講義標示</div><div class="vl small muted">${cd['標示']}</div></div>` : ''}</div>
+      </div>
     </div>
     ${c.clusters.length ? `<div class="card mt">
       <div class="h2">常見考法</div>
@@ -363,6 +378,7 @@ function renderQuiz(){
     ${inkBar()}
     <div class="card qcard ${INK.on ? 'drawing' : ''}" id="qcard">
       <canvas id="ink" class="ink ${INK.on ? 'on' : ''}"></canvas>
+      <div class="qgrid"><div class="qleft">
       <div class="row small" style="margin-bottom:.6rem">
         <span class="chip lv-${c.level}">${esc(c.name.replace(/（.*?）/g, ''))}</span>
         ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip chip-src">${esc(q.src)}</span>`}
@@ -373,6 +389,7 @@ function renderQuiz(){
       ${q.fig ? `<div class="fig"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
       ${q.img ? `<div class="qimg ${'small'}"><img src="img/${q.img}.jpg" alt="題目附圖" onclick="zoom(this.src)" onload="setupInk()"></div>` : ''}
       ${q.fh || ''}
+      </div><div class="qright">
       <div>${q.o.map((t, k) => {
         let cls = '';
         if (answered){ if (k === q.a) cls = 'ok'; else if (k === z.picked) cls = 'bad'; else cls = 'dim'; }
@@ -385,6 +402,7 @@ function renderQuiz(){
         ${z.mode === 'wrong' && ok && WRONG[q.id] ? `<div class="small mt2">再答對 ${NEED_STREAK - WRONG[q.id].s} 次就能移出錯題本</div>` : ''}
         ${z.mode === 'wrong' && ok && !WRONG[q.id] ? `<div class="small mt2">🎉 已移出錯題本</div>` : ''}
       </div>` : ''}
+      </div></div>
     </div>
     ${answered ? `<div class="sticky-next"><div class="in"><button class="btn btn-primary" onclick="nextQ()">${z.i + 1 < z.list.length ? '下一題 ›' : '看結果'}</button></div></div>` : ''}`;
   setupInk();
