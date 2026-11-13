@@ -193,6 +193,17 @@ label.ck:first-child{border-top:0}
 <main class="wrap" id="app"></main>
 <div class="toast" id="toast"></div>
 
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (typeof renderHome === 'function' && document.querySelector('.tiles')) try { render(); } catch (e) {} });
+}
+function offlineNote(){
+  if (!('serviceWorker' in navigator)) return '';
+  const ok = !!navigator.serviceWorker.controller;
+  return `<p class="muted small" style="text-align:center;margin-top:1.2rem">${ok ? '📶 已可離線使用' : '⏳ 正在下載離線資料，請保持連網一下'}</p>`;
+}
+</script>
 <script src="data/hist-ch3.js"></script>
 <script src="data/hist-ch4.js"></script>
 <script src="data/geo-ch3.js"></script>
@@ -297,7 +308,8 @@ function renderHome(){
           <span class="muted small">${c.n} 題</span></button>`;
       }).join('')}</div>
     </div>
-    ${Object.keys(FLAG).length ? `<button class="card mt weakcard" onclick="go('flags')"><span class="ico">🚩</span><span style="flex:1"><b>回報的題目</b><br><span class="muted small">${Object.keys(FLAG).length} 題覺得怪怪的，複製清單給 Claude 核對</span></span><span class="muted">›</span></button>` : ''}`;
+    ${Object.keys(FLAG).length ? `<button class="card mt weakcard" onclick="go('flags')"><span class="ico">🚩</span><span style="flex:1"><b>回報的題目</b><br><span class="muted small">${Object.keys(FLAG).length} 題覺得怪怪的，複製清單給 Claude 核對</span></span><span class="muted">›</span></button>` : ''}
+    ${offlineNote()}`;
 }
 
 /* ---------------- 重點卡 ---------------- */
