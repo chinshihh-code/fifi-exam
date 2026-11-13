@@ -92,7 +92,8 @@ pre.flow{background:var(--cream);border-radius:14px;padding:.8rem;overflow-x:aut
 .ctx .lb,.fig .lb{font-size:.76rem;font-weight:700;color:var(--clay-deep);display:block;margin-bottom:.15rem}
 .fig{background:var(--sage-soft);border-radius:14px;padding:.75rem .9rem;font-size:.92rem;color:var(--sage-deep);margin:.7rem 0}
 .fig .lb{color:var(--sage-deep)}
-.qtext{font-size:1.12rem;font-weight:600;line-height:1.75}
+.qtext{font-size:1.12rem;font-weight:600;line-height:1.75;white-space:pre-line}
+.imgnote{font-size:.76rem;color:var(--muted);margin-top:.2rem}
 .opt{display:flex;gap:.7rem;align-items:flex-start;width:100%;text-align:left;margin-top:.6rem;padding:.85rem 1rem;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);font-size:1.02rem;line-height:1.55}
 .opt .k{flex:none;width:1.9rem;height:1.9rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--cream);color:var(--clay-deep);font-weight:700;font-size:.9rem}
 .opt.ok{border-color:var(--sage);background:var(--sage-soft)}.opt.ok .k{background:var(--sage-deep);color:#fff}
@@ -171,6 +172,7 @@ label.ck:first-child{border-top:0}
 <div class="toast" id="toast"></div>
 
 <script src="data/hist-ch3.js"></script>
+<script src="data/hist-ch4.js"></script>
 <script>
 'use strict';
 const DATA = window.SOCIAL_DATA || [];
@@ -191,7 +193,7 @@ DATA.forEach(u => u.questions.forEach(q => { q.unit = u.id; Q_BY_ID[q.id] = q; }
 const unitOf = id => DATA.find(u => u.id === id);
 const conceptOf = q => unitOf(q.unit).concepts.find(c => c.id === q.c);
 
-let ST = { view: 'home', unit: DATA[0] && DATA[0].id, concept: null, extra: null, quiz: null };
+let ST = { view: 'home', unit: (DATA.find(u => u.id === LS.get('SOCIAL_UNIT', '')) || DATA[0] || {}).id, concept: null, extra: null, quiz: null };
 
 function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 1600); }
 function shuffle(a){ a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -217,7 +219,7 @@ function renderHome(){
   const wrongN = qs.filter(q => WRONG[q.id]).length;
   const done = qs.filter(q => STAT[q.id]).length;
   const repN = qs.filter(q => q.rep).length;
-  const units = DATA.map(x => `<button class="pill ${x.id === ST.unit ? 'on' : ''}" onclick="ST.unit='${x.id}';render()">${esc(x.subject)}・${esc(x.chapter)}</button>`).join('');
+  const units = DATA.map(x => `<button class="pill ${x.id === ST.unit ? 'on' : ''}" onclick="ST.unit='${x.id}';LS.set('SOCIAL_UNIT','${x.id}');SETUP.cs=null;WF='all';render()">${esc(x.subject)}・${esc(x.chapter)}</button>`).join('');
   $('#app').innerHTML = `
     <div class="row">${units}</div>
     <div class="card mt">
@@ -266,7 +268,8 @@ function renderCards(){
   $('#app').innerHTML = groups.map(g => {
     const cs = u.concepts.filter(c => c.level === g);
     if (!cs.length) return '';
-    return `<div class="mt"><span class="chip lv-${g}">${g}</span> <span class="muted small">${g === '必考' ? '17 題以上' : g === '常考' ? '6–16 題' : '5 題以下'}</span>
+    const L = u.levels || { '必考': 17, '常考': 6 };
+    return `<div class="mt"><span class="chip lv-${g}">${g}</span> <span class="muted small">${g === '必考' ? `${L['必考']} 題以上` : g === '常考' ? `${L['常考']}–${L['必考'] - 1} 題` : `${L['常考'] - 1} 題以下`}</span>
       <div class="cpt-grid">${cs.map(c => { const s = conceptStat(u, c);
         return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})"><span class="nm">${esc(c.name)}</span>
         <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }).join('')}</div></div>`;
@@ -387,7 +390,7 @@ function renderQuiz(){
       ${q.ctx ? `<div class="ctx"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
       <div class="qtext">${esc(q.q)}</div>
       ${q.fig ? `<div class="fig"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
-      ${q.img ? `<div class="qimg ${'small'}"><img src="img/${q.img}.jpg" alt="題目附圖" onclick="zoom(this.src)" onload="setupInk()"></div>` : ''}
+      ${q.img ? `<div class="qimg"><img src="img/${q.img}.jpg" alt="題目附圖" onclick="zoom(this.src)" onload="setupInk()">${q.imgnote ? `<div class="imgnote">${esc(q.imgnote)}</div>` : ''}</div>` : ''}
       ${q.fh || ''}
       </div><div class="qright">
       <div>${q.o.map((t, k) => {
