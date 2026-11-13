@@ -105,6 +105,7 @@ pre.flow{background:var(--cream);border-radius:14px;padding:.8rem;overflow-x:aut
 .sticky-next{position:fixed;left:0;right:0;bottom:0;padding:.8rem 1rem calc(.8rem + var(--safe-b));background:rgba(247,243,238,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line-soft);z-index:30}
 .sticky-next .in{max-width:860px;margin:0 auto;display:flex;gap:.6rem}
 .sticky-next .btn{flex:1}
+.sticky-next .btn:disabled{opacity:.35}
 .result-num{font-size:3.6rem;font-weight:800;line-height:1;color:var(--rose-deep)}
 .empty{text-align:center;padding:2.2rem 1rem}
 .wq{padding:.9rem 0;border-top:1px solid var(--line-soft)}
@@ -469,7 +470,7 @@ function pickRep(uid){
 function startQuiz(list, name, back, mode){
   if (!list.length){ toast('沒有題目'); return; }
   INK.on = false;
-  ST.quiz = { list: list.map(q => q.id), i: 0, picked: null, right: 0, wrongIds: [], name, back: back || 'home', mode: mode || 'normal', done: false };
+  ST.quiz = { list: list.map(q => q.id), i: 0, ans: {}, right: 0, wrongIds: [], name, back: back || 'home', mode: mode || 'normal', done: false };
   go('quiz');
 }
 function renderQuiz(){
@@ -479,8 +480,10 @@ function renderQuiz(){
   if (z.done) return renderResult();
   const q = Q_BY_ID[z.list[z.i]];
   const c = conceptOf(q);
-  const answered = z.picked !== null;
-  const ok = answered && z.picked === q.a;
+  const picked = z.ans[z.i] ?? null;
+  const answered = picked !== null;
+  const ok = answered && picked === q.a;
+  const last = z.i + 1 >= z.list.length;
   const pct = Math.round(z.i / z.list.length * 100);
   $('#app').innerHTML = `
     <div class="qhead"><b>第 ${z.i + 1} / ${z.list.length} 題</b><span class="muted small">答對 ${z.right}</span></div>
@@ -502,7 +505,7 @@ function renderQuiz(){
       </div><div class="qright">
       <div>${q.o.map((t, k) => {
         let cls = '';
-        if (answered){ if (k === q.a) cls = 'ok'; else if (k === z.picked) cls = 'bad'; else cls = 'dim'; }
+        if (answered){ if (k === q.a) cls = 'ok'; else if (k === picked) cls = 'bad'; else cls = 'dim'; }
         return `<button class="opt ${cls}" ${answered ? 'disabled style="opacity:1"' : ''} onclick="pick(${k})"><span class="k">${'ABCD'[k]}</span><span>${esc(t)}</span></button>`;
       }).join('')}</div>
       ${answered ? `<div class="expl ${ok ? 'ok' : 'bad'}">
@@ -515,13 +518,16 @@ function renderQuiz(){
       </div>` : ''}
       </div></div>
     </div>
-    ${answered ? `<div class="sticky-next"><div class="in"><button class="btn btn-primary" onclick="nextQ()">${z.i + 1 < z.list.length ? '下一題 ›' : '看結果'}</button></div></div>` : ''}`;
+    <div class="sticky-next"><div class="in">
+      <button class="btn btn-line" style="flex:0 0 32%" onclick="prevQ()" ${z.i === 0 ? 'disabled' : ''}>‹ 上一題</button>
+      <button class="btn ${answered ? 'btn-primary' : 'btn-line'}" onclick="nextQ()">${last ? '看結果' : (answered ? '下一題 ›' : '先跳過 ›')}</button>
+    </div></div>`;
   setupInk();
 }
 function pick(k){
-  const z = ST.quiz; if (z.picked !== null) return;
+  const z = ST.quiz; if (z.ans[z.i] != null) return;
   const q = Q_BY_ID[z.list[z.i]];
-  z.picked = k;
+  z.ans[z.i] = k;
   const ok = k === q.a;
   const s = STAT[q.id] || { r: 0, n: 0 }; s.n++; if (ok) s.r++; STAT[q.id] = s; LS.set('SOCIAL_STAT', STAT);
   if (ok){
@@ -536,12 +542,26 @@ function pick(k){
   if (z.right && ok && z.right % 5 === 0 && z.right === z.i + 1) toast(`連續答對 ${z.right} 題！`);
 }
 function nextQ(){
-  const z = ST.quiz; z.i++; z.picked = null; INK.on = false;
-  if (z.i >= z.list.length) z.done = true;
+  const z = ST.quiz; INK.on = false;
+  if (z.i + 1 >= z.list.length){
+    const left = z.list.length - Object.keys(z.ans).length;
+    if (left && !confirm(`還有 ${left} 題沒作答，確定要看結果嗎？`)){
+      z.i = z.list.findIndex((_, k) => z.ans[k] == null); render(); window.scrollTo(0, 0); return;
+    }
+    z.done = true;
+  } else z.i++;
   render(); window.scrollTo(0, 0);
 }
+function prevQ(){
+  const z = ST.quiz; if (z.i === 0) return; INK.on = false; z.i--;
+  render(); window.scrollTo(0, 0);
+}
+function backToUnanswered(){
+  const z = ST.quiz; const k = z.list.findIndex((_, j) => z.ans[j] == null); if (k < 0) return;
+  z.done = false; z.i = k; render(); window.scrollTo(0, 0);
+}
 function renderResult(){
-  const z = ST.quiz, n = z.list.length, pct = Math.round(z.right / n * 100);
+  const z = ST.quiz, n = z.list.length, pct = Math.round(z.right / n * 100), skipped = n - Object.keys(z.ans).length;
   const msg = pct === 100 ? '全對，太厲害了！' : pct >= 80 ? '很棒，再把錯的看一次就穩了' : pct >= 60 ? '不錯，錯題記得重練' : '先回去看重點卡，再練一次';
   // 依觀念統計錯題
   const byC = {};
@@ -551,6 +571,7 @@ function renderResult(){
       <div class="muted">${esc(z.name)}</div>
       <div class="result-num serif mt2">${z.right}<span style="font-size:1.4rem;color:var(--muted)"> / ${n}</span></div>
       <div class="h2 mt2">${msg}</div>
+      ${skipped ? `<div class="muted mt2">有 ${skipped} 題沒作答</div><button class="btn btn-line mt2" onclick="backToUnanswered()">回去作答</button>` : ''}
     </div>
     ${z.wrongIds.length ? `<div class="card mt"><div class="h2">這次錯的觀念</div>
       ${Object.entries(byC).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="cluster"><span>${esc(k)}</span><b class="muted">${v} 題</b></div>`).join('')}
