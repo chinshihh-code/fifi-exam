@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>社會科段考複習</title>
+<style>
+:root{
+  --paper:#f7f3ee; --surface:#fffdfa; --line:#e9e1d8; --line-soft:#f1ebe4;
+  --ink:#3b3532; --ink-2:#5e5651; --muted:#8a8079;
+  --rose:#a9645a; --rose-deep:#8a4c43; --rose-soft:#f5e6e2;
+  --sage:#6f8a76; --sage-deep:#4d6654; --sage-soft:#e7efe9;
+  --clay:#a37f6c; --clay-deep:#73574a; --clay-soft:#f3ebe5; --cream:#f4ede5;
+  --plum:#65517a; --plum-soft:#efe8f2; --gold:#7d5d1f; --gold-soft:#fbf5e8;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:17px;-webkit-text-size-adjust:100%}
+@media (min-width:744px){html{font-size:19px}}
+body{background:var(--paper);color:var(--ink);line-height:1.7;
+  font-family:"PingFang TC","Noto Sans TC","Noto Sans CJK TC","Microsoft JhengHei",-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;padding-bottom:calc(90px + var(--safe-b))}
+.serif{font-family:"Noto Serif TC","Songti TC","Noto Serif CJK TC",serif}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+button:disabled{opacity:.45;cursor:not-allowed}
+.wrap{max-width:860px;margin:0 auto;padding:1rem 1rem 2rem}
+header.top{position:sticky;top:0;z-index:20;background:rgba(247,243,238,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line-soft)}
+.top-in{max-width:860px;margin:0 auto;padding:.7rem 1rem;display:flex;align-items:center;gap:.7rem}
+.top-in .ttl{font-weight:700;font-size:1.1rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back{display:inline-flex;align-items:center;gap:.3rem;color:var(--muted);font-weight:600;font-size:.9rem;text-decoration:none;padding:.35rem .6rem;border-radius:10px}
+.back:hover{background:var(--cream)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:0 1px 2px rgba(70,50,40,.04),0 10px 28px -18px rgba(70,50,40,.22);padding:1.3rem}
+.flat{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:1rem}
+.mt{margin-top:1rem}.mt2{margin-top:.6rem}.muted{color:var(--muted)}.small{font-size:.86rem}
+.row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:50px;padding:.6rem 1.15rem;border-radius:15px;font-weight:650;transition:transform .08s,background .15s}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn-primary{background:var(--rose);color:#fff;box-shadow:0 6px 16px -8px rgba(169,100,90,.7)}
+.btn-sage{background:var(--sage-deep);color:#fff}
+.btn-plum{background:var(--plum);color:#fff}
+.btn-line{background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
+.btn-soft{background:var(--cream);color:var(--clay-deep)}
+.btn-sm{min-height:40px;padding:.35rem .85rem;font-size:.88rem;border-radius:12px}
+.btn-block{width:100%}
+.chip{display:inline-flex;align-items:center;border-radius:999px;padding:.12rem .65rem;font-size:.78rem;font-weight:700;white-space:nowrap}
+.lv-必考{background:var(--rose-soft);color:var(--rose-deep)}
+.lv-常考{background:var(--gold-soft);color:var(--gold)}
+.lv-一般{background:var(--cream);color:var(--clay-deep)}
+.chip-mock{background:var(--plum-soft);color:var(--plum)}
+.chip-src{background:var(--line-soft);color:var(--ink-2);font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:.3rem;min-height:42px;padding:.3rem 1rem;border-radius:999px;font-weight:650;font-size:.9rem;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
+.pill.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.h1{font-size:1.5rem;font-weight:700}
+.h2{font-size:1.15rem;font-weight:700}
+.big{font-size:2.6rem;font-weight:700;line-height:1}
+/* menu tiles */
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:.25rem;text-align:left;padding:1.1rem 1.2rem;border-radius:20px;border:1px solid var(--line);background:var(--surface);min-height:110px}
+.tile b{font-size:1.1rem}
+.tile .ico{font-size:1.5rem}
+.tile:active{transform:scale(.98)}
+/* concept list */
+.cpt{display:flex;align-items:center;gap:.8rem;width:100%;text-align:left;padding:.9rem 1rem;border-radius:16px;background:var(--surface);border:1px solid var(--line);margin-top:.55rem}
+.cpt .nm{flex:1;font-weight:650}
+.bar{height:6px;border-radius:6px;background:var(--line-soft);overflow:hidden;margin-top:.35rem}
+.bar i{display:block;height:100%;background:var(--sage)}
+.field{margin-top:.9rem}
+.field .lb{font-size:.82rem;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.field .vl{margin-top:.15rem}
+.cluster{display:flex;justify-content:space-between;gap:.6rem;padding:.55rem 0;border-top:1px dashed var(--line)}
+.cluster:first-child{border-top:0}
+/* tables & extras */
+.tbl{overflow-x:auto;margin:.6rem 0 1rem;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:520px}
+th,td{padding:.5rem .65rem;border-bottom:1px solid var(--line-soft);text-align:left;vertical-align:top}
+th{background:var(--cream);color:var(--clay-deep);font-weight:700;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.extra h3{font-size:1.05rem;margin:1.2rem 0 .3rem;color:var(--rose-deep)}
+.extra h3:first-child{margin-top:0}
+.extra p{margin:.25rem 0}
+.extra .li{padding-left:1em;text-indent:-1em}.extra .li:before{content:"• ";color:var(--rose)}
+.extra .sub{padding-left:1.6em}.extra .sub:before{content:""}
+.extra .poem{background:var(--rose-soft);color:var(--rose-deep);padding:.5rem .9rem;border-radius:12px;margin:.3rem 0;font-weight:650}
+pre.flow{background:var(--cream);border-radius:14px;padding:.8rem;overflow-x:auto;font-size:.82rem;line-height:1.5;font-family:"PingFang TC","Noto Sans TC",monospace}
+/* quiz */
+.qhead{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.6rem}
+.prog{height:8px;border-radius:8px;background:var(--line-soft);overflow:hidden;margin-bottom:1rem}
+.prog i{display:block;height:100%;background:var(--rose);transition:width .3s}
+.ctx{background:var(--cream);border-radius:14px;padding:.75rem .9rem;font-size:.92rem;color:var(--ink-2);margin-bottom:.7rem;white-space:pre-line}
+.ctx .lb,.fig .lb{font-size:.76rem;font-weight:700;color:var(--clay-deep);display:block;margin-bottom:.15rem}
+.fig{background:var(--sage-soft);border-radius:14px;padding:.75rem .9rem;font-size:.92rem;color:var(--sage-deep);margin:.7rem 0}
+.fig .lb{color:var(--sage-deep)}
+.qtext{font-size:1.12rem;font-weight:600;line-height:1.75}
+.opt{display:flex;gap:.7rem;align-items:flex-start;width:100%;text-align:left;margin-top:.6rem;padding:.85rem 1rem;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);font-size:1.02rem;line-height:1.55}
+.opt .k{flex:none;width:1.9rem;height:1.9rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--cream);color:var(--clay-deep);font-weight:700;font-size:.9rem}
+.opt.ok{border-color:var(--sage);background:var(--sage-soft)}.opt.ok .k{background:var(--sage-deep);color:#fff}
+.opt.bad{border-color:var(--rose);background:var(--rose-soft)}.opt.bad .k{background:var(--rose);color:#fff}
+.opt.dim{opacity:.55}
+.expl{margin-top:1rem;border-radius:16px;padding:1rem 1.1rem;line-height:1.75}
+.expl.ok{background:var(--sage-soft);color:#2f4a38}.expl.bad{background:var(--rose-soft);color:#6e3a33}
+.expl .vd{font-weight:800;font-size:1.05rem;margin-bottom:.2rem}
+.sticky-next{position:fixed;left:0;right:0;bottom:0;padding:.8rem 1rem calc(.8rem + var(--safe-b));background:rgba(247,243,238,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line-soft);z-index:30}
+.sticky-next .in{max-width:860px;margin:0 auto;display:flex;gap:.6rem}
+.sticky-next .btn{flex:1}
+.result-num{font-size:3.6rem;font-weight:800;line-height:1;color:var(--rose-deep)}
+.empty{text-align:center;padding:2.2rem 1rem}
+.wq{padding:.9rem 0;border-top:1px solid var(--line-soft)}
+.wq:first-child{border-top:0}
+.toast{position:fixed;left:50%;top:5rem;transform:translateX(-50%);background:var(--ink);color:#fff;padding:.5rem 1.1rem;border-radius:999px;font-weight:650;z-index:50;font-size:.9rem;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+.cb{width:22px;height:22px;accent-color:var(--rose)}
+label.ck{display:flex;align-items:center;gap:.55rem;padding:.55rem .2rem;border-top:1px solid var(--line-soft)}
+label.ck:first-child{border-top:0}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="back" id="backBtn" href="../">‹ 錯題庫</a>
+  <div class="ttl serif" id="ttl">社會科段考複習</div>
+  <span class="chip lv-一般" id="wrongBadge" style="display:none"></span>
+</div></header>
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script src="data/hist-ch3.js"></script>
+<script>
+'use strict';
+const DATA = window.SOCIAL_DATA || [];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+// 錯題本：{qid:{w:錯次, s:連對次, t:時間}}；連續答對 2 次移出
+let WRONG = LS.get('SOCIAL_WRONG', {});
+// 作答紀錄：{qid:{r:答對次, n:作答次}}
+let STAT = LS.get('SOCIAL_STAT', {});
+const NEED_STREAK = 2;
+
+const Q_BY_ID = {};
+DATA.forEach(u => u.questions.forEach(q => { q.unit = u.id; Q_BY_ID[q.id] = q; }));
+const unitOf = id => DATA.find(u => u.id === id);
+const conceptOf = q => unitOf(q.unit).concepts.find(c => c.id === q.c);
+
+let ST = { view: 'home', unit: DATA[0] && DATA[0].id, concept: null, extra: null, quiz: null };
+
+function toast(t){ const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('on'), 1600); }
+function shuffle(a){ a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function go(view, extra){ Object.assign(ST, { view }, extra || {}); render(); window.scrollTo(0, 0); }
+function updateBadge(){
+  const n = Object.keys(WRONG).filter(id => Q_BY_ID[id]).length, b = $('#wrongBadge');
+  b.style.display = n ? '' : 'none'; b.textContent = `錯題 ${n}`;
+}
+function setTitle(t, backToHome){
+  $('#ttl').textContent = t;
+  const bb = $('#backBtn');
+  if (backToHome){ bb.textContent = '‹ 返回'; bb.href = 'javascript:void(0)'; bb.onclick = e => { e.preventDefault(); if (ST.quiz && ST.view === 'quiz' && !ST.quiz.done && ST.quiz.i > 0 && !confirmLeave()) return; ST.quiz = null; go(backToHome); }; }
+  else { bb.textContent = '‹ 錯題庫'; bb.href = '../'; bb.onclick = null; }
+}
+function confirmLeave(){ return window.confirm('測驗還沒做完，確定要離開嗎？'); }
+
+/* ---------------- 首頁 ---------------- */
+function renderHome(){
+  setTitle('社會科段考複習');
+  const u = unitOf(ST.unit);
+  if (!u){ $('#app').innerHTML = '<div class="card empty">還沒有資料</div>'; return; }
+  const qs = u.questions;
+  const wrongN = qs.filter(q => WRONG[q.id]).length;
+  const done = qs.filter(q => STAT[q.id]).length;
+  const repN = qs.filter(q => q.rep).length;
+  const units = DATA.map(x => `<button class="pill ${x.id === ST.unit ? 'on' : ''}" onclick="ST.unit='${x.id}';render()">${esc(x.subject)}・${esc(x.chapter)}</button>`).join('');
+  $('#app').innerHTML = `
+    <div class="row">${units}</div>
+    <div class="card mt">
+      <div class="muted small">${esc(u.subject)}・${esc(u.chapter)}</div>
+      <div class="h1 serif">${esc(u.title)}</div>
+      <div class="row mt2 small muted">
+        <span>題庫 ${qs.filter(q => q.st !== '仿題').length} 題＋仿題 ${qs.filter(q => q.st === '仿題').length} 題</span>
+        <span>·</span><span>已練習 ${done} 題</span>
+      </div>
+      <div class="bar"><i style="width:${Math.round(done / qs.length * 100)}%"></i></div>
+    </div>
+    <div class="grid2 mt">
+      <button class="tile" onclick="go('cards')"><span class="ico">📇</span><b>重點卡</b><span class="muted small">${u.concepts.length} 個觀念，依出題數標示必考等級</span></button>
+      <button class="tile" onclick="startQuiz(pickRep('${u.id}'),'必考精選')"><span class="ico">⭐</span><b>必考精選</b><span class="muted small">${repN} 題代表題，考前衝刺</span></button>
+      <button class="tile" onclick="go('setup')"><span class="ico">📝</span><b>章節測驗</b><span class="muted small">自選觀念與題數</span></button>
+      <button class="tile" onclick="go('wrong')"><span class="ico">📕</span><b>錯題本</b><span class="muted small">${wrongN ? `${wrongN} 題待重練` : '目前沒有錯題'}</span></button>
+    </div>
+    <div class="card mt">
+      <div class="h2">總整理</div>
+      <div class="row mt2">${u.extras.map(x => `<button class="btn btn-soft btn-sm" onclick="go('extra',{extra:'${x.id}'})">${esc(x.title)}</button>`).join('')}</div>
+    </div>
+    <div class="card mt">
+      <div class="h2">出題熱度</div>
+      <div class="muted small">各觀念在自修、講義、考卷中出現的題數</div>
+      ${u.concepts.map(c => {
+        const max = u.concepts[0].n;
+        return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})" style="padding:.7rem .9rem">
+          <span class="chip lv-${c.level}">${c.level}</span>
+          <span class="nm" style="font-size:.92rem">${esc(c.name)}<span class="bar" style="display:block"><i style="width:${Math.round(c.n / max * 100)}%;background:${c.level === '必考' ? 'var(--rose)' : c.level === '常考' ? '#c4a265' : 'var(--clay)'}"></i></span></span>
+          <span class="muted small">${c.n} 題</span></button>`;
+      }).join('')}
+    </div>`;
+}
+
+/* ---------------- 重點卡 ---------------- */
+function conceptStat(u, c){
+  const qs = u.questions.filter(q => q.c === c.id);
+  const tried = qs.filter(q => STAT[q.id]);
+  const r = tried.reduce((a, q) => a + STAT[q.id].r, 0), n = tried.reduce((a, q) => a + STAT[q.id].n, 0);
+  return { total: qs.length, tried: tried.length, rate: n ? Math.round(r / n * 100) : null };
+}
+function renderCards(){
+  setTitle('重點卡', 'home');
+  const u = unitOf(ST.unit);
+  const groups = ['必考', '常考', '一般'];
+  $('#app').innerHTML = groups.map(g => {
+    const cs = u.concepts.filter(c => c.level === g);
+    if (!cs.length) return '';
+    return `<div class="mt"><span class="chip lv-${g}">${g}</span> <span class="muted small">${g === '必考' ? '17 題以上' : g === '常考' ? '6–16 題' : '5 題以下'}</span>
+      ${cs.map(c => { const s = conceptStat(u, c);
+        return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})"><span class="nm">${esc(c.name)}</span>
+        <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }).join('')}</div>`;
+  }).join('');
+}
+function renderCard(){
+  const u = unitOf(ST.unit);
+  const c = u.concepts.find(x => x.id === ST.concept);
+  setTitle('重點卡', 'cards');
+  const cd = c.card || {};
+  const F = (k, lb) => cd[k] ? `<div class="field"><div class="lb">${lb}</div><div class="vl">${cd[k]}</div></div>` : '';
+  const qs = u.questions.filter(q => q.c === c.id);
+  const s = conceptStat(u, c);
+  const idx = u.concepts.findIndex(x => x.id === c.id);
+  const prev = u.concepts[idx - 1], next = u.concepts[idx + 1];
+  $('#app').innerHTML = `
+    <div class="card">
+      <div class="row"><span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題${s.rate !== null ? `・答對率 ${s.rate}%` : ''}</span></div>
+      <div class="h1 serif mt2">${esc(c.name)}</div>
+      ${F('說明', '說明')}${F('關鍵名詞', '關鍵名詞')}${F('因果／影響', '因果／影響')}
+      ${cd['標示'] ? `<div class="field"><div class="lb">自修／講義標示</div><div class="vl small muted">${cd['標示']}</div></div>` : ''}
+    </div>
+    ${c.clusters.length ? `<div class="card mt">
+      <div class="h2">常見考法</div>
+      <div class="muted small">相似的題目歸成一組，數字是出現次數</div>
+      <div class="mt2">${c.clusters.map(k => `<div class="cluster"><span>${esc(k.t)}</span><b class="muted">${k.n} 題</b></div>`).join('')}</div>
+    </div>` : ''}
+    <div class="row mt">
+      <button class="btn btn-primary" style="flex:1" onclick="startQuiz(shuffle(unitOf('${u.id}').questions.filter(q=>q.c==='${c.id}')),'${esc(c.name)}')">練這個觀念（${qs.length} 題）</button>
+    </div>
+    <div class="row mt">
+      ${prev ? `<button class="btn btn-line btn-sm" onclick="go('card',{concept:'${prev.id}'})">‹ 上一個</button>` : ''}
+      <span style="flex:1"></span>
+      ${next ? `<button class="btn btn-line btn-sm" onclick="go('card',{concept:'${next.id}'})">下一個 ›</button>` : ''}
+    </div>`;
+}
+function renderExtra(){
+  const u = unitOf(ST.unit);
+  const x = u.extras.find(e => e.id === ST.extra);
+  setTitle(x.title, 'home');
+  $('#app').innerHTML = `<div class="row">${u.extras.map(e => `<button class="pill ${e.id === x.id ? 'on' : ''}" onclick="go('extra',{extra:'${e.id}'})">${esc(e.title)}</button>`).join('')}</div>
+    <div class="card mt extra">${x.html}</div>`;
+}
+
+/* ---------------- 測驗設定 ---------------- */
+let SETUP = { cs: null, n: 20, mock: true, src: 'all' };
+function renderSetup(){
+  setTitle('章節測驗', 'home');
+  const u = unitOf(ST.unit);
+  if (!SETUP.cs || SETUP.unit !== u.id){ SETUP.cs = new Set(u.concepts.map(c => c.id)); SETUP.unit = u.id; }
+  const pool = setupPool(u);
+  $('#app').innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><div class="h2">選擇觀念</div>
+        <div class="row"><button class="btn btn-line btn-sm" onclick="setAll(true)">全選</button><button class="btn btn-line btn-sm" onclick="setAll(false)">全不選</button>
+        <button class="btn btn-soft btn-sm" onclick="setMust()">只選必考</button></div></div>
+      <div class="mt2">${u.concepts.map(c => `<label class="ck"><input type="checkbox" class="cb" ${SETUP.cs.has(c.id) ? 'checked' : ''} onchange="toggleC('${c.id}',this.checked)">
+        <span style="flex:1">${esc(c.name)}</span><span class="chip lv-${c.level}">${c.level}</span><span class="muted small" style="width:3.2em;text-align:right">${u.questions.filter(q => q.c === c.id).length} 題</span></label>`).join('')}</div>
+    </div>
+    <div class="card mt">
+      <div class="h2">題目來源</div>
+      <div class="row mt2">${[['all', '全部'], ['考卷', '考卷'], ['自修', '自修'], ['講義', '講義']].map(([k, l]) => `<button class="pill ${SETUP.src === k ? 'on' : ''}" onclick="SETUP.src='${k}';renderSetup()">${l}</button>`).join('')}</div>
+      <label class="ck mt2" style="border:0"><input type="checkbox" class="cb" ${SETUP.mock ? 'checked' : ''} onchange="SETUP.mock=this.checked;renderSetup()"><span>加入仿題</span></label>
+      <div class="h2 mt">題數</div>
+      <div class="row mt2">${[10, 20, 30, 0].map(n => `<button class="pill ${SETUP.n === n ? 'on' : ''}" onclick="SETUP.n=${n};renderSetup()">${n || '全部'}</button>`).join('')}</div>
+    </div>
+    <button class="btn btn-primary btn-block mt" ${pool.length ? '' : 'disabled'} onclick="startSetup()">開始測驗（${SETUP.n && SETUP.n < pool.length ? SETUP.n : pool.length} 題）</button>`;
+}
+function setupPool(u){
+  return u.questions.filter(q => SETUP.cs.has(q.c) && (q.st === '仿題' ? SETUP.mock : (SETUP.src === 'all' || q.st === SETUP.src)));
+}
+function toggleC(id, on){ on ? SETUP.cs.add(id) : SETUP.cs.delete(id); renderSetup(); }
+function setAll(on){ const u = unitOf(ST.unit); SETUP.cs = new Set(on ? u.concepts.map(c => c.id) : []); renderSetup(); }
+function setMust(){ const u = unitOf(ST.unit); SETUP.cs = new Set(u.concepts.filter(c => c.level === '必考').map(c => c.id)); renderSetup(); }
+function startSetup(){
+  const u = unitOf(ST.unit); let p = shuffle(setupPool(u));
+  if (SETUP.n) p = p.slice(0, SETUP.n);
+  startQuiz(p, '章節測驗', 'setup');
+}
+function pickRep(uid){
+  const u = unitOf(uid);
+  // 依觀念熱度排序，同觀念內打散
+  const order = u.concepts.map(c => c.id);
+  return order.flatMap(cid => shuffle(u.questions.filter(q => q.rep && q.c === cid)));
+}
+
+/* ---------------- 作答 ---------------- */
+function startQuiz(list, name, back, mode){
+  if (!list.length){ toast('沒有題目'); return; }
+  ST.quiz = { list: list.map(q => q.id), i: 0, picked: null, right: 0, wrongIds: [], name, back: back || 'home', mode: mode || 'normal', done: false };
+  go('quiz');
+}
+function renderQuiz(){
+  const z = ST.quiz;
+  setTitle(z.name, z.back);
+  if (z.done) return renderResult();
+  const q = Q_BY_ID[z.list[z.i]];
+  const c = conceptOf(q);
+  const answered = z.picked !== null;
+  const ok = answered && z.picked === q.a;
+  const pct = Math.round(z.i / z.list.length * 100);
+  $('#app').innerHTML = `
+    <div class="qhead"><b>第 ${z.i + 1} / ${z.list.length} 題</b><span class="muted small">答對 ${z.right}</span></div>
+    <div class="prog"><i style="width:${pct}%"></i></div>
+    <div class="card">
+      <div class="row small" style="margin-bottom:.6rem">
+        <span class="chip lv-${c.level}">${esc(c.name.replace(/（.*?）/g, ''))}</span>
+        ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip chip-src">${esc(q.src)}</span>`}
+      </div>
+      ${q.ctx ? `<div class="ctx"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
+      <div class="qtext">${esc(q.q)}</div>
+      ${q.fig ? `<div class="fig"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
+      <div>${q.o.map((t, k) => {
+        let cls = '';
+        if (answered){ if (k === q.a) cls = 'ok'; else if (k === z.picked) cls = 'bad'; else cls = 'dim'; }
+        return `<button class="opt ${cls}" ${answered ? 'disabled style="opacity:1"' : ''} onclick="pick(${k})"><span class="k">${'ABCD'[k]}</span><span>${esc(t)}</span></button>`;
+      }).join('')}</div>
+      ${answered ? `<div class="expl ${ok ? 'ok' : 'bad'}">
+        <div class="vd">${ok ? '答對了！' : `答錯了，正確答案是 (${'ABCD'[q.a]})`}</div>
+        <div>${esc(q.e)}</div>
+        ${z.mode === 'wrong' && ok && WRONG[q.id] ? `<div class="small mt2">再答對 ${NEED_STREAK - WRONG[q.id].s} 次就能移出錯題本</div>` : ''}
+        ${z.mode === 'wrong' && ok && !WRONG[q.id] ? `<div class="small mt2">🎉 已移出錯題本</div>` : ''}
+      </div>` : ''}
+    </div>
+    ${answered ? `<div class="sticky-next"><div class="in"><button class="btn btn-primary" onclick="nextQ()">${z.i + 1 < z.list.length ? '下一題 ›' : '看結果'}</button></div></div>` : ''}`;
+}
+function pick(k){
+  const z = ST.quiz; if (z.picked !== null) return;
+  const q = Q_BY_ID[z.list[z.i]];
+  z.picked = k;
+  const ok = k === q.a;
+  const s = STAT[q.id] || { r: 0, n: 0 }; s.n++; if (ok) s.r++; STAT[q.id] = s; LS.set('SOCIAL_STAT', STAT);
+  if (ok){
+    z.right++;
+    if (WRONG[q.id]){ WRONG[q.id].s++; if (WRONG[q.id].s >= NEED_STREAK) delete WRONG[q.id]; }
+  } else {
+    z.wrongIds.push(q.id);
+    const w = WRONG[q.id] || { w: 0, s: 0 }; w.w++; w.s = 0; w.t = Date.now(); WRONG[q.id] = w;
+  }
+  LS.set('SOCIAL_WRONG', WRONG); updateBadge();
+  renderQuiz();
+  if (z.right && ok && z.right % 5 === 0 && z.right === z.i + 1) toast(`連續答對 ${z.right} 題！`);
+}
+function nextQ(){
+  const z = ST.quiz; z.i++; z.picked = null;
+  if (z.i >= z.list.length) z.done = true;
+  render(); window.scrollTo(0, 0);
+}
+function renderResult(){
+  const z = ST.quiz, n = z.list.length, pct = Math.round(z.right / n * 100);
+  const msg = pct === 100 ? '全對，太厲害了！' : pct >= 80 ? '很棒，再把錯的看一次就穩了' : pct >= 60 ? '不錯，錯題記得重練' : '先回去看重點卡，再練一次';
+  // 依觀念統計錯題
+  const byC = {};
+  z.wrongIds.forEach(id => { const c = conceptOf(Q_BY_ID[id]); byC[c.name] = (byC[c.name] || 0) + 1; });
+  $('#app').innerHTML = `
+    <div class="card" style="text-align:center">
+      <div class="muted">${esc(z.name)}</div>
+      <div class="result-num serif mt2">${z.right}<span style="font-size:1.4rem;color:var(--muted)"> / ${n}</span></div>
+      <div class="h2 mt2">${msg}</div>
+    </div>
+    ${z.wrongIds.length ? `<div class="card mt"><div class="h2">這次錯的觀念</div>
+      ${Object.entries(byC).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="cluster"><span>${esc(k)}</span><b class="muted">${v} 題</b></div>`).join('')}
+    </div>` : ''}
+    <div class="row mt">
+      ${z.wrongIds.length ? `<button class="btn btn-primary" style="flex:1" onclick="startQuiz(ST.quiz.wrongIds.map(id=>Q_BY_ID[id]),'錯題重練','home','wrong')">馬上重練錯題（${z.wrongIds.length}）</button>` : ''}
+      <button class="btn btn-line" style="flex:1" onclick="ST.quiz=null;go('home')">回首頁</button>
+    </div>`;
+}
+
+/* ---------------- 錯題本 ---------------- */
+let WF = 'all';
+function renderWrong(){
+  setTitle('錯題本', 'home');
+  const u = unitOf(ST.unit);
+  let list = u.questions.filter(q => WRONG[q.id]);
+  const cs = [...new Set(list.map(q => q.c))];
+  if (WF !== 'all') list = list.filter(q => q.c === WF);
+  list.sort((a, b) => (WRONG[b.id].w - WRONG[a.id].w) || (WRONG[b.id].t - WRONG[a.id].t));
+  if (!u.questions.some(q => WRONG[q.id])){
+    $('#app').innerHTML = `<div class="card empty"><div style="font-size:2.4rem">🌿</div><div class="h2 mt2">目前沒有錯題</div><div class="muted mt2">做測驗時答錯的題目會自動收進來，<br>連續答對 ${NEED_STREAK} 次才會移出。</div>
+      <button class="btn btn-primary mt" onclick="go('setup')">去做章節測驗</button></div>`;
+    return;
+  }
+  $('#app').innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><div><span class="big serif" style="color:var(--rose-deep)">${u.questions.filter(q => WRONG[q.id]).length}</span> <span class="muted">題待重練</span></div>
+      <button class="btn btn-primary" onclick="startQuiz(shuffle(unitOf('${u.id}').questions.filter(q=>WRONG[q.id]&&(WF==='all'||q.c===WF))),'錯題重練','wrong','wrong')">開始重練</button></div>
+      <div class="muted small mt2">連續答對 ${NEED_STREAK} 次會自動移出錯題本</div>
+    </div>
+    <div class="row mt"><button class="pill ${WF === 'all' ? 'on' : ''}" onclick="WF='all';renderWrong()">全部</button>
+      ${cs.map(c => { const cc = u.concepts.find(x => x.id === c); return `<button class="pill ${WF === c ? 'on' : ''}" onclick="WF='${c}';renderWrong()">${esc(cc.name.replace(/（.*?）/g, '').split('：')[0])}<span class="small">${u.questions.filter(q => WRONG[q.id] && q.c === c).length}</span></button>`; }).join('')}</div>
+    <div class="card mt">${list.map(q => `
+      <div class="wq"><div class="row small"><span class="chip chip-src">${esc(q.st === '仿題' ? '仿題' : q.src)}</span><span class="muted">錯 ${WRONG[q.id].w} 次${WRONG[q.id].s ? `・已連對 ${WRONG[q.id].s} 次` : ''}</span></div>
+        ${q.ctx ? `<div class="ctx mt2 small"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
+        <div class="mt2" style="font-weight:600">${esc(q.q)}</div>
+        ${q.fig ? `<div class="fig small"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
+        <details class="mt2"><summary class="muted small" style="cursor:pointer">看答案與解析</summary>
+          <div class="small mt2">${q.o.map((t, k) => `<div style="${k === q.a ? 'color:var(--sage-deep);font-weight:700' : ''}">(${'ABCD'[k]}) ${esc(t)}</div>`).join('')}</div>
+          <div class="expl ok small">${esc(q.e)}</div></details>
+      </div>`).join('')}</div>`;
+}
+
+/* ---------------- 路由 ---------------- */
+function render(){
+  updateBadge();
+  ({ home: renderHome, cards: renderCards, card: renderCard, extra: renderExtra, setup: renderSetup, quiz: renderQuiz, wrong: renderWrong }[ST.view] || renderHome)();
+}
+render();
+</script>
+</body>
+</html>
