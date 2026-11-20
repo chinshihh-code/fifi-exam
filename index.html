@@ -361,6 +361,9 @@ display: grid;
 .hidden {
 display: none;
 }
+.inline {
+display: inline;
+}
 .table {
 display: table;
 }
@@ -780,6 +783,9 @@ background-color: #ebe4dc;
 .bg-\[\#eef3f8\] {
 background-color: #eef3f8;
 }
+.bg-\[\#eef4f9\]\! {
+background-color: #eef4f9 !important;
+}
 .bg-\[\#f2f6fa\]\! {
 background-color: #f2f6fa !important;
 }
@@ -809,9 +815,6 @@ background-color: #fbf5e8;
 }
 .bg-\[\#fbf5e8\]\! {
 background-color: #fbf5e8 !important;
-}
-.bg-\[\#fcfaf7\] {
-background-color: #fcfaf7;
 }
 .bg-\[\#fff1c9\]\! {
 background-color: #fff1c9 !important;
@@ -1170,9 +1173,6 @@ text-decoration-line: underline;
 .accent-\[\#a9645a\] {
 accent-color: #a9645a;
 }
-.opacity-40 {
-opacity: 40%;
-}
 .opacity-60 {
 opacity: 60%;
 }
@@ -1247,6 +1247,9 @@ display: inline;
 }
 .sm\:grid-cols-2 {
 grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.sm\:grid-cols-3 {
+grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .sm\:grid-cols-\[1\.4fr_\.8fr_1\.1fr_110px_auto\] {
 grid-template-columns: 1.4fr .8fr 1.1fr 110px auto;
@@ -1607,6 +1610,30 @@ inherits: false;
     .steps .step { display:flex; gap:.55rem; padding:.28rem 0; line-height:1.75; }
     .steps .step .dot { color: var(--rose); font-weight:800; flex-shrink:0; }
     .steps .step.star { background: var(--rose-soft); border-radius:10px; padding:.45rem .65rem; margin-top:.35rem; color: var(--rose-deep); font-weight:600; }
+    .ex { display:flex; flex-direction:column; gap:.6rem; }
+    .ex-box { border-radius:18px; padding:.85rem 1rem; line-height:1.8; }
+    .ex-point { background:#faf6f1; }
+    .ex-why { background:#fbeceb; color:#5c2f29; }
+    .ex-h { font-weight:800; color:#8a4c43; margin-bottom:.2rem; display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
+    .ex-why .ex-h { color:#a03f35; }
+    .ex-ref { font-size:.78rem; font-weight:700; color:#5e6f62; background:#e4efe8; border-radius:999px; padding:.1rem .6rem; }
+    .ex-sec { border:1px solid #efe7de; border-radius:18px; background:#fffdfa; }
+    .ex-sec > summary { cursor:pointer; padding:.7rem 1rem; font-weight:700; color:#5e5651; list-style:none; display:flex; align-items:center; gap:.4rem; }
+    .ex-sec > summary::-webkit-details-marker { display:none; }
+    .ex-sec > summary::after { content:'›'; margin-left:auto; transition:transform .2s; font-size:1.2rem; color:#a89c92; }
+    .ex-sec[open] > summary::after { transform:rotate(90deg); }
+    .ex-body { padding:0 1rem .9rem; line-height:1.8; }
+    .ex-hint { background:#fff7e3; border-radius:12px; padding:.5rem .75rem; margin-bottom:.45rem; }
+    .ex-opt { display:flex; gap:.6rem; padding:.35rem 0; border-top:1px dashed #efe7de; }
+    .ex-opt:first-child { border-top:0; }
+    .ex-opt .k { flex-shrink:0; font-weight:800; min-width:3.3rem; white-space:nowrap; }
+    .ex-opt.ok .k { color:#3f6150; } .ex-opt.no .k { color:#a03f35; }
+    .ex table { border-collapse:collapse; margin:.3rem 0; font-size:.95em; }
+    .ex td, .ex th { border:1px solid #e6dcd2; padding:.3rem .6rem; vertical-align:top; }
+    .ex tr:first-child td { background:#f4ede5; font-weight:700; }
+    .ex-simple { background:#eef4f9; color:#2f4a63; }
+    .ex-simple .ex-h { color:#3e5b78; }
+    .ex-help { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
 
     /* Tab bar */
     .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:60; background: rgba(255,253,250,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -1730,6 +1757,9 @@ inherits: false;
     .paper .sol .steps .step { padding:.3mm 0; line-height:1.55; gap:1.5mm; }
     .paper .sol .steps .step.star { padding:1mm 2mm; margin-top:1mm; }
     .paper .sol .svgbox svg { max-width:100%; }
+    .paper .keypage { break-before:page; page-break-before:always; padding-top:2mm; }
+    .paper .keypage h2 { font-size:13pt; font-weight:800; margin-bottom:3mm; border-bottom:.6pt solid #333; padding-bottom:1.5mm; }
+    .paper .keygrid { display:grid; grid-template-columns:repeat(4, 1fr); gap:2mm 4mm; font-size:10.5pt; }
     @media print {
       @page { size: A4; margin: 12mm; }
       body { background:#fff !important; padding:0 !important; }
@@ -2014,6 +2044,101 @@ function formatSteps(sol) {
     : `<div class="step"><span class="dot">▸</span><span>${esc(l)}</span></div>`).join('') + '</div>';
 }
 
+// ---- 新版解析（考點／為什麼選錯／漸進提示／選項逐一／比較口訣／圖解／簡單版）----
+function normExpl(x) {
+  if (!x || typeof x !== 'object') return null;
+  const str = v => typeof v === 'string' ? v.trim() : '';
+  const arr = v => Array.isArray(v) ? v.map(t => String(t).trim()).filter(Boolean) : (typeof v === 'string' && v.trim() ? v.split(/\r?\n/).map(t => t.trim()).filter(Boolean) : []);
+  const o = {
+    point: str(x.point), ref: str(x.ref), why: str(x.why), hints: arr(x.hints), steps: arr(x.steps),
+    options: (Array.isArray(x.options) ? x.options : []).filter(q => q && q.t).map(q => ({ k: String(q.k || '').trim(), ok: !!q.ok, t: String(q.t).trim() })),
+    tip: str(x.tip), svg: str(x.svg), simple: str(x.simple)
+  };
+  return (o.point || o.why || o.steps.length || o.hints.length) ? o : null;
+}
+function explToText(x) {
+  if (!x) return '';
+  const tip = (x.tip || '').split('\n').find(l => l.trim() && !l.trim().startsWith('|'));
+  return [x.point && '考點：' + x.point, ...(x.steps || []), tip && '★ ' + tip.replace(/^★\s*/, '')].filter(Boolean).join('\n');
+}
+// 段落文字：換行、**粗體**、以「|」開頭的連續行排成表格
+function richText(t) {
+  const lines = String(t || '').replace(/\r/g, '').split('\n');
+  const out = []; let tbl = [];
+  const inline = l => esc(l).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  const flush = () => {
+    if (!tbl.length) return;
+    const rows = tbl.filter(r => !/^\|?(\s*:?-{2,}:?\s*\|?)+$/.test(r));
+    out.push('<table>' + rows.map(r => '<tr>' + r.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => `<td>${inline(c.trim())}</td>`).join('') + '</tr>').join('') + '</table>');
+    tbl = [];
+  };
+  for (const l of lines) {
+    if (l.trim().startsWith('|')) { tbl.push(l.trim()); continue; }
+    flush(); if (l.trim()) out.push(`<div>${inline(l.trim())}</div>`);
+  }
+  flush();
+  return out.join('');
+}
+function whyTitle(e) {
+  const a = String(e.studentAnswer || '').trim();
+  if (!a || a === '未作答') return '這題卡在哪裡';
+  if (/^[A-E]$/.test(a)) return `你為什麼會選 ${a}`;
+  const m = a.match(/^原答\s*([A-E])/); if (m) return `你原本為什麼會選 ${m[1]}`;
+  return '你錯在哪裡';
+}
+function confusedHtml(e) {
+  return `<span class="chip bg-[#eef4f9]! text-[#3e5b78]!">🙋 已標記「還是不懂」，家長週報會列出，下次整理時補強</span><button class="btn btn-sm btn-ghost" onclick="markConfused('${e.id}',false)">取消標記</button>`;
+}
+function helpHtml(e) {
+  const x = e.expl;
+  if (e.confused) return confusedHtml(e);
+  if (x && x.simple) return `<button class="btn btn-sm btn-line" onclick="showSimple(this,'${e.id}')">🙋 我還是不懂</button>`;
+  return `<button class="btn btn-sm btn-ghost" onclick="markConfused('${e.id}',true)">🙋 我還是不懂，標記起來</button>`;
+}
+function explBlock(e) {
+  const x = e.expl;
+  const tag = e.tag ? `<span class="font-semibold text-sm muted ml-2">#${esc(e.tag)}</span>` : '';
+  const svg = (x && x.svg) || e.svgDiagram;
+  const svgSec = svg ? `<details class="ex-sec"><summary>📐 圖解</summary><div class="ex-body"><div class="svgbox">${svg}</div></div></details>` : '';
+  if (!x) return `<div class="ex"><div class="ex-box ex-point"><div class="ex-h">解析${tag}</div>${formatSteps(e.solution)}</div>${svgSec}
+    <div class="ex-help" data-exh="${e.id}">${helpHtml(e)}</div></div>`;
+  const steps = x.hints.length
+    ? `<div class="ex-steps">${x.hints.map((h, i) => `<div class="ex-hint hidden"><b>提示 ${i + 1}</b>　${richText(h)}</div>`).join('')}
+        <div class="ex-full hidden">${formatSteps(x.steps.join('\n'))}</div>
+        <button class="btn btn-sm btn-line mt-1" onclick="exNext(this)">看提示 1</button></div>`
+    : formatSteps(x.steps.join('\n'));
+  return `<div class="ex">
+    <div class="ex-box ex-point"><div class="ex-h">🎯 考點${x.ref ? `<span class="ex-ref">📖 ${esc(x.ref)}</span>` : ''}${tag}</div>${richText(x.point)}</div>
+    ${x.why ? `<div class="ex-box ex-why"><div class="ex-h">🤔 ${esc(whyTitle(e))}</div>${richText(x.why)}</div>` : ''}
+    ${x.steps.length || x.hints.length ? `<details class="ex-sec"><summary>✏️ 正解步驟${x.hints.length ? '（先看提示，自己想想看）' : ''}</summary><div class="ex-body">${steps}</div></details>` : ''}
+    ${x.options.length ? `<details class="ex-sec"><summary>🔍 每個選項為什麼對／錯</summary><div class="ex-body">${x.options.map(o => `<div class="ex-opt ${o.ok ? 'ok' : 'no'}"><span class="k">(${esc(o.k)}) ${o.ok ? '✓' : '✗'}</span><span>${richText(o.t)}</span></div>`).join('')}</div></details>` : ''}
+    ${x.tip ? `<details class="ex-sec"><summary>💡 比較表／口訣</summary><div class="ex-body">${richText(x.tip)}</div></details>` : ''}
+    ${svgSec}
+    ${x.simple ? `<div class="ex-box ex-simple hidden" data-exs="${e.id}"><div class="ex-h">🙋 換個簡單的說法</div>${richText(x.simple)}</div>` : ''}
+    <div class="ex-help" data-exh="${e.id}">${helpHtml(e)}</div>
+  </div>`;
+}
+function exNext(btn) {
+  const box = btn.parentElement;
+  const next = box.querySelector('.ex-hint.hidden, .ex-full.hidden');
+  if (next) next.classList.remove('hidden');
+  const after = box.querySelector('.ex-hint.hidden, .ex-full.hidden');
+  if (!after) return btn.remove();
+  btn.textContent = after.classList.contains('ex-full') ? '看完整解答' : `看提示 ${[...box.querySelectorAll('.ex-hint')].indexOf(after) + 1}`;
+}
+function showSimple(btn, id) {
+  const box = btn.closest('.ex').querySelector(`[data-exs="${id}"]`);
+  if (box) { box.classList.remove('hidden'); renderMath(box); }
+  btn.outerHTML = `<button class="btn btn-sm btn-ghost" onclick="markConfused('${id}',true)">還是不懂，標記起來</button>`;
+}
+function markConfused(id, on) {
+  const e = S.errors.find(x => x.id === id); if (!e) return;
+  e.confused = on ? todayKey() : '';
+  persist('errors');
+  $$(`[data-exh="${id}"]`).forEach(el => el.innerHTML = helpHtml(e));
+  toast(on ? '已標記，會列在家長週報' : '已取消標記', 'success');
+}
+
 // 題目文字排版：題幹＋選項（短選項排兩欄）
 function formatQuestionText(t) {
   const OPT = /[（(]\s*([A-E])\s*[)）]/;
@@ -2163,7 +2288,7 @@ function normErr(e) {
     chapter: e.chapter || '', chapterName: e.chapterName || '',
     questionType: e.questionType || '', content: e.content || '',
     studentAnswer: e.studentAnswer || '', correctAnswer: e.correctAnswer || '',
-    tag: e.tag || '', solution: e.solution || '', svgDiagram: e.svgDiagram || '',
+    tag: e.tag || '', solution: e.solution || '', expl: normExpl(e.expl), confused: e.confused || '', myWhy: e.myWhy || null, svgDiagram: e.svgDiagram || '',
     hasImage: !!e.hasImage, source: e.source || '',
     createdAt: e.createdAt || todayKey(),
     review: Object.assign({ due: todayKey(), streak: 0, count: 0, last: '' }, e.review || {}),
@@ -2515,7 +2640,7 @@ function renderQuiz() {
             <div class="rounded-2xl ${ok === false ? 'bg-[#fbeceb]' : 'bg-[#f4ede5]'} px-4 py-3"><div class="text-xs font-semibold muted">你的答案</div><div class="font-bold mt-0.5">${esc(QZ.ans[e.id] || '（未作答）')}</div></div>
             <div class="rounded-2xl bg-[#e4efe8] px-4 py-3"><div class="text-xs font-semibold text-[#3f6150]">正確答案</div><div class="font-bold text-[#3f6150] mt-0.5">${esc(e.correctAnswer || '見解析')}</div></div>
           </div>
-          <div class="mt-3 p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43] mb-1">解析${e.tag ? `<span class="font-semibold text-sm muted ml-2">#${esc(e.tag)}</span>` : ''}</div>${formatSteps(e.solution)}</div>
+          <div class="mt-3">${explBlock(e)}</div>
           ${!isChoice(e) && ok === undefined ? `<div class="flex gap-2 mt-4"><button class="rate-btn rate-again" onclick="quizSelf('${e.id}',false)">😣 我答錯了</button><button class="rate-btn rate-good" onclick="quizSelf('${e.id}',true)">😊 我答對了</button></div>` : ''}
         </div>`;
       }).join('')}</div>
@@ -2580,16 +2705,12 @@ function renderReview() {
           <button class="btn btn-dark btn-lg w-full mt-5" onclick="RV.flipped=true;renderReview()">${icon('eye')}翻開答案</button>
         ` : `
           <div class="flip-in">
-            ${e.hasImage ? `<div class="qimg"><img data-img="${e.id}" data-v="orig" alt="原題"></div>` : `<div class="text-[1.05rem] leading-relaxed">${esc(e.content)}</div>`}
+            ${e.hasImage ? `<div class="qimg"><img data-img="${e.id}" data-v="orig" alt="原題"></div>` : `<div class="sq">${formatQuestionText(e.content)}</div>`}
             <div class="grid sm:grid-cols-2 gap-3 mt-4">
               <div class="rounded-2xl bg-[#fbeceb] px-4 py-3"><div class="text-xs font-semibold text-[#a03f35]">當時的答案</div><div class="font-bold text-[#a03f35] mt-0.5">${esc(e.studentAnswer || '—')}</div></div>
               <div class="rounded-2xl bg-[#e4efe8] px-4 py-3"><div class="text-xs font-semibold text-[#3f6150]">正確答案</div><div class="font-bold text-[#3f6150] mt-0.5">${esc(e.correctAnswer || '見解析')}</div></div>
             </div>
-            ${e.svgDiagram ? `<div class="svgbox mt-4 p-3 rounded-2xl bg-[#fcfaf7] border border-[#f1ebe4]">${e.svgDiagram}</div>` : ''}
-            <div class="mt-4 p-4 rounded-2xl bg-[#faf6f1]">
-              <div class="font-bold text-[#8a4c43] mb-1">解析${e.tag ? `<span class="font-semibold text-sm muted ml-2">#${esc(e.tag)}</span>` : ''}</div>
-              ${formatSteps(e.solution)}
-            </div>
+            <div class="mt-4">${explBlock(e)}</div>
             <div class="text-center text-sm font-semibold muted mt-5 mb-2">這題你會了嗎？</div>
             <div class="flex gap-2 sm:gap-3">
               <button class="rate-btn rate-again" onclick="rate('again')">😣 不會<small>明天再練</small></button>
@@ -2706,11 +2827,11 @@ function renderLibList() {
           <button class="btn btn-ghost btn-icon text-[#b0463b]!" onclick="deleteError('${e.id}')" aria-label="刪除">${icon('trash', 'w-[18px] h-[18px]')}</button>
         </div>
       </div>
-      ${e.hasImage ? screenQuestion(e, LIB.view, 'clean') : `<div class="text-[1rem] leading-relaxed">${esc(e.content)}</div>
-        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-[#ecd9b0] bg-[#fbf5e8] px-4 py-3">
+      ${e.hasImage ? screenQuestion(e, LIB.view, 'clean') : `<div class="sq">${formatQuestionText(e.content)}</div>
+        ${e.figChecked ? '' : `<div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-dashed border-[#ecd9b0] bg-[#fbf5e8] px-4 py-3">
           <span class="flex items-center gap-2 text-sm font-semibold text-[#7d5d1f]">${icon('alert', 'w-4 h-4')}缺少原題截圖，複習時看不到題目的圖表</span>
           <button class="btn btn-sm btn-line" onclick="addImageQuick('${e.id}')">${icon('imageplus', 'w-4 h-4')}加入截圖</button>
-        </div>`}
+        </div>`}`}
       <div class="flex flex-wrap items-center justify-between gap-3 mt-3">
         <span class="text-sm muted">${open ? '' : '先想一想答案，再點「看答案與解析」'}</span>
         <button class="btn btn-soft btn-sm" onclick="toggleOpen('${e.id}')">${open ? '收合' : '看答案與解析'}${icon('down', 'w-4 h-4 transition ' + (open ? 'rotate-180' : ''))}</button>
@@ -2723,8 +2844,7 @@ function renderLibList() {
           <span class="px-3 py-1.5 rounded-xl bg-[#e4efe8] text-[#3f6150] font-bold">正解：${esc(e.correctAnswer || '見解析')}</span>
         </div>
         ${e.hasImage ? `<details><summary class="text-sm font-semibold muted cursor-pointer">看原題截圖（含當時的作答與訂正）</summary><div class="qimg mt-2"><img data-img="${e.id}" data-v="orig" alt="原題截圖"></div></details>` : ''}
-        <div class="p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43] mb-1">解析</div>${formatSteps(e.solution)}</div>
-        ${e.svgDiagram ? `<div class="svgbox p-3 rounded-2xl bg-[#fcfaf7] border border-[#f1ebe4]">${e.svgDiagram}</div>` : ''}
+        ${explBlock(e)}
         <div class="flex flex-wrap gap-2">
           ${e.hasImage ? `<button class="btn btn-sm btn-line" onclick="openEdit('${e.id}')">${icon('pencil', 'w-4 h-4')}擦除筆跡／調整截圖</button>` : ''}
           ${localStorage.getItem('GEMINI_API_KEY') && e.hasImage && !aiBusy(e) ? `<button class="btn btn-sm btn-line" onclick="reanalyze('${e.id}')">${icon('refresh', 'w-4 h-4')}AI 重新分析</button>` : ''}
@@ -2819,7 +2939,16 @@ function openEdit(id) {
     ${e.hasImage ? `<div><div class="flex items-center justify-between mb-1"><label class="label mb-0!">剪下來的圖表（印文字版時放在題目下方）</label>
       <button class="btn btn-sm btn-line" onclick="editAddFig()">${icon('crop', 'w-4 h-4')}框選圖表</button></div>
       <div id="ed-figs" class="flex flex-wrap gap-2"></div></div>` : ''}
-    <div><label class="label">解析（一行一步驟；用「★」開頭的那行會特別標示）</label><textarea id="ed-sol" rows="5" class="textarea">${esc(e.solution)}</textarea></div>
+    ${e.expl ? `<div class="space-y-3 p-4 rounded-2xl bg-[#faf6f1]"><div class="font-bold text-[#8a4c43]">解析（新版）</div>
+      <div class="grid sm:grid-cols-3 gap-3"><div class="sm:col-span-2"><label class="label">🎯 考點</label><input id="ex-point" class="input" value="${esc(e.expl.point)}"></div>
+        <div><label class="label">📖 自修頁碼</label><input id="ex-ref" class="input" value="${esc(e.expl.ref)}" placeholder="自修 p.159"></div></div>
+      <div><label class="label">🤔 為什麼會選錯</label><textarea id="ex-why" rows="3" class="textarea">${esc(e.expl.why)}</textarea></div>
+      <div><label class="label">提示（一行一個，可留白）</label><textarea id="ex-hints" rows="2" class="textarea">${esc(e.expl.hints.join('\n'))}</textarea></div>
+      <div><label class="label">✏️ 完整解答（一行一步驟）</label><textarea id="ex-steps" rows="4" class="textarea">${esc(e.expl.steps.join('\n'))}</textarea></div>
+      <div><label class="label">🔍 選項逐一（一行一個，例如「A：…」）</label><textarea id="ex-opts" rows="4" class="textarea">${esc(e.expl.options.map(o => o.k + '：' + o.t).join('\n'))}</textarea></div>
+      <div><label class="label">💡 比較表／口訣（表格每列用「|」分欄）</label><textarea id="ex-tip" rows="3" class="textarea">${esc(e.expl.tip)}</textarea></div>
+      <div><label class="label">🙋 簡單版說明</label><textarea id="ex-simple" rows="3" class="textarea">${esc(e.expl.simple)}</textarea></div></div>`
+    : `<div><label class="label">解析（一行一步驟；用「★」開頭的那行會特別標示）</label><textarea id="ed-sol" rows="5" class="textarea">${esc(e.solution)}</textarea></div>`}
     <details><summary class="text-sm font-semibold muted cursor-pointer">進階：手繪圖解 SVG 原始碼</summary>
       <textarea id="ed-svg" rows="4" class="textarea mt-2 font-mono text-xs!">${esc(e.svgDiagram)}</textarea></details>`;
   openModal('modal-edit');
@@ -2898,7 +3027,14 @@ async function saveEdit() {
   e.studentAnswer = $('#ed-stu').value.trim();
   e.correctAnswer = $('#ed-ans').value.trim();
   e.content = $('#ed-content').value.trim();
-  e.solution = $('#ed-sol').value.trim();
+  if (e.expl) {
+    const lines = id => $(id).value.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+    const ans = String(e.correctAnswer || '').trim().toUpperCase();
+    e.expl = normExpl({ ...e.expl, point: $('#ex-point').value, ref: $('#ex-ref').value, why: $('#ex-why').value, hints: lines('#ex-hints'), steps: lines('#ex-steps'),
+      options: lines('#ex-opts').map(l => { const m = l.match(/^[（(]?\s*([A-E])\s*[)）]?\s*[：:．.、]?\s*(.*)$/); return m ? { k: m[1], ok: ans.includes(m[1]), t: m[2] } : { k: '', ok: false, t: l }; }),
+      tip: $('#ex-tip').value, simple: $('#ex-simple').value }) || e.expl;
+    e.solution = explToText(e.expl);
+  } else e.solution = $('#ed-sol').value.trim();
   e.svgDiagram = sanitizeSvg($('#ed-svg').value.trim());
   e.unsure = [];
   e.textChecked = true;
@@ -3642,6 +3778,7 @@ function answerField(it, key, label) {
 function setField(key, v, quiet) {
   const it = selItem(); if (!it) return;
   it[key] = v;
+  if (key === 'solution') it.expl = null;
   it.touched = [...new Set([...(it.touched || []), key])];
   it.unsure = (it.unsure || []).filter(k => k !== key);
   if (!quiet) renderUpEditor();
@@ -3702,9 +3839,10 @@ async function regenSolution() {
     const j = parseJsonLoose(await gemini([{ text: `你是台灣國中老師。這是一題學生答錯的題目截圖。
 學生的答案：${it.studentAnswer || '（未填）'}
 正確答案：${it.correctAnswer || '（請自行解題）'}
-請依照上面的「正確答案」寫解析：國中生看得懂，最多 4 行，每行一句話或一個算式，最後一行用「★」開頭寫關鍵觀念或口訣；數學式用 LaTeX 並以 $...$ 包住。
-只回傳 JSON：{"solution":"第 1 步：…\\n第 2 步：…\\n★ …","tag":"核心考點（10 字內）"}` }, { inline_data: { mime_type: 'image/jpeg', data: crop.split(',')[1] } }], true, { wait: true }));
-    if (j.solution) it.solution = j.solution;
+請依照上面的「正確答案」寫解析。${EXPL_RULE}
+只回傳 JSON：{${EXPL_JSON},"tag":"核心考點（10 字內）"}` }, { inline_data: { mime_type: 'image/jpeg', data: crop.split(',')[1] } }], true, { wait: true }));
+    const x = normExpl(j.expl);
+    if (x) { it.expl = x; it.solution = explToText(x); } else if (j.solution) it.solution = j.solution;
     if (j.tag && !it.tag) it.tag = j.tag;
     it.unsure = (it.unsure || []).filter(k => k !== 'solution');
     toast('已重新產生解析', 'success');
@@ -3763,7 +3901,7 @@ function newStaging(photo, box, f = {}) {
   return {
     id: uid('s'), photoId: photo.id, sec: f.sec || '', num: f.num || '', box, include: true, preview: '', unsure: f.unsure || [],
     subject: sub, chapter: ch, questionType: f.questionType || '', content: f.content || '',
-    studentAnswer: f.studentAnswer || '', correctAnswer: f.correctAnswer || '', tag: f.tag || '', solution: f.solution || ''
+    studentAnswer: f.studentAnswer || '', correctAnswer: f.correctAnswer || '', tag: f.tag || '', solution: f.solution || '', expl: f.expl || null
   };
 }
 
@@ -3888,6 +4026,16 @@ async function commitStaging() {
 
 // ---- 存入後的背景分析（最多同時 2 題，關掉網頁下次開啟會繼續）----
 const BG = { running: 0, active: new Set(), timer: null, resumeTimer: null, gapMs: 4500, status: '' };
+const EXPL_RULE = `解析請用「expl」物件，寫給國中生看，要完整易懂：
+- point：考點，一句話。
+- why：針對學生的答案說明「為什麼會選這個、錯在哪裡」（誘答點）；未作答就寫這題卡在哪。2～3 句。
+- hints：數學、理化寫 1～2 個由淺入深的提示（不直接給答案）；其他科給空陣列。
+- steps：完整解答，每個元素一步、一句話或一個算式。
+- options：選擇題每個選項一筆 {"k":"A","ok":true/false,"t":"為什麼對或錯"}；非選擇題給空陣列。
+- tip：易混淆比較或口訣；比較表可用多行、每列以「|」分欄。
+- simple：換個更簡單的說法，用生活例子或比喻再講一次，3 句內。
+數學式用 LaTeX 並以 $...$ 包住。`;
+const EXPL_JSON = '"expl":{"point":"","why":"","hints":[],"steps":[],"options":[],"tip":"","simple":""}';
 function analyzePrompt(e) {
   return `你是台灣國中各科的資深老師，正在幫學生整理「錯題本」。這張截圖是考卷上「一題學生答錯的題目」（照片拍的，已批改過）。
 
@@ -3902,7 +4050,7 @@ function analyzePrompt(e) {
 3. 完整題目文字（含選項）。
 ${FIG_TEXT_RULE}
 4. 核心考點（10 字內）。
-5. 國中生看得懂的解析：最多 4 行，每行一句話或一個算式；最後一行用「★」開頭，寫關鍵觀念或口訣。數學式用 LaTeX 並以 $...$ 包住。
+5. 解析：${EXPL_RULE}
 6. 科目代碼與單元代碼。
 7. 沒有把握的欄位（例如字跡模糊、看不清楚紅筆字母）放進 unsure 陣列，可用：studentAnswer、correctAnswer、solution、content、tag。
 8. 判斷學生答錯的主要原因 errType，只能是：concept（觀念不懂）、reading（審題不清，例如漏看「不」「錯誤」、題意理解錯）、calc（計算錯誤、正負號、單位換算）、chart（圖表判讀）、memory（記憶不熟、名詞或數據記錯）。
@@ -3911,7 +4059,7 @@ ${FIG_TEXT_RULE}
 單元請從下列清單選最接近的代碼（都不符合就填空字串）：
 ${(e.aiKeep || []).includes('subject') ? `${e.subject}（${SUBJECTS[e.subject].name}）：` + chaptersOf(e.subject).map(c => `${c.id}=${c.name}`).join('；') + `\n這題的科目是：${e.subject}（${SUBJECTS[e.subject].name}）。` : chapterListForPrompt()}
 
-只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","figures":[],"studentAnswer":"","correctAnswer":"","tag":"","errType":"","solution":"第 1 步：…\\n★ …","unsure":[]}`;
+只回傳 JSON：{"questionType":"","subject":"","chapter":"","content":"","figures":[],"studentAnswer":"","correctAnswer":"","tag":"","errType":"",${EXPL_JSON},"unsure":[]}`;
 }
 const aiBusy = e => e.ai === 'pending' || e.ai === 'running';
 async function smallImage(url, maxW = 1000) {
@@ -3998,6 +4146,7 @@ async function bgOne(e) {
     const cur = S.errors.find(x => x.id === e.id); if (!cur) return;
     const keep = cur.aiKeep || [];
     for (const k of ['questionType', 'content', 'studentAnswer', 'correctAnswer', 'tag', 'solution']) if (!keep.includes(k) && j[k]) cur[k] = String(j[k]);
+    if (!keep.includes('solution')) { const x = normExpl(j.expl); if (x) { cur.expl = x; cur.solution = explToText(x); } }
     if (!keep.includes('subject') && SUBJECTS[j.subject] && j.subject !== cur.subject) { cur.subject = j.subject; if (!keep.includes('chapter')) cur.chapter = ''; }
     if (!keep.includes('chapter') && chaptersOf(cur.subject).find(c => c.id === j.chapter)) { cur.chapter = j.chapter; cur.chapterName = chapterName(cur); }
     cur.unsure = (Array.isArray(j.unsure) ? j.unsure : []).filter(k => !keep.includes(k));
@@ -4446,23 +4595,23 @@ function renderScores() {
 // =====================================================================
 // A4 派卷
 // =====================================================================
-const PR = { mode: 'student', subject: 'all', scope: 'learning', space: 'M', layout: 'text', title: '敦化國中 考前錯題專項複習卷' };
+const PR = { mode: 'student', key: true, subject: 'all', scope: 'learning', space: 'M', layout: 'text', title: '敦化國中 考前錯題專項複習卷' };
 const SPACE_MM = { L: 55, M: 32, S: 16, none: 0 };
 function renderPrintTab() {
   const el = $('#tab-print');
   el.innerHTML = `
     <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
-      <div><h2 class="section-title serif">A4 派卷</h2><p class="text-sm muted mt-1">練習卷為雙欄、自動隱藏紅筆訂正；詳解卷為「題目在左、解析在右」</p></div>
+      <div><h2 class="section-title serif">A4 派卷</h2><p class="text-sm muted mt-1">雙欄練習卷、自動隱藏紅筆訂正；解析請在 iPad 上看，可在最後附一頁答案</p></div>
       <button class="btn btn-primary btn-lg" onclick="doPrint()">${icon('printer')}列印／存成 PDF</button>
     </div>
     <div class="card p-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div><label class="label">卷別</label><div class="flex gap-2">
-        <button class="pill flex-1 justify-center ${PR.mode === 'student' ? 'on' : ''}" onclick="PR.mode='student';renderPrintTab()">練習卷</button>
-        <button class="pill flex-1 justify-center ${PR.mode === 'solution' ? 'on' : ''}" onclick="PR.mode='solution';renderPrintTab()">詳解卷</button></div></div>
+      <div><label class="label">答案頁</label><div class="flex gap-2">
+        <button class="pill flex-1 justify-center ${PR.key ? 'on' : ''}" onclick="PR.key=true;renderPrintTab()">附在最後</button>
+        <button class="pill flex-1 justify-center ${!PR.key ? 'on' : ''}" onclick="PR.key=false;renderPrintTab()">不附</button></div></div>
       <div><label class="label">科目</label><select class="select" onchange="PR.subject=this.value;renderPrintPreview()"><option value="all">全部科目</option>${SUBJ_ORDER.map(s => `<option value="${s}" ${PR.subject === s ? 'selected' : ''}>${SUBJECTS[s].name}</option>`).join('')}</select></div>
       <div><label class="label">範圍</label><select class="select" onchange="PR.scope=this.value;renderPrintPreview()">
         ${[['learning', '尚未精熟的題目'], ['due', '今天待複習'], ['all', '全部錯題']].map(([v, l]) => `<option value="${v}" ${PR.scope === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <div class="${PR.mode === 'student' ? '' : 'opacity-40 pointer-events-none'}"><label class="label">作答區</label><div class="flex gap-1.5">
+      <div><label class="label">作答區</label><div class="flex gap-1.5">
         ${[['L', '大'], ['M', '中'], ['S', '小'], ['none', '不留']].map(([v, l]) => `<button class="pill flex-1 justify-center px-2! ${PR.space === v ? 'on' : ''}" onclick="PR.space='${v}';renderPrintTab()">${l}</button>`).join('')}</div></div>
       <div><label class="label">題目呈現</label><div class="flex gap-2">
         <button class="pill flex-1 justify-center ${PR.layout === 'text' ? 'on' : ''}" onclick="PR.layout='text';renderPrintTab()">文字＋圖表</button>
@@ -4485,9 +4634,9 @@ function printList() {
   return S.errors.filter(e => !aiBusy(e) && (PR.subject === 'all' || e.subject === PR.subject) && (PR.scope === 'all' || (PR.scope === 'due' ? isDue(e) : !e.mastered)));
 }
 function paperHtml() {
-  const list = printList(), stu = PR.mode === 'student';
+  const list = printList(), stu = true;
   const head = `<div class="ph"><h1>${esc(PR.title)}</h1><div class="meta">
-      <span>科目：${PR.subject === 'all' ? '綜合' : SUBJECTS[PR.subject].name}　共 ${list.length} 題　${stu ? '練習卷' : '詳解卷'}</span><span>姓名：__________　得分：______</span></div></div>`;
+      <span>科目：${PR.subject === 'all' ? '綜合' : SUBJECTS[PR.subject].name}　共 ${list.length} 題</span><span>姓名：__________　得分：______</span></div></div>`;
   if (!list.length) return head + '<div style="text-align:center;color:#999;padding:30mm 0">這個範圍沒有題目</div>';
   const qh = (e, i) => `<div class="qh"><span>${i + 1}.　${SUBJECTS[e.subject].name}・${esc(chapterName(e))}${e.questionType ? '・' + esc(e.questionType) : ''}</span>${stu ? '' : `<span class="ans">正解：${esc(e.correctAnswer || '見解析')}</span>`}</div>`;
   const imgBody = e => `<img data-img="${e.id}" data-v="${stu ? 'clean' : 'orig'}" data-fit="print" ${stu ? '' : 'data-max="118"'} alt="">`;
@@ -4502,7 +4651,8 @@ function paperHtml() {
   if (stu) {
     const sp = SPACE_MM[PR.space];
     return head + `<div class="cols">${list.map((e, i) => `
-      <div class="pq two-col">${qh(e, i)}${body(e)}${sp ? `<div class="answer-space" style="height:${sp}mm">作答區</div>` : ''}</div>`).join('')}</div>`;
+      <div class="pq two-col">${qh(e, i)}${body(e)}${sp ? `<div class="answer-space" style="height:${sp}mm">作答區</div>` : ''}</div>`).join('')}</div>`
+      + (PR.key ? `<div class="keypage"><h2>答案頁</h2><div class="keygrid">${list.map((e, i) => `<div><b>${i + 1}.</b> ${esc(e.correctAnswer || '見 iPad 解析')}</div>`).join('')}</div></div>` : '');
   }
   return head + list.map((e, i) => `
     <div class="pq">${qh(e, i)}<div class="sol-row"><div>${body(e)}</div>
@@ -4719,6 +4869,17 @@ async function applyImport(data, title = '匯入備份') {
           if (v) { await setImg(e.id, Object.assign({}, v, { figs: im.figs })); cur.figChecked = true; ch = true; }
         }
         if (src.content && !cur.content) { cur.content = src.content; ch = true; }
+        // 新版解析：沒有新版解析的舊題補上；rewrite:true 的整題重寫（保留複習紀錄、精熟、自己寫的錯因）
+        if (src.rewrite || (e.expl && !cur.expl)) {
+          if (e.expl) { cur.expl = e.expl; cur.solution = e.solution || explToText(e.expl); }
+          if (src.rewrite) {
+            for (const k of ['content', 'questionType', 'studentAnswer', 'correctAnswer', 'tag', 'chapter', 'chapterName', 'source']) if (src[k]) cur[k] = e[k];
+            if (src.errType && ERR_TYPES[src.errType]) cur.errType = src.errType;
+            cur.textChecked = true; cur.unsure = [];
+            if (im && Array.isArray(im.figs)) { const v = await getImg(e.id); if (v) { await setImg(e.id, Object.assign({}, v, { figs: im.figs })); $$(`img[data-fig="${e.id}"]`).forEach(el => delete el.dataset.loaded); } cur.figChecked = true; }
+          }
+          ch = true;
+        }
         if (ch) updated++;
         continue;
       }
