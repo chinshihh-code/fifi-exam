@@ -51,6 +51,11 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(247,243,238,.92);bac
 .lv-一般{background:var(--cream);color:var(--clay-deep)}
 .chip-mock{background:var(--plum-soft);color:var(--plum)}
 .chip-src{background:var(--line-soft);color:var(--ink-2);font-weight:600}
+.chip-sec{background:#e4ece6;color:#3f6150;font-weight:800;letter-spacing:.02em}
+.sechd{display:flex;align-items:baseline;gap:.5rem;margin-top:1.1rem}
+.sechd b{font-size:1.02rem}
+.paper{display:flex;align-items:center;gap:.9rem;width:100%;text-align:left;padding:.85rem 1rem;border:1px solid var(--line-soft);border-radius:16px;background:var(--card,#fff);margin-top:.55rem}
+.paper .bar{margin-top:.35rem}
 .pill{display:inline-flex;align-items:center;gap:.3rem;min-height:42px;padding:.3rem 1rem;border-radius:999px;font-weight:650;font-size:.9rem;background:var(--surface);border:1px solid var(--line);color:var(--ink-2)}
 .pill.on{background:var(--ink);border-color:var(--ink);color:#fff}
 .h1{font-size:1.5rem;font-weight:700}
@@ -213,6 +218,56 @@ function offlineNote(){
 <script>
 'use strict';
 const DATA = window.SOCIAL_DATA || [];
+// 節次（依翰林社會自修(3) 各章「課程架構」）：只是標籤，不影響作答紀錄
+const SEC_T = {
+  'geo-3': { '3-1': '傳統維生方式', '3-2': '人口分布與遷移', '3-3': '人口成長與問題' },
+  'geo-4': { '4-1': '農業發展與轉型', '4-2': '工商業發展與區域差異', '4-3': '經濟發展與全球關連' },
+  'hist-3': { '3-1': '宋元時期國際的對抗與征服', '3-2': '宋元時期的經濟貿易', '3-3': '宋元時期的文化交流' },
+  'hist-4': { '4-1': '明清帝國的建立與擴張', '4-2': '明清的經濟與全球貿易', '4-3': '東亞世界與西方的文化交流' },
+  'civ-3': { '3-1': '人治與法治', '3-2': '為什麼政府的體制需要權力分立？' },
+  'civ-4': { '4-1': '中央政府的組成', '4-2': '我國中央政府的互動關係' }
+};
+const SEC_C = {
+  'geo-3': { e1: '3-1', e2: '3-1', e3: '3-2', e5: '3-2', e4: '3-3', e6: '3-3', e7: '3-3', e8: '3-3', e9: '3-3' },
+  'geo-4': { e1: '4-1', e2: '4-2', e3: '4-2', e4: '4-2', e5: '4-2', e6: '4-3', e7: '4-3', e8: '4-3', e9: '4-3' },
+  'hist-3': { c1: '3-1', c2: '3-1', c3: '3-1', c4: '3-1', c5: '3-1', c6: '3-1', c14: '3-1', c7: '3-2', c8: '3-2', c9: '3-2', c10: '3-2', c11: '3-3', c12: '3-3', c13: '3-3' },
+  'hist-4': { d1: '4-1', d2: '4-1', d3: '4-1', d4: '4-1', d5: '4-2', d6: '4-2', d7: '4-2', d8: '4-2', d9: '4-2', d10: '4-2', d11: '4-3', d12: '4-3', d13: '4-3', d14: '跨章' },
+  'civ-3': { c1: '3-1', c2: '3-1', c3: '3-2', c4: '3-2', c5: '3-2', c6: '3-2' },
+  'civ-4': { c1: '4-1', c2: '4-1', c3: '4-1', c4: '4-1', c5: '4-1', c6: '4-1', c7: '4-2' }
+};
+const secOf = (u, c) => (c.sec || (SEC_C[u.id] || {})[c.id] || '').split(/[、,]/).filter(Boolean);
+const secChip = (u, c) => secOf(u, c).map(x => `<span class="chip chip-sec">${esc(x)}</span>`).join(' ');
+const secList = u => { const t = SEC_T[u.id] || {}; const ks = Object.keys(t); u.concepts.forEach(c => secOf(u, c).forEach(x => { if (!ks.includes(x)) ks.push(x); })); return ks; };
+
+// 考卷：依每題出處整理（翰林 A／B／C 卷、金安、大魔王卷），題目照原卷順序
+function paperOf(q){
+  const s = String(q.src || '').replace(/^考卷\s*/, '');
+  let m = s.match(/翰林社會2上\s*([ABC])卷\s*(?:第\s*(\d+)\s*卷|卷\s*(\d+))/);
+  if (m){ const v = m[2] || m[3]; return { key: `hl-${m[1]}-${v}`, name: `翰林 ${m[1]}卷・卷${v}`, ord: 100 + v * 10 + 'ABC'.indexOf(m[1]) }; }
+  m = s.match(/金安.*?第\s*(\d+)\s*次練習/);
+  if (m) return { key: `ja-${m[1]}`, name: `金安・第${m[1]}次練習`, ord: 300 + +m[1] };
+  if (/^大魔王卷/.test(s)) return { key: 'boss', name: '大魔王卷', ord: 900 };
+  return null;
+}
+function papersOf(u){
+  const map = {};
+  u.questions.forEach(q => { if (q.st === '仿題') return; const p = paperOf(q); if (!p) return; (map[p.key] = map[p.key] || { ...p, qs: [] }).qs.push(q); });
+  const ps = Object.values(map).sort((a, b) => a.ord - b.ord);
+  ps.forEach(p => { p.qs = p.key === 'boss' && u.boss ? u.boss.ids.map(id => p.qs.find(q => q.id === id)).filter(Boolean).concat(p.qs.filter(q => !u.boss.ids.includes(q.id))) : sortPaper(p.qs); });
+  return ps;
+}
+// 原卷順序：選擇題（第 N 題）→ 題組 → 進階思考題／實戰模擬題（含重新從第 1 題編號的第二段）
+function sortPaper(qs){
+  const seen = new Set(), CN = '一二三四五六';
+  const key = qs.map((q, i) => {
+    const s = String(q.src || ''); let m;
+    if ((m = s.match(/(進階思考題|實戰模擬題|第\s*進階)\s*(\d+)/))) return [2, +m[2], i];
+    if ((m = s.match(/題組\s*[（(]?\s*([一二三四五六])?\s*[）)]?\s*\(?(\d+)?/))) { const n = +((s.match(/(\d+)\D*$/) || [])[1] || 0); return [1, (m[1] ? CN.indexOf(m[1]) + 1 : 0) * 100 + n, i]; }
+    if ((m = s.match(/第\s*(\d+)\s*題/))) { const n = +m[1]; if (seen.has(n)) return [2, n, i]; seen.add(n); return [0, n, i]; }
+    return [3, 0, i];
+  });
+  return qs.map((q, i) => [q, key[i]]).sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1] || a[1][2] - b[1][2]).map(x => x[0]);
+}
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LS = {
@@ -291,6 +346,7 @@ function renderHome(){
       <button class="tile" onclick="go('setup')"><span class="ico">📝</span><b>章節測驗</b><span class="muted small">自選觀念與題數</span></button>
       <button class="tile" onclick="go('wrong')"><span class="ico">📕</span><b>錯題本</b><span class="muted small">${wrongN ? `${wrongN} 題待重練` : '目前沒有錯題'}</span></button>
     </div>
+    ${(() => { const ps = papersOf(u); return ps.length ? `<button class="card mt weakcard" onclick="go('papers')"><span class="ico">📄</span><span style="flex:1;text-align:left"><b>依考卷練習</b><br><span class="muted small">${ps.length} 份考卷（${esc(u.subject)}的部分），照原卷題號作答</span></span><span class="muted">›</span></button>` : ''; })()}
     ${(() => { const w = weakItems(u), sg = suggestions(u), n = w.cs.length + w.xs.length;
       return `<button class="card mt weakcard" onclick="go('weak')"><span class="ico">🔖</span><span style="flex:1;text-align:left"><b>我的不熟</b><br><span class="muted small">${n ? `${w.cs.length} 個觀念、${w.xs.length} 段總整理待加強` : '在重點卡或總整理標記「不熟」就會集中到這裡'}</span>${sg.length ? `<br><span class="small" style="color:var(--gold)">💡 有 ${sg.length} 個觀念答對率偏低，建議加入</span>` : ''}</span><span class="muted">›</span></button>`; })()}
     <div class="card mt">
@@ -304,7 +360,7 @@ function renderHome(){
         const max = u.concepts[0].n;
         return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})" style="padding:.7rem .9rem">
           <span class="chip lv-${c.level}">${c.level}</span>
-          <span class="nm" style="font-size:.92rem">${esc(c.name)} ${mDot(cKey(u, c))}<span class="bar" style="display:block"><i style="width:${Math.round(c.n / max * 100)}%;background:${c.level === '必考' ? 'var(--rose)' : c.level === '常考' ? '#c4a265' : 'var(--clay)'}"></i></span></span>
+          <span class="nm" style="font-size:.92rem">${secChip(u, c)} ${esc(c.name)} ${mDot(cKey(u, c))}<span class="bar" style="display:block"><i style="width:${Math.round(c.n / max * 100)}%;background:${c.level === '必考' ? 'var(--rose)' : c.level === '常考' ? '#c4a265' : 'var(--clay)'}"></i></span></span>
           <span class="muted small">${c.n} 題</span></button>`;
       }).join('')}</div>
     </div>
@@ -361,18 +417,31 @@ function suggestions(u){   // 做過 5 題以上、答對率低於 60%，還沒�
 function dismissSug(k){ DISMISS[k] = 1; LS.set('SOCIAL_DISMISS', DISMISS); render(); }
 
 /* ---------------- 重點卡 ---------------- */
+let CARDSORT = LS.get('SOCIAL_CARDSORT', 'sec');
+function cptBtn(u, c, noSec){ const s = conceptStat(u, c);
+  return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})"><span class="nm">${noSec ? '' : secChip(u, c)} ${esc(c.name)} ${mDot(cKey(u, c))}</span>
+    <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }
 function renderCards(){
   setTitle('重點卡', 'home');
   const u = unitOf(ST.unit);
+  const sortBar = `<div class="row"><span class="muted small">排列</span>${[['sec', '依節次'], ['lv', '依必考等級']].map(([k, l]) => `<button class="pill ${CARDSORT === k ? 'on' : ''}" onclick="CARDSORT='${k}';LS.set('SOCIAL_CARDSORT','${k}');renderCards()">${l}</button>`).join('')}</div>`;
+  if (CARDSORT === 'sec' && secList(u).length){
+    const T = SEC_T[u.id] || {}, lv = { '必考': 0, '常考': 1, '一般': 2 };
+    $('#app').innerHTML = sortBar + secList(u).map(k => {
+      const cs = u.concepts.filter(c => secOf(u, c).includes(k)).sort((a, b) => lv[a.level] - lv[b.level] || b.n - a.n);
+      if (!cs.length) return '';
+      return `<div class="sechd"><span class="chip chip-sec">${esc(k)}</span><b>${esc(T[k] || '')}</b><span class="muted small">${cs.length} 個觀念</span></div>
+        <div class="cpt-grid">${cs.map(c => cptBtn(u, c, true)).join('')}</div>`;
+    }).join('') + (u.concepts.some(c => !secOf(u, c).length) ? `<div class="sechd"><b>其他</b></div><div class="cpt-grid">${u.concepts.filter(c => !secOf(u, c).length).map(c => cptBtn(u, c)).join('')}</div>` : '');
+    return;
+  }
   const groups = ['必考', '常考', '一般'];
-  $('#app').innerHTML = groups.map(g => {
+  $('#app').innerHTML = sortBar + groups.map(g => {
     const cs = u.concepts.filter(c => c.level === g);
     if (!cs.length) return '';
     const L = u.levels || { '必考': 17, '常考': 6 };
     return `<div class="mt"><span class="chip lv-${g}">${g}</span> <span class="muted small">${g === '必考' ? `${L['必考']} 題以上` : g === '常考' ? `${L['常考']}–${L['必考'] - 1} 題` : `${L['常考'] - 1} 題以下`}</span>
-      <div class="cpt-grid">${cs.map(c => { const s = conceptStat(u, c);
-        return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})"><span class="nm">${esc(c.name)} ${mDot(cKey(u, c))}</span>
-        <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }).join('')}</div></div>`;
+      <div class="cpt-grid">${cs.map(c => cptBtn(u, c)).join('')}</div></div>`;
   }).join('');
 }
 function renderCard(){
@@ -389,7 +458,7 @@ function renderCard(){
   $('#app').innerHTML = `
     ${inkBar()}
     ${inkHostHTML(`
-      <div class="row"><span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題${s.rate !== null ? `・答對率 ${s.rate}%` : ''}</span></div>
+      <div class="row">${secChip(u, c)}${secOf(u, c).length === 1 && (SEC_T[u.id] || {})[secOf(u, c)[0]] ? `<span class="muted small">${esc(SEC_T[u.id][secOf(u, c)[0]])}</span>` : ''}<span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題${s.rate !== null ? `・答對率 ${s.rate}%` : ''}</span></div>
       <div class="h1 serif mt2">${esc(c.name)}</div>
       <div class="${(c.imgs || []).length ? 'split' : ''}">
       ${(c.imgs || []).length ? `<div>${c.imgs.map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"><figcaption>${esc(u.mapname[m])}</figcaption></figure>`).join('')}</div>` : ''}
@@ -468,8 +537,9 @@ function renderSetup(){
       <div class="row" style="justify-content:space-between"><div class="h2">選擇觀念</div>
         <div class="row"><button class="btn btn-line btn-sm" onclick="setAll(true)">全選</button><button class="btn btn-line btn-sm" onclick="setAll(false)">全不選</button>
         <button class="btn btn-soft btn-sm" onclick="setMust()">只選必考</button></div></div>
+      ${secList(u).length ? `<div class="row mt2"><span class="muted small">只選節次</span>${secList(u).map(k => `<button class="pill ${secOn(u, k) ? 'on' : ''}" onclick="setSec('${k}')">${esc(k)}</button>`).join('')}</div>` : ''}
       <div class="mt2">${u.concepts.map(c => `<label class="ck"><input type="checkbox" class="cb" ${SETUP.cs.has(c.id) ? 'checked' : ''} onchange="toggleC('${c.id}',this.checked)">
-        <span style="flex:1">${esc(c.name)}</span><span class="chip lv-${c.level}">${c.level}</span><span class="muted small" style="width:3.2em;text-align:right">${u.questions.filter(q => q.c === c.id).length} 題</span></label>`).join('')}</div>
+        <span style="flex:1">${secChip(u, c)} ${esc(c.name)}</span><span class="chip lv-${c.level}">${c.level}</span><span class="muted small" style="width:3.2em;text-align:right">${u.questions.filter(q => q.c === c.id).length} 題</span></label>`).join('')}</div>
     </div>
     <div class="card mt">
       <div class="h2">題目來源</div>
@@ -485,6 +555,9 @@ function setupPool(u){
 }
 function toggleC(id, on){ on ? SETUP.cs.add(id) : SETUP.cs.delete(id); renderSetup(); }
 function setAll(on){ const u = unitOf(ST.unit); SETUP.cs = new Set(on ? u.concepts.map(c => c.id) : []); renderSetup(); }
+function secIds(u, k){ return u.concepts.filter(c => secOf(u, c).includes(k)).map(c => c.id); }
+function secOn(u, k){ const ids = secIds(u, k); return ids.length && SETUP.cs.size === ids.length && ids.every(id => SETUP.cs.has(id)); }
+function setSec(k){ const u = unitOf(ST.unit); SETUP.cs = new Set(secIds(u, k)); renderSetup(); }
 function setMust(){ const u = unitOf(ST.unit); SETUP.cs = new Set(u.concepts.filter(c => c.level === '必考').map(c => c.id)); renderSetup(); }
 function startSetup(){
   const u = unitOf(ST.unit); let p = shuffle(setupPool(u));
@@ -506,6 +579,23 @@ function pickRep(uid){
   // 依觀念熱度排序，同觀念內打散
   const order = u.concepts.map(c => c.id);
   return order.flatMap(cid => shuffle(u.questions.filter(q => q.rep && q.c === cid)));
+}
+
+function renderPapers(){
+  setTitle('依考卷練習', 'home');
+  const u = unitOf(ST.unit), ps = papersOf(u);
+  $('#app').innerHTML = `<div class="muted small">${esc(u.subject)}・${esc(u.chapter)}　只列出這一章的題目，照原卷題號排列</div>` + ps.map(p => {
+    const tried = p.qs.filter(q => STAT[q.id]);
+    const r = tried.reduce((a, q) => a + STAT[q.id].r, 0), n = tried.reduce((a, q) => a + STAT[q.id].n, 0);
+    const wr = p.qs.filter(q => WRONG[q.id]).length;
+    return `<button class="paper" onclick="startPaper('${p.key}')"><span class="ico" style="font-size:1.4rem">${p.key === 'boss' ? '👹' : '📄'}</span>
+      <span style="flex:1"><b>${esc(p.name)}</b><br><span class="muted small">共 ${p.qs.length} 題・已做 ${tried.length} / ${p.qs.length} 題${n ? `・答對率 ${Math.round(r / n * 100)}%` : ''}${wr ? `・錯題 ${wr}` : ''}</span>
+      <span class="bar" style="display:block"><i style="width:${Math.round(tried.length / p.qs.length * 100)}%"></i></span></span><span class="muted">›</span></button>`;
+  }).join('');
+}
+function startPaper(key){
+  const u = unitOf(ST.unit), p = papersOf(u).find(x => x.key === key);
+  if (p) startQuiz(p.qs, p.name, 'papers');
 }
 
 /* ---------------- 作答 ---------------- */
@@ -835,7 +925,7 @@ function copyFlags(){
 /* ---------------- 路由 ---------------- */
 function render(){
   updateBadge();
-  ({ home: renderHome, cards: renderCards, card: renderCard, extra: renderExtra, setup: renderSetup, quiz: renderQuiz, wrong: renderWrong, weak: renderWeak, wq: renderWQ, flags: renderFlags }[ST.view] || renderHome)();
+  ({ home: renderHome, cards: renderCards, card: renderCard, extra: renderExtra, setup: renderSetup, quiz: renderQuiz, wrong: renderWrong, weak: renderWeak, wq: renderWQ, flags: renderFlags, papers: renderPapers }[ST.view] || renderHome)();
 }
 render();
 </script>
