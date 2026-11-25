@@ -249,11 +249,22 @@ function paperOf(q){
   if (/^大魔王卷/.test(s)) return { key: 'boss', name: '大魔王卷', ord: 900 };
   return null;
 }
-function papersOf(u){
+function papersOfUnit(u){
   const map = {};
   u.questions.forEach(q => { if (q.st === '仿題') return; const p = paperOf(q); if (!p) return; (map[p.key] = map[p.key] || { ...p, qs: [] }).qs.push(q); });
   const ps = Object.values(map).sort((a, b) => a.ord - b.ord);
   ps.forEach(p => { p.qs = p.key === 'boss' && u.boss ? u.boss.ids.map(id => p.qs.find(q => q.id === id)).filter(Boolean).concat(p.qs.filter(q => !u.boss.ids.includes(q.id))) : sortPaper(p.qs); });
+  return ps;
+}
+// 綜合卷（例如卷6）會橫跨第三、四章：同一科目的各章合併成一份完整考卷，先第三章再第四章
+function papersOf(u){
+  const map = {};
+  DATA.filter(v => v.subject === u.subject).forEach(v => papersOfUnit(v).forEach(p => {
+    const m = map[p.key] = map[p.key] || { ...p, qs: [], parts: [] };
+    m.qs = m.qs.concat(p.qs); m.parts.push({ ch: v.chapter, n: p.qs.length });
+  }));
+  const ps = Object.values(map).filter(p => p.parts.some(x => x.ch === u.chapter)).sort((a, b) => a.ord - b.ord);
+  ps.forEach(p => { if (p.parts.length > 1 && !(p.qs[0] && p.qs[0].pk)) p.qs = sortPaper(p.qs); });
   return ps;
 }
 // 原卷順序：選擇題（第 N 題）→ 題組 → 進階思考題／實戰模擬題（含重新從第 1 題編號的第二段）
@@ -584,12 +595,12 @@ function pickRep(uid){
 function renderPapers(){
   setTitle('依考卷練習', 'home');
   const u = unitOf(ST.unit), ps = papersOf(u);
-  $('#app').innerHTML = `<div class="muted small">${esc(u.subject)}・${esc(u.chapter)}　只列出這一章的題目，照原卷題號排列</div>` + ps.map(p => {
+  $('#app').innerHTML = `<div class="muted small">${esc(u.subject)}・整份考卷（跨第三、四章的綜合卷會合併成一份），照原卷題號排列</div>` + ps.map(p => {
     const tried = p.qs.filter(q => STAT[q.id]);
     const r = tried.reduce((a, q) => a + STAT[q.id].r, 0), n = tried.reduce((a, q) => a + STAT[q.id].n, 0);
     const wr = p.qs.filter(q => WRONG[q.id]).length;
     return `<button class="paper" onclick="startPaper('${p.key}')"><span class="ico" style="font-size:1.4rem">${p.key === 'boss' ? '👹' : '📄'}</span>
-      <span style="flex:1"><b>${esc(p.name)}</b><br><span class="muted small">共 ${p.qs.length} 題・已做 ${tried.length} / ${p.qs.length} 題${n ? `・答對率 ${Math.round(r / n * 100)}%` : ''}${wr ? `・錯題 ${wr}` : ''}</span>
+      <span style="flex:1"><b>${esc(p.name)}</b><br><span class="muted small">${p.parts.length > 1 ? p.parts.map(x => `${esc(x.ch)} ${x.n} 題`).join('＋') + '・' : ''}共 ${p.qs.length} 題・已做 ${tried.length} / ${p.qs.length} 題${n ? `・答對率 ${Math.round(r / n * 100)}%` : ''}${wr ? `・錯題 ${wr}` : ''}</span>
       <span class="bar" style="display:block"><i style="width:${Math.round(tried.length / p.qs.length * 100)}%"></i></span></span><span class="muted">›</span></button>`;
   }).join('');
 }
