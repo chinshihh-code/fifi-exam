@@ -1,0 +1,33 @@
+// 自動產生，勿手改
+const VER = 'math-50288b499c';
+const FILES = ["./", "index.html", "data/m2-2.js", "data/m2-3.js", "katex/auto-render.min.js", "katex/katex.min.css", "katex/katex.min.js", "katex/fonts/KaTeX_AMS-Regular.woff2", "katex/fonts/KaTeX_Caligraphic-Bold.woff2", "katex/fonts/KaTeX_Caligraphic-Regular.woff2", "katex/fonts/KaTeX_Fraktur-Bold.woff2", "katex/fonts/KaTeX_Fraktur-Regular.woff2", "katex/fonts/KaTeX_Main-Bold.woff2", "katex/fonts/KaTeX_Main-BoldItalic.woff2", "katex/fonts/KaTeX_Main-Italic.woff2", "katex/fonts/KaTeX_Main-Regular.woff2", "katex/fonts/KaTeX_Math-BoldItalic.woff2", "katex/fonts/KaTeX_Math-Italic.woff2", "katex/fonts/KaTeX_SansSerif-Bold.woff2", "katex/fonts/KaTeX_SansSerif-Italic.woff2", "katex/fonts/KaTeX_SansSerif-Regular.woff2", "katex/fonts/KaTeX_Script-Regular.woff2", "katex/fonts/KaTeX_Size1-Regular.woff2", "katex/fonts/KaTeX_Size2-Regular.woff2", "katex/fonts/KaTeX_Size3-Regular.woff2", "katex/fonts/KaTeX_Size4-Regular.woff2", "katex/fonts/KaTeX_Typewriter-Regular.woff2"];
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(VER).then(c => Promise.allSettled(FILES.map(f => c.add(new Request(f, {cache: 'reload'}))))));
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('math-') && k !== VER).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const isPage = req.mode === 'navigate' || /\/data\/|index\.html$|\/math\/$/.test(req.url);
+  if (isPage) {
+    // 先抓網路（拿到最新題目），3 秒沒回應或沒網路就用離線版
+    e.respondWith(new Promise(res => {
+      let done = false;
+      const fallback = () => caches.match(req, {ignoreSearch: true}).then(r => r || caches.match('index.html')).then(r => { if (!done && r) { done = true; res(r); } });
+      const t = setTimeout(fallback, 3000);
+      fetch(req).then(r => {
+        clearTimeout(t);
+        if (r.ok) { const cp = r.clone(); caches.open(VER).then(c => c.put(req, cp)); }
+        if (!done) { done = true; res(r); }
+      }).catch(() => { clearTimeout(t); fallback().then(() => { if (!done) { done = true; res(Response.error()); } }); });
+    }));
+  } else {
+    e.respondWith(caches.match(req, {ignoreSearch: true}).then(r => r || fetch(req).then(n => {
+      if (n.ok) { const cp = n.clone(); caches.open(VER).then(c => c.put(req, cp)); }
+      return n;
+    })));
+  }
+});
