@@ -191,6 +191,13 @@ label.ck:first-child{border-top:0}
 .flagbtn{font-size:.8rem;font-weight:650;color:var(--muted);background:transparent;border:1px dashed var(--line);border-radius:999px;padding:.25rem .8rem}
 .flagbtn.on{color:var(--rose-deep);border-color:var(--rose);background:var(--rose-soft)}
 .flagtxt{width:100%;min-height:90px;margin-top:.8rem;border:1px solid var(--line);border-radius:12px;padding:.6rem;font-size:.82rem;font-family:inherit;color:var(--ink-2);background:#fcfaf7}
+.prevbox{background:#f6f1ec;border:1px dashed var(--line);border-radius:12px;padding:.55rem .8rem;margin:0 0 .8rem;font-size:.92rem}
+.prevbox summary{cursor:pointer;color:var(--muted);font-weight:600}
+.prevbox .pq{margin-top:.5rem;line-height:1.7}
+.prevbox .po{margin-top:.3rem;color:var(--ink-2)}
+.prevbox .pdiv{border:0;border-top:1px dashed var(--line);margin:.5rem 0}
+.clbtn{width:100%;background:none;border:0;border-top:1px dashed var(--line);font:inherit;color:inherit;text-align:left;cursor:pointer}
+.clbtn:active{background:var(--line-soft)}
 /* ---------- 數學 ---------- */
 .katex{font-size:1.08em}
 .expl .katex{font-size:1.12em}
@@ -306,6 +313,21 @@ const flagBtn = id => `<button class="flagbtn ${FLAG[id] ? 'on' : ''}" onclick="
 
 const Q_BY_ID = {};
 DATA.forEach(u => u.questions.forEach(q => { q.unit = u.id; Q_BY_ID[q.id] = q; }));
+// 「承上題」：記下前面相關的題目，單獨出題時一起顯示
+const CHAIN_RE = /^\s*承(上題|上文|前題|第\s*\d+\s*題)/;
+DATA.forEach(u => u.questions.forEach((q, i) => {
+  if (!CHAIN_RE.test(q.q || '')) return;
+  const m = (q.q.match(/^\s*承第\s*(\d+)\s*題/) || [])[1];
+  const chain = []; let j = i - 1;
+  while (j >= 0){
+    const p = u.questions[j];
+    if (p.src && q.src && p.pk !== q.pk && p.st !== q.st) break;
+    chain.unshift(p.id);
+    if (m ? String(p.no || '').endsWith(m) || /\(?一\)?\s*1$|題組.*\b1$/.test(p.src || '') : !CHAIN_RE.test(p.q || '')) break;
+    j--;
+  }
+  q.prev = chain;
+}));
 const unitOf = id => DATA.find(u => u.id === id);
 const conceptOf = q => unitOf(q.unit).concepts.find(c => c.id === q.c);
 
@@ -486,8 +508,8 @@ function renderCard(){
     <div class="card mt">${mBar(cKey(u, c))}</div>
     ${c.clusters.length ? `<div class="card mt">
       <div class="h2">常見考法</div>
-      <div class="muted small">相似的題目歸成一組，數字是出現次數</div>
-      <div class="mt2">${c.clusters.map(k => `<div class="cluster"><span>${esc(k.t)}</span><b class="muted">${k.n} 題</b></div>`).join('')}</div>
+      <div class="muted small">相似的題目歸成一組，點一下就練這一組</div>
+      <div class="mt2">${c.clusters.map((k, i) => `<button class="cluster clbtn" onclick="startCluster('${c.id}',${i})"><span>${esc(k.t)}</span><b class="muted">${statTxt(qStat(k.ids.map(id => Q_BY_ID[id]).filter(Boolean))).replace(/^已做 \d+ \/ /, '').replace(/・答對.*/, '')} ›</b></button>`).join('')}</div>
     </div>` : ''}
     <div class="row mt">
       <button class="btn btn-primary" style="flex:1" onclick="startQuiz(shuffle(unitOf('${u.id}').questions.filter(q=>q.c==='${c.id}')),'${esc(c.name)}')">練這個觀念（${qs.length} 題）</button>
@@ -669,6 +691,7 @@ function renderQuiz(){
         ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip ${q.st === '良師' ? 'chip-ls' : 'chip-src'}">${esc(q.src)}</span>`}${q.rep ? '<span class="chip lv-必考">⭐ 重點題</span>' : ''}
         ${q.chk ? `<span class="chip chip-chk">${esc(q.chk)}待核對</span>` : ''}
       </div>
+      ${prevBox(q)}
       ${q.ctx ? `<div class="ctx"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
       <div class="qtext">${esc(q.q)}</div>
       ${q.fig ? `<div class="fig"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}
@@ -697,6 +720,22 @@ function renderQuiz(){
       <button class="btn ${answered ? 'btn-primary' : 'btn-line'}" onclick="nextQ()">${last ? '看結果' : (answered ? '下一題 ›' : '先跳過 ›')}</button>
     </div></div>`;
   setupInk();
+}
+function prevBox(q){
+  if (!q.prev || !q.prev.length) return '';
+  const ps = q.prev.map(id => Q_BY_ID[id]).filter(Boolean);
+  if (!ps.length) return '';
+  const ctxShown = ps.some(p => p.ctx && p.ctx === q.ctx);
+  return `<details class="prevbox" open><summary>📎 前面的題目（這題要接著看）</summary>${ps.map(p => `
+    ${p.ctx && !ctxShown && p.ctx !== q.ctx ? `<div class="ctx small"><span class="lb">題組資料</span>${esc(p.ctx)}</div>` : ''}
+    <div class="pq">${esc(p.q)}</div>
+    ${p.fig ? `<div class="fig small"><span class="lb">圖表內容</span>${esc(p.fig)}</div>` : ''}
+    ${p.img ? `<div class="qimg"><img src="img/${p.img}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"></div>` : ''}${p.fh || ''}
+    ${(p.o || []).length ? `<div class="po small">${p.o.map((t, k) => `(${'ABCDE'[k]}) ${esc(t)}`).join('　')}</div>` : ''}`).join('<hr class="pdiv">')}</details>`;
+}
+function startCluster(cid, i){
+  const u = DATA.find(u => u.concepts.some(c => c.id === cid)), c = u.concepts.find(c => c.id === cid), k = c.clusters[i];
+  startQuiz(k.ids.map(id => Q_BY_ID[id]).filter(Boolean), c.name.replace(/（.*?）/g, '').split('：').pop() + '・' + k.t);
 }
 function showHint(){ const z = ST.quiz; z.hint = z.hint || {}; z.hint[z.i] = (z.hint[z.i] || 0) + 1; const y = window.scrollY; renderQuiz(); window.scrollTo(0, y); }
 function pick(k){
@@ -919,6 +958,7 @@ function renderWQ(){
     ${inkHostHTML(`
       <div class="row small" style="margin-bottom:.6rem"><span class="chip lv-${c.level}">${esc(c.name.replace(/（.*?）/g, ''))}</span>
         <span class="chip chip-src">${esc(q.st === '仿題' ? '仿題' : q.src)}</span>${WRONG[q.id] ? `<span class="muted">錯 ${WRONG[q.id].w} 次</span>` : ''}</div>
+      ${prevBox(q)}
       ${q.ctx ? `<div class="ctx"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
       <div class="qtext">${esc(q.q)}</div>
       ${q.fig ? `<div class="fig"><span class="lb">圖表內容</span>${esc(q.fig)}</div>` : ''}

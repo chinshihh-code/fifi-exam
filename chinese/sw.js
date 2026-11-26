@@ -1,5 +1,5 @@
 // 自動產生，勿手改
-const VER = 'chi-4a790da262';
+const VER = 'chi-945516d9b1';
 const FILES = ["./", "index.html", "data/chi-g2.js", "data/chi-l4.js", "data/chi-l6.js"];
 self.addEventListener('install', e => {
   self.skipWaiting();
