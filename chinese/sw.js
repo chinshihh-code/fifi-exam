@@ -1,6 +1,6 @@
 // 自動產生，勿手改
-const VER = 'chi-64b34c8db6';
-const FILES = ["./", "index.html", "data/chi-l4.js"];
+const VER = 'chi-4a790da262';
+const FILES = ["./", "index.html", "data/chi-g2.js", "data/chi-l4.js", "data/chi-l6.js"];
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(VER).then(c => Promise.allSettled(FILES.map(f => c.add(new Request(f, {cache: 'reload'}))))));

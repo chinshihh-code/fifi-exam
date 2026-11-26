@@ -334,8 +334,7 @@ function renderHome(){
       <div class="muted small">${esc(u.subject)}・${esc(u.chapter)}</div>
       <div class="h1 serif">${esc(u.title)}</div>
       <div class="row mt2 small muted">
-        <span>題庫 ${qs.filter(q => q.st !== '仿題').length} 題${qs.some(q => q.st === '仿題') ? `＋仿題 ${qs.filter(q => q.st === '仿題').length} 題` : ''}</span>
-        <span>·</span><span>已練習 ${done} 題</span>
+        ${qs.some(q => q.st === '仿題') ? `<span>含仿題 ${qs.filter(q => q.st === '仿題').length} 題</span><span>·</span>` : ''}<span>${statTxt(qStat(qs))}</span>
       </div>
       <div class="bar"><i style="width:${Math.round(done / qs.length * 100)}%"></i></div>
     </div>
@@ -370,12 +369,11 @@ function renderHome(){
 }
 
 /* ---------------- 重點卡 ---------------- */
-function conceptStat(u, c){
-  const qs = u.questions.filter(q => q.c === c.id);
-  const tried = qs.filter(q => STAT[q.id]);
-  const r = tried.reduce((a, q) => a + STAT[q.id].r, 0), n = tried.reduce((a, q) => a + STAT[q.id].n, 0);
-  return { total: qs.length, tried: tried.length, rate: n ? Math.round(r / n * 100) : null };
-}
+// 答對率：每題只算「最近一次」作答的對錯（舊紀錄沒有 l 時，用錯題本推回最近一次）
+function lastOk(id){ const s = STAT[id]; if (!s) return null; if (s.l === 0 || s.l === 1) return s.l; const w = WRONG[id]; if (w) return w.s > 0 ? 1 : 0; return s.r > 0 ? 1 : 0; }
+function qStat(qs){ const tried = qs.filter(q => STAT[q.id]); const right = tried.filter(q => lastOk(q.id) === 1).length; return { total: qs.length, tried: tried.length, right, rate: tried.length ? Math.round(right / tried.length * 100) : null }; }
+function statTxt(st){ return `已做 ${st.tried} / ${st.total} 題${st.tried ? `・答對 ${st.right} 題（${st.rate}%）` : ''}`; }
+function conceptStat(u, c){ return qStat(u.questions.filter(q => q.c === c.id)); }
 /* ---------------- 熟練度 ---------------- */
 // SCI_MASTER：{ 'c:章:觀念' 或 'x:章:總整理頁:段落': 0 不熟 / 1 有點熟 / 2 熟了 }
 let MASTER = LS.get('SCI_MASTER', {});
@@ -421,7 +419,7 @@ function dismissSug(k){ DISMISS[k] = 1; LS.set('SCI_DISMISS', DISMISS); render()
 let CARDSORT = LS.get('SCI_CARDSORT', 'sec');
 function cptBtn(u, c, noSec){ const s = conceptStat(u, c);
   return `<button class="cpt" onclick="go('card',{concept:'${c.id}'})"><span class="nm">${noSec ? '' : secChip(u, c)} ${esc(c.name)} ${mDot(cKey(u, c))}</span>
-    <span class="muted small" style="text-align:right">${c.n} 題${s.rate !== null ? `<br>答對率 ${s.rate}%` : ''}</span><span class="muted">›</span></button>`; }
+    <span class="muted small" style="text-align:right">${c.n} 題${s.tried ? `<br>已做 ${s.tried}・對 ${s.right}（${s.rate}%）` : ''}</span><span class="muted">›</span></button>`; }
 function renderCards(){
   setTitle('重點卡', 'home');
   const u = unitOf(ST.unit);
@@ -459,7 +457,7 @@ function renderCard(){
   $('#app').innerHTML = `
     ${inkBar()}
     ${inkHostHTML(`
-      <div class="row">${secChip(u, c)}${secOf(u, c).length === 1 && (u.secs || SEC_T[u.id] || {})[secOf(u, c)[0]] ? `<span class="muted small">${esc((u.secs || SEC_T[u.id])[secOf(u, c)[0]])}</span>` : ''}<span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題${s.rate !== null ? `・答對率 ${s.rate}%` : ''}</span></div>
+      <div class="row">${secChip(u, c)}${secOf(u, c).length === 1 && (u.secs || SEC_T[u.id] || {})[secOf(u, c)[0]] ? `<span class="muted small">${esc((u.secs || SEC_T[u.id])[secOf(u, c)[0]])}</span>` : ''}<span class="chip lv-${c.level}">${c.level}</span><span class="muted small">出現 ${c.n} 題・${statTxt(s)}</span></div>
       <div class="h1 serif mt2">${esc(c.name)}</div>
       <div class="${(c.imgs || []).length ? 'split' : ''}">
       ${(c.imgs || []).length ? `<div>${c.imgs.map(m => `<figure class="cimg"><img src="img/${m}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"><figcaption>${esc(u.mapname[m])}</figcaption></figure>`).join('')}</div>` : ''}
@@ -513,7 +511,7 @@ function renderWeak(){
       <div class="muted small mt2">在重點卡、總整理按「不熟」或「有點熟」就會出現在這裡；按「熟了」就會移出。</div>
     </div>
     ${sug.length ? `<div class="card mt sug"><div class="h2">💡 建議加入</div><div class="muted small">這些觀念做過 5 題以上，答對率低於 60%</div>
-      ${sug.map(c => { const s = conceptStat(u, c); return `<div class="cluster" style="align-items:center"><span>${esc(c.name)}<br><span class="muted small">答對率 ${s.rate}%（${s.tried} 題）</span></span>
+      ${sug.map(c => { const s = conceptStat(u, c); return `<div class="cluster" style="align-items:center"><span>${esc(c.name)}<br><span class="muted small">已做 ${s.tried} 題・答對 ${s.right} 題（${s.rate}%）</span></span>
         <span class="row" style="gap:.4rem;flex-wrap:nowrap"><button class="btn btn-sm btn-primary" onclick="mSet('${cKey(u, c)}',0)">加入不熟</button><button class="btn btn-sm btn-line" onclick="dismissSug('${cKey(u, c)}')">忽略</button></span></div>`; }).join('')}
     </div>` : ''}
     <div class="card mt"><div class="h2">重點卡</div>
@@ -586,11 +584,10 @@ function renderPapers(){
   setTitle('依考卷練習', 'home');
   const u = unitOf(ST.unit), ps = papersOf(u);
   $('#app').innerHTML = `<div class="muted small">${esc(u.subject)}・${esc(u.chapter)}　只列出這一章的題目，照原卷題號排列</div>` + ps.map(p => {
-    const tried = p.qs.filter(q => STAT[q.id]);
-    const r = tried.reduce((a, q) => a + STAT[q.id].r, 0), n = tried.reduce((a, q) => a + STAT[q.id].n, 0);
+    const st = qStat(p.qs), tried = { length: st.tried };
     const wr = p.qs.filter(q => WRONG[q.id]).length;
     return `<button class="paper" onclick="startPaper('${p.key}')"><span class="ico" style="font-size:1.4rem">${p.key === 'boss' ? '👹' : '📄'}</span>
-      <span style="flex:1"><b>${esc(p.name)}</b><br><span class="muted small">共 ${p.qs.length} 題・已做 ${tried.length} / ${p.qs.length} 題${n ? `・答對率 ${Math.round(r / n * 100)}%` : ''}${wr ? `・錯題 ${wr}` : ''}</span>
+      <span style="flex:1"><b>${esc(p.name)}</b><br><span class="muted small">${statTxt(st)}${wr ? `・錯題 ${wr}` : ''}</span>
       <span class="bar" style="display:block"><i style="width:${Math.round(tried.length / p.qs.length * 100)}%"></i></span></span><span class="muted">›</span></button>`;
   }).join('');
 }
@@ -686,7 +683,7 @@ function pick(k){
   const q = Q_BY_ID[z.list[z.i]];
   z.ans[z.i] = k;
   const ok = k === q.a;
-  const s = STAT[q.id] || { r: 0, n: 0 }; s.n++; if (ok) s.r++; STAT[q.id] = s; LS.set('SCI_STAT', STAT);
+  const s = STAT[q.id] || { r: 0, n: 0 }; s.n++; if (ok) s.r++; s.l = ok ? 1 : 0; STAT[q.id] = s; LS.set('SCI_STAT', STAT);
   if (ok){
     z.right++;
     if (WRONG[q.id]){ WRONG[q.id].s++; if (WRONG[q.id].s >= NEED_STREAK) delete WRONG[q.id]; }
