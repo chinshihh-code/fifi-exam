@@ -143,6 +143,7 @@ label.ck:first-child{border-top:0}
 .cimg img{max-width:100%;max-height:420px;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:zoom-in}
 .cimg figcaption{font-size:.8rem;color:var(--muted);margin-top:.25rem}
 .expl .cimg img{max-height:300px}
+.chip-ls{background:#efe6f3;color:#6d4a7d}
 .chip-chk{background:var(--gold-soft);color:var(--gold)}
 .zoom{position:fixed;inset:0;background:rgba(30,25,22,.88);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem}
 .zoom img{max-width:100%;max-height:100%;background:#fff;border-radius:10px}
@@ -360,7 +361,7 @@ function renderHome(){
     ${bossCard(u)}
     <div class="grid2 tiles mt">
       <button class="tile" onclick="go('cards')"><span class="ico">📇</span><b>重點卡</b><span class="muted small">${u.concepts.length} 個觀念，依出題數標示必考等級</span></button>
-      <button class="tile" onclick="startQuiz(pickRep('${u.id}'),'必考精選')"><span class="ico">⭐</span><b>必考精選</b><span class="muted small">${repN} 題代表題，考前衝刺</span></button>
+      <button class="tile" onclick="startQuiz(focusList('${u.id}'),'重點題精選')"><span class="ico">⭐</span><b>重點題精選</b><span class="muted small">${repN} 題・${statTxt(qStat(qs.filter(q => q.rep))).replace('已做 ', '')}</span></button>
       <button class="tile" onclick="go('setup')"><span class="ico">📝</span><b>章節測驗</b><span class="muted small">自選觀念與題數</span></button>
       <button class="tile" onclick="go('wrong')"><span class="ico">📕</span><b>錯題本</b><span class="muted small">${wrongN ? `${wrongN} 題待重練` : '目前沒有錯題'}</span></button>
     </div>
@@ -590,6 +591,7 @@ function bossCard(u){
     <div class="row mt2">${b.videos.map(v => `<a class="btn btn-soft btn-sm" href="${v.url}" target="_blank" rel="noopener">▶ ${esc(v.t)}</a>`).join('')}</div>
   </div>`;
 }
+function focusList(uid){ const u = unitOf(uid); return u.focus ? u.focus.map(id => Q_BY_ID[id]).filter(Boolean) : pickRep(uid); }
 function bossList(uid){ const u = unitOf(uid); return u.boss.ids.map(id => u.questions.find(q => q.id === id)).filter(Boolean); }
 function pickRep(uid){
   const u = unitOf(uid);
@@ -664,7 +666,7 @@ function renderQuiz(){
       <div class="qgrid"><div class="qleft">
       <div class="row small" style="margin-bottom:.6rem">
         <span class="chip lv-${c.level}">${esc(c.name.replace(/（.*?）/g, ''))}</span>
-        ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip chip-src">${esc(q.src)}</span>`}
+        ${q.st === '仿題' ? '<span class="chip chip-mock">仿題</span>' : `<span class="chip ${q.st === '良師' ? 'chip-ls' : 'chip-src'}">${esc(q.src)}</span>`}${q.rep ? '<span class="chip lv-必考">⭐ 重點題</span>' : ''}
         ${q.chk ? `<span class="chip chip-chk">${esc(q.chk)}待核對</span>` : ''}
       </div>
       ${q.ctx ? `<div class="ctx"><span class="lb">題組資料</span>${esc(q.ctx)}</div>` : ''}
