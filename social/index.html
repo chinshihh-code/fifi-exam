@@ -657,6 +657,19 @@ function dropResume(){
   if (!confirm('確定放棄上次沒做完的測驗？（已作答的錯題仍會留在錯題本）')) return;
   LS.set('SOCIAL_RESUME', null); render();
 }
+function prevBox(q){
+  if (!q.prev || !q.prev.length) return '';
+  const ps = q.prev.map(id => Q_BY_ID[id]).filter(Boolean);
+  if (!ps.length) return '';
+  const ctxShown = ps.some(p => p.ctx && p.ctx === q.ctx);
+  return `<details class="prevbox" open><summary>📎 前面的題目（這題要接著看）</summary>${ps.map(p => `
+    ${p.ctx && !ctxShown && p.ctx !== q.ctx ? `<div class="ctx small"><span class="lb">題組資料</span>${esc(p.ctx)}</div>` : ''}
+    <div class="pq">${esc(p.q)}</div>
+    ${p.fig ? `<div class="fig small"><span class="lb">圖表內容</span>${esc(p.fig)}</div>` : ''}
+    ${p.img ? `<div class="qimg"><img src="img/${p.img}.jpg" alt="" onclick="zoom(this.src)" onload="setupInk()"></div>` : ''}${p.fh || ''}
+    ${(p.o || []).length ? `<div class="po small">${p.o.map((t, k) => `(${'ABCDE'[k]}) ${esc(t)}`).join('　')}</div>` : ''}`).join('<hr class="pdiv">')}</details>`;
+}
+
 function renderQuiz(){
   const z = ST.quiz;
   inkSetCtx({ view: 'quiz', key: null, done: '完成，去作答', hint: '畫記模式中不能點選答案', rerender: renderQuiz });
